@@ -1,0 +1,122 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useMemo, useTransition } from "react";
+import { useRole } from "@/components/role-provider";
+import { StatusBadge } from "@/components/status-badge";
+import { formatDate, formatMoney } from "@/lib/format";
+import { UiPayout } from "@/lib/ui-types";
+
+export function PayoutsClient({ payouts }: { payouts: UiPayout[] }) {
+  const router = useRouter();
+  const { role, merchantId } = useRole();
+  const [isPending, startTransition] = useTransition();
+
+  const visiblePayouts = useMemo(
+    () => payouts.filter((payout) => (role === "MERCHANT" ? payout.merchantId === merchantId : true)),
+    [payouts, role, merchantId]
+  );
+
+  const mutate = (action: () => Promise<void>) => {
+    startTransition(async () => {
+      await action();
+      router.refresh();
+    });
+  };
+
+  return (
+    <div className="card rounded-[1.75rem] p-5">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="font-display text-2xl font-semibold">Выплаты</p>
+          <p className="mt-1 text-sm text-graphite/65">Создание выплаты резервирует сумму и комиссию на замороженном балансе.</p>
+        </div>
+        <button
+          disabled={isPending}
+          onClick={() =>
+            mutate(async () => {
+              await fetch("/api/payouts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ merchantId })
+              });
+            })
+          }
+          className="focus-ring rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss disabled:opacity-50"
+        >
+          Создать выплату
+        </button>
+      </div>
+
+      <div className="mt-5 overflow-x-auto">
+        <table className="w-full min-w-[900px] border-separate border-spacing-y-2 text-left text-sm">
+          <thead className="text-xs uppercase tracking-[0.18em] text-graphite/48">
+            <tr>
+              <th className="px-4 py-2">ID</th>
+              <th className="px-4 py-2">Мерчант</th>
+              <th className="px-4 py-2">Сумма</th>
+              <th className="px-4 py-2">Статус</th>
+              <th className="px-4 py-2">Получатель</th>
+              <th className="px-4 py-2">Комиссия</th>
+              <th className="px-4 py-2">Дата</th>
+              <th className="px-4 py-2">Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visiblePayouts.map((payout) => (
+              <tr key={payout.id} className="bg-white/60">
+                <td className="rounded-l-2xl px-4 py-3 font-semibold">{payout.id}</td>
+                <td className="px-4 py-3">{payout.merchantName}</td>
+                <td className="px-4 py-3">{formatMoney(payout.amount, payout.currency)}</td>
+                <td className="px-4 py-3">
+                  <StatusBadge status={payout.status} type="payout" />
+                </td>
+                <td className="px-4 py-3">{payout.recipient}</td>
+                <td className="px-4 py-3">{formatMoney(payout.commission, payout.currency)}</td>
+                <td className="px-4 py-3">{formatDate(payout.createdAt)}</td>
+                <td className="rounded-r-2xl px-4 py-3">
+                  {["CREATED", "PENDING_APPROVAL", "HOLD"].includes(payout.status) ? (
+                    <div className="flex gap-2">
+                      <button
+                        disabled={isPending}
+                        onClick={() =>
+                          mutate(async () => {
+                            await fetch(`/api/payouts/${payout.id}/status`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ status: "COMPLETED" })
+                            });
+                          })
+                        }
+                        className="rounded-full bg-jade px-3 py-1.5 text-xs font-semibold text-white"
+                      >
+                        Подтвердить
+                      </button>
+                      <button
+                        disabled={isPending}
+                        onClick={() =>
+                          mutate(async () => {
+                            await fetch(`/api/payouts/${payout.id}/status`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ status: "CANCELED" })
+                            });
+                          })
+                        }
+                        className="rounded-full bg-stone-100 px-3 py-1.5 text-xs font-semibold text-stone-700"
+                      >
+                        Отменить
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-graphite/50">Закрыта</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

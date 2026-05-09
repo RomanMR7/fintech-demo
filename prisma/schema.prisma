@@ -1,0 +1,233 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String        @id @default(cuid())
+  name            String
+  email           String        @unique
+  role            String        @default("MERCHANT")
+  merchantId      String?
+  merchant        Merchant?     @relation(fields: [merchantId], references: [id])
+  assignedAppeals Appeal[]      @relation("AppealAssignee")
+  authoredAppeals Appeal[]      @relation("AppealAuthor")
+  comments        AppealComment[]
+  createdAt       DateTime      @default(now())
+}
+
+model Merchant {
+  id              String              @id @default(cuid())
+  name            String
+  displayName     String
+  status          String              @default("active")
+  apiKey          String
+  callbackUrl     String
+  payinFeeRate    Decimal             @default(0.025)
+  payoutFeeRate   Decimal             @default(0.015)
+  trustLimit      Decimal             @default(0)
+  createdAt       DateTime            @default(now())
+  users           User[]
+  orders          PaymentOrder[]
+  payouts         Payout[]
+  balances        BalanceAccount[]
+  transactions    BalanceTransaction[]
+  requisites      PaymentRequisite[]
+  appeals         Appeal[]
+  notifications   Notification[]
+}
+
+model Provider {
+  id              String             @id @default(cuid())
+  name            String
+  displayName     String
+  type            String
+  status          String             @default("ACTIVE")
+  commissionRate  Decimal            @default(0.018)
+  availability    Int                @default(99)
+  testMode        Boolean            @default(true)
+  payinAvailable  Boolean            @default(true)
+  payoutAvailable Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  orders          PaymentOrder[]
+  requisites      PaymentRequisite[]
+}
+
+model PaymentRequisite {
+  id              String           @id @default(cuid())
+  merchantId      String?
+  providerId      String?
+  merchant        Merchant?        @relation(fields: [merchantId], references: [id])
+  provider        Provider?        @relation(fields: [providerId], references: [id])
+  type            String
+  bank            String
+  maskedNumber    String
+  holder          String
+  currency        String           @default("RUB")
+  status          String           @default("ACTIVE")
+  dailyLimit      Decimal          @default(0)
+  dailyUsed       Decimal          @default(0)
+  minAmount       Decimal          @default(0)
+  maxAmount       Decimal          @default(0)
+  linkedOrders    Int              @default(0)
+  createdAt       DateTime         @default(now())
+  orders          PaymentOrder[]
+}
+
+model PaymentOrder {
+  id              String           @id @default(cuid())
+  externalId      String           @unique
+  merchantId      String
+  providerId      String?
+  requisiteId     String?
+  merchant        Merchant         @relation(fields: [merchantId], references: [id])
+  provider        Provider?        @relation(fields: [providerId], references: [id])
+  requisite       PaymentRequisite? @relation(fields: [requisiteId], references: [id])
+  amount          Decimal
+  currency        String           @default("RUB")
+  status          String           @default("CREATED")
+  orderType       String           @default("PAY-IN")
+  providerName    String?
+  commission      Decimal          @default(0)
+  platformFee     Decimal          @default(0)
+  merchantNet     Decimal          @default(0)
+  paymentUrl      String?
+  metadata        String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  paidAt          DateTime?
+  completedAt     DateTime?
+  appeals         Appeal[]
+  transactions    BalanceTransaction[]
+}
+
+model Payout {
+  id              String         @id @default(cuid())
+  merchantId      String
+  merchant        Merchant       @relation(fields: [merchantId], references: [id])
+  amount          Decimal
+  currency        String         @default("RUB")
+  status          String         @default("CREATED")
+  recipient       String
+  commission      Decimal        @default(0)
+  sourceBalance   String         @default("Доступный баланс")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  completedAt     DateTime?
+  transactions    BalanceTransaction[]
+}
+
+model BalanceAccount {
+  id              String                @id @default(cuid())
+  merchantId      String
+  merchant        Merchant              @relation(fields: [merchantId], references: [id])
+  type            String
+  currency        String                @default("RUB")
+  amount          Decimal               @default(0)
+  updatedAt       DateTime              @updatedAt
+  transactions    BalanceTransaction[]
+
+  @@unique([merchantId, type, currency])
+}
+
+model BalanceTransaction {
+  id              String            @id @default(cuid())
+  merchantId      String
+  merchant        Merchant          @relation(fields: [merchantId], references: [id])
+  balanceId       String?
+  balance         BalanceAccount?   @relation(fields: [balanceId], references: [id])
+  orderId         String?
+  order           PaymentOrder?     @relation(fields: [orderId], references: [id])
+  payoutId        String?
+  payout          Payout?           @relation(fields: [payoutId], references: [id])
+  appealId        String?
+  type            String
+  direction       String
+  amount          Decimal
+  beforeAmount    Decimal
+  afterAmount     Decimal
+  currency        String            @default("RUB")
+  description     String
+  createdAt       DateTime          @default(now())
+}
+
+model CommissionRule {
+  id              String          @id @default(cuid())
+  name            String
+  type            String
+  rate            Decimal
+  minAmount       Decimal         @default(0)
+  maxAmount       Decimal         @default(0)
+  active          Boolean         @default(true)
+  description     String
+}
+
+model Appeal {
+  id              String          @id @default(cuid())
+  orderId         String
+  merchantId      String
+  authorId        String?
+  assigneeId      String?
+  order           PaymentOrder    @relation(fields: [orderId], references: [id])
+  merchant        Merchant        @relation(fields: [merchantId], references: [id])
+  author          User?           @relation("AppealAuthor", fields: [authorId], references: [id])
+  assignee        User?           @relation("AppealAssignee", fields: [assigneeId], references: [id])
+  reason          String
+  status          String          @default("NEW")
+  decision        String?
+  frozenAmount    Decimal         @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  resolvedAt      DateTime?
+  comments        AppealComment[]
+}
+
+model AppealComment {
+  id              String       @id @default(cuid())
+  appealId        String
+  userId          String?
+  appeal          Appeal       @relation(fields: [appealId], references: [id])
+  user            User?        @relation(fields: [userId], references: [id])
+  authorRole      String
+  message         String
+  createdAt       DateTime     @default(now())
+}
+
+model Notification {
+  id              String             @id @default(cuid())
+  role            String
+  merchantId      String?
+  merchant        Merchant?          @relation(fields: [merchantId], references: [id])
+  title           String
+  message         String
+  type            String             @default("INFO")
+  read            Boolean            @default(false)
+  createdAt       DateTime           @default(now())
+}
+
+model EventLog {
+  id              String       @id @default(cuid())
+  actorRole       String
+  actorName       String
+  entityType      String
+  entityId        String
+  type            String
+  title           String
+  description     String
+  metadata        String?
+  createdAt       DateTime     @default(now())
+}
+
+model ScenarioState {
+  id              String       @id @default(cuid())
+  key             String       @unique
+  title           String
+  description     String
+  step            Int          @default(0)
+  totalSteps      Int
+  updatedAt       DateTime     @updatedAt
+}
