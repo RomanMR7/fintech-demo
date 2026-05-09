@@ -3,10 +3,12 @@ import { runScenarioStep } from "@/lib/domain";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(_: Request, { params }: { params: Promise<{ key: string }> }) {
+export async function POST(request: Request, { params }: { params: Promise<{ key: string }> }) {
   try {
     const { key } = await params;
-    const state = await runScenarioStep(key);
+    const body = await request.json().catch(() => ({}));
+    const targetStep = Number.isFinite(Number(body.targetStep)) ? Number(body.targetStep) : undefined;
+    const state = await runScenarioStep(key, targetStep);
     return NextResponse.json(state);
   } catch (error) {
     console.error("Scenario step failed", error);

@@ -961,11 +961,12 @@ async function addAppealReviewComment(message: string) {
   return appeal;
 }
 
-export async function runScenarioStep(key: string) {
+export async function runScenarioStep(key: string, targetStep?: number) {
   const state = await prisma.scenarioState.findUnique({ where: { key } });
   if (!state) throw new Error("Сценарий не найден.");
 
-  const nextStep = state.step >= state.totalSteps ? 1 : state.step + 1;
+  const requestedStep = Number.isFinite(targetStep) ? Math.trunc(Number(targetStep)) : undefined;
+  const nextStep = requestedStep ? Math.min(Math.max(requestedStep, 1), state.totalSteps) : state.step >= state.totalSteps ? 1 : state.step + 1;
 
   if (key === "merchant-create-order") {
     if (nextStep === 1) await createDemoOrder(UserRole.MERCHANT);
