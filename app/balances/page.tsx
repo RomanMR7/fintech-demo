@@ -1,4 +1,5 @@
 import { EducationBlock } from "@/components/education-block";
+import { BalanceAdjustClient } from "@/components/balance-adjust-client";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
 import { formatDate, formatMoney, toNumber } from "@/lib/format";
@@ -7,9 +8,10 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 export default async function BalancesPage() {
-  const [balances, transactions] = await Promise.all([
+  const [balances, transactions, merchants] = await Promise.all([
     prisma.balanceAccount.findMany({ include: { merchant: true }, orderBy: [{ merchantId: "asc" }, { type: "asc" }] }),
-    prisma.balanceTransaction.findMany({ include: { merchant: true }, orderBy: { createdAt: "desc" }, take: 18 })
+    prisma.balanceTransaction.findMany({ include: { merchant: true }, orderBy: { createdAt: "desc" }, take: 18 }),
+    prisma.merchant.findMany({ orderBy: { displayName: "asc" } })
   ]);
 
   const available = balances.filter((item) => item.type === "AVAILABLE").reduce((sum, item) => sum + toNumber(item.amount), 0);
@@ -28,6 +30,8 @@ export default async function BalancesPage() {
         <MetricCard label="Замороженный баланс" value={formatMoney(frozen)} hint="Холды по выплатам и апелляциям." accent="brass" />
         <MetricCard label="Комиссии" value={formatMoney(fees)} hint="Удержанные комиссии платформы и провайдеров." />
       </section>
+
+      <BalanceAdjustClient merchants={merchants.map((merchant) => ({ id: merchant.id, displayName: merchant.displayName }))} />
 
       <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="card rounded-[1.75rem] p-5">

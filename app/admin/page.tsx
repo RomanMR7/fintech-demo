@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { EducationBlock } from "@/components/education-block";
+import { MerchantAdminClient } from "@/components/merchant-admin-client";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
@@ -30,6 +31,8 @@ export default async function AdminPage() {
         <MetricCard label="Пользователи" value={formatNumber(users.length)} hint="Роли демо-контура." accent="brass" />
         <MetricCard label="Риски" value={formatNumber(orders.filter((order) => order.status === "DISPUTED").length + appeals.filter((appeal) => ["NEW", "OPEN"].includes(appeal.status)).length)} hint="Споры и активные апелляции." accent="red" />
       </section>
+
+      <MerchantAdminClient merchants={merchants.map((merchant) => ({ id: merchant.id, displayName: merchant.displayName, name: merchant.name }))} />
 
       <section className="grid gap-5 xl:grid-cols-2">
         <div className="card rounded-[1.75rem] p-5">

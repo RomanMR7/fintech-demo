@@ -601,6 +601,230 @@ export async function resolveAppeal(appealId: string, resolution: "merchant" | "
   });
 }
 
+function toSlug(value: string) {
+  const normalized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 32);
+
+  return normalized || "demo";
+}
+
+export async function createMerchantProfile(params: {
+  displayName: string;
+  legalName?: string;
+  trustLimit?: number;
+  initialBalance?: number;
+  payinFeeRate?: number;
+  payoutFeeRate?: number;
+}) {
+  const displayName = params.displayName.trim();
+  if (!displayName) throw new Error("Укажите название мерчанта.");
+
+  const idSuffix = Date.now().toString().slice(-6);
+  const slug = toSlug(displayName);
+  const merchantId = `merchant-${slug}-${idSuffix}`;
+  const legalName = params.legalName?.trim() || `ООО ${displayName}`;
+  const trustLimit = new Prisma.Decimal(params.trustLimit ?? 0);
+  const initialBalance = new Prisma.Decimal(params.initialBalance ?? 0);
+  const payinFeeRate = new Prisma.Decimal(params.payinFeeRate ?? 0.025);
+  const payoutFeeRate = new Prisma.Decimal(params.payoutFeeRate ?? 0.015);
+
+  if (initialBalance.lessThan(0)) throw new Error("Стартовый баланс не может быть отрицательным.");
+
+  return prisma.$transaction(async (db) => {
+    const merchant = await db.merchant.create({
+      data: {
+        id: merchantId,
+        name: legalName,
+        displayName,
+        apiKey: `demo_${slug}_${idSuffix}`,
+        callbackUrl: `https://${slug}.example/webhook`,
+        trustLimit,
+        payinFeeRate,
+        payoutFeeRate
+      }
+    });
+
+    const available = await db.balanceAccount.create({
+      data: {
+        merchantId: merchant.id,
+        type: BalanceType.AVAILABLE,
+        currency: "RUB",
+        amount: initialBalance
+      }
+    });
+
+    await db.balanceAccount.createMany({
+      data: [
+        { merchantId: merchant.id, type: BalanceType.FROZEN, currency: "RUB", amount: "0" },
+        { merchantId: merchant.id, type: BalanceType.FEES, currency: "RUB", amount: "0" }
+      ]
+    });
+
+    if (initialBalance.greaterThan(0)) {
+      await db.balanceTransaction.create({
+        data: {
+          merchantId: merchant.id,
+          balanceId: available.id,
+          type: "Стартовое пополнение",
+          direction: BalanceDirection.CREDIT,
+          amount: initialBalance,
+          beforeAmount: "0",
+          afterAmount: initialBalance,
+          description: "Стартовый баланс нового мерчанта"
+        }
+      });
+    }
+
+    await db.user.create({
+      data: {
+        id: `user-${slug}-${idSuffix}`,
+        name: `Менеджер ${displayName}`,
+        email: `${slug}-${idSuffix}@demo.local`,
+        role: UserRole.MERCHANT,
+        merchantId: merchant.id
+      }
+    });
+
+    await writeEventAndNotification(db, {
+      actorRole: UserRole.PLATFORM_ADMIN,
+      actorName: "Администратор демо",
+      type: EventType.BALANCE_CHANGED,
+      entityType: "Merchant",
+      entityId: merchant.id,
+      title: "Добавлен новый мерчант",
+      description: `Мерчант ${displayName} подключен к демо-контуру со стартовым балансом ${initialBalance.toString()} RUB.`,
+      notifyRole: UserRole.PLATFORM_ADMIN,
+      merchantId: merchant.id,
+      notificationType: NotificationType.SUCCESS
+    });
+
+    return merchant;
+  });
+}
+
+export async function adjustMerchantBalance(params: {
+  merchantId: string;
+  operation: "credit_available" | "debit_available" | "freeze" | "unfreeze" | "credit_fees" | "debit_fees";
+  amount: number;
+  description?: string;
+}) {
+  const amount = new Prisma.Decimal(params.amount);
+  if (amount.lessThanOrEqualTo(0)) throw new Error("Сумма должна быть больше нуля.");
+
+  const description = params.description?.trim() || "Ручная корректировка баланса";
+
+  return prisma.$transaction(async (db) => {
+    const merchant = await db.merchant.findUnique({ where: { id: params.merchantId } });
+    if (!merchant) throw new Error("Мерчант не найден.");
+
+    const ensureEnough = async (type: BalanceTypeValue) => {
+      const balance = await getBalance(db, params.merchantId, type);
+      if (new Prisma.Decimal(balance.amount).lessThan(amount)) {
+        throw new Error("Недостаточно средств на выбранном балансе.");
+      }
+    };
+
+    if (params.operation === "credit_available") {
+      await moveBalance(db, {
+        merchantId: params.merchantId,
+        type: BalanceType.AVAILABLE,
+        direction: BalanceDirection.CREDIT,
+        amount,
+        description
+      });
+    }
+
+    if (params.operation === "debit_available") {
+      await ensureEnough(BalanceType.AVAILABLE);
+      await moveBalance(db, {
+        merchantId: params.merchantId,
+        type: BalanceType.AVAILABLE,
+        direction: BalanceDirection.DEBIT,
+        amount,
+        description
+      });
+    }
+
+    if (params.operation === "freeze") {
+      await ensureEnough(BalanceType.AVAILABLE);
+      await moveBalance(db, {
+        merchantId: params.merchantId,
+        type: BalanceType.AVAILABLE,
+        direction: BalanceDirection.DEBIT,
+        amount,
+        description: `${description}: списание в холд`
+      });
+      await moveBalance(db, {
+        merchantId: params.merchantId,
+        type: BalanceType.FROZEN,
+        direction: BalanceDirection.FREEZE,
+        amount,
+        description: `${description}: заморозка`
+      });
+    }
+
+    if (params.operation === "unfreeze") {
+      await ensureEnough(BalanceType.FROZEN);
+      await moveBalance(db, {
+        merchantId: params.merchantId,
+        type: BalanceType.FROZEN,
+        direction: BalanceDirection.DEBIT,
+        amount,
+        description: `${description}: снятие холда`
+      });
+      await moveBalance(db, {
+        merchantId: params.merchantId,
+        type: BalanceType.AVAILABLE,
+        direction: BalanceDirection.CREDIT,
+        amount,
+        description: `${description}: возврат в доступный баланс`
+      });
+    }
+
+    if (params.operation === "credit_fees") {
+      await moveBalance(db, {
+        merchantId: params.merchantId,
+        type: BalanceType.FEES,
+        direction: BalanceDirection.CREDIT,
+        amount,
+        description
+      });
+    }
+
+    if (params.operation === "debit_fees") {
+      await ensureEnough(BalanceType.FEES);
+      await moveBalance(db, {
+        merchantId: params.merchantId,
+        type: BalanceType.FEES,
+        direction: BalanceDirection.DEBIT,
+        amount,
+        description
+      });
+    }
+
+    await writeEventAndNotification(db, {
+      actorRole: UserRole.FINANCE_MANAGER,
+      actorName: "Финансовый менеджер демо",
+      type: EventType.BALANCE_CHANGED,
+      entityType: "Merchant",
+      entityId: params.merchantId,
+      title: "Ручная корректировка баланса",
+      description: `${merchant.displayName}: ${description} на ${amount.toString()} RUB.`,
+      notifyRole: UserRole.MERCHANT,
+      merchantId: params.merchantId,
+      notificationType: NotificationType.INFO
+    });
+
+    return db.balanceAccount.findMany({
+      where: { merchantId: params.merchantId },
+      orderBy: { type: "asc" }
+    });
+  });
+}
+
 async function writeScenarioCheckpoint(key: string, step: number, title: string, description: string, merchantId?: string | null, notifyRole: string = UserRole.PLATFORM_ADMIN) {
   await prisma.$transaction(async (db) => {
     await writeEventAndNotification(db, {
