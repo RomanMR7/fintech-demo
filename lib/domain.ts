@@ -140,7 +140,7 @@ export async function createDemoOrder(actorRole: string = UserRole.MERCHANT) {
 
   const amount = new Prisma.Decimal(70000 + Math.floor(Math.random() * 90000));
   const commission = amount.mul(merchant.payinFeeRate);
-  const idSuffix = Date.now().toString().slice(-6);
+  const idSuffix = `${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
 
   return prisma.$transaction(async (db) => {
     const order = await db.paymentOrder.create({
@@ -601,68 +601,249 @@ export async function resolveAppeal(appealId: string, resolution: "merchant" | "
   });
 }
 
+async function writeScenarioCheckpoint(key: string, step: number, title: string, description: string, merchantId?: string | null, notifyRole: string = UserRole.PLATFORM_ADMIN) {
+  await prisma.$transaction(async (db) => {
+    await writeEventAndNotification(db, {
+      actorRole: scenarioActor.role,
+      actorName: scenarioActor.name,
+      type: EventType.SCENARIO_STEP,
+      entityType: "ScenarioState",
+      entityId: key,
+      title,
+      description: `Шаг ${step}: ${description}`,
+      notifyRole,
+      merchantId,
+      notificationType: NotificationType.INFO
+    });
+  });
+}
+
+async function findLatestOrder(statuses: string[]) {
+  return prisma.paymentOrder.findFirst({
+    where: { status: { in: statuses } },
+    orderBy: { updatedAt: "desc" }
+  });
+}
+
+async function ensureWaitingPaymentOrder() {
+  const waiting = await findLatestOrder([OrderStatus.WAITING_PAYMENT]);
+  if (waiting) return waiting;
+
+  const created = (await findLatestOrder([OrderStatus.CREATED])) ?? (await createDemoOrder(UserRole.PLATFORM_ADMIN));
+  return assignRequisiteToOrder(created.id);
+}
+
+async function ensurePaidOrder() {
+  const paid = await findLatestOrder([OrderStatus.PAID]);
+  if (paid) return paid;
+
+  const waiting = await ensureWaitingPaymentOrder();
+  return changeOrderStatus(waiting.id, OrderStatus.PAID, UserRole.OPERATOR);
+}
+
+async function ensureConfirmedOrder() {
+  const confirmed = await findLatestOrder([OrderStatus.CONFIRMED]);
+  if (confirmed) return confirmed;
+
+  const paid = await ensurePaidOrder();
+  return changeOrderStatus(paid.id, OrderStatus.CONFIRMED, UserRole.OPERATOR);
+}
+
+async function ensureDisputedOrder() {
+  const disputed = await findLatestOrder([OrderStatus.DISPUTED]);
+  if (disputed) return disputed;
+
+  const order =
+    (await findLatestOrder([OrderStatus.CONFIRMED, OrderStatus.PAID, OrderStatus.WAITING_PAYMENT, OrderStatus.CREATED])) ??
+    (await createDemoOrder(UserRole.PLATFORM_ADMIN));
+
+  return changeOrderStatus(order.id, OrderStatus.DISPUTED, UserRole.OPERATOR);
+}
+
+async function findLatestPayout(statuses: string[]) {
+  return prisma.payout.findFirst({
+    where: { status: { in: statuses } },
+    orderBy: { updatedAt: "desc" }
+  });
+}
+
+async function ensureReviewablePayout() {
+  return (await findLatestPayout([PayoutStatus.PENDING_APPROVAL, PayoutStatus.HOLD, PayoutStatus.CREATED])) ?? (await createPayoutForMerchant());
+}
+
+async function movePayoutToHold(payoutId: string) {
+  return prisma.$transaction(async (db) => {
+    const payout = await db.payout.findUnique({ where: { id: payoutId } });
+    if (!payout) throw new Error("Выплата не найдена.");
+    if (payout.status === PayoutStatus.HOLD || payout.status === PayoutStatus.COMPLETED) return payout;
+
+    const updated = await db.payout.update({
+      where: { id: payoutId },
+      data: { status: PayoutStatus.HOLD }
+    });
+
+    await writeEventAndNotification(db, {
+      actorRole: UserRole.FINANCE_MANAGER,
+      actorName: "Глеб Фомин",
+      type: EventType.STATUS_CHANGED,
+      entityType: "Payout",
+      entityId: payoutId,
+      title: "Выплата взята на финансовую проверку",
+      description: `Выплата ${payoutId} переведена в статус HOLD перед подтверждением.`,
+      notifyRole: UserRole.MERCHANT,
+      merchantId: payout.merchantId,
+      notificationType: NotificationType.INFO
+    });
+
+    return updated;
+  });
+}
+
+async function ensureOpenAppeal() {
+  const open = await prisma.appeal.findFirst({ where: { status: AppealStatus.OPEN }, orderBy: { updatedAt: "desc" } });
+  if (open) return open;
+
+  const fresh = (await prisma.appeal.findFirst({ where: { status: AppealStatus.NEW }, orderBy: { updatedAt: "desc" } })) ?? (await createAppealForOrder());
+  return openAppeal(fresh.id);
+}
+
+async function addAppealReviewComment(message: string) {
+  const appeal = await ensureOpenAppeal();
+
+  await prisma.$transaction(async (db) => {
+    await db.appealComment.create({
+      data: {
+        appealId: appeal.id,
+        userId: "user-support",
+        authorRole: UserRole.SUPPORT,
+        message
+      }
+    });
+
+    await writeEventAndNotification(db, {
+      actorRole: UserRole.SUPPORT,
+      actorName: "Надежда Ким",
+      type: EventType.STATUS_CHANGED,
+      entityType: "Appeal",
+      entityId: appeal.id,
+      title: "Support обновил разбор апелляции",
+      description: message,
+      notifyRole: UserRole.MERCHANT,
+      merchantId: appeal.merchantId,
+      notificationType: NotificationType.INFO
+    });
+  });
+
+  return appeal;
+}
+
 export async function runScenarioStep(key: string) {
   const state = await prisma.scenarioState.findUnique({ where: { key } });
   if (!state) throw new Error("Сценарий не найден.");
 
   const nextStep = state.step >= state.totalSteps ? 1 : state.step + 1;
 
-  if (key === "merchant-create-order" && nextStep === 1) await createDemoOrder(UserRole.MERCHANT);
-  if (key === "assign-requisite" && nextStep === 1) await assignRequisiteToOrder();
+  if (key === "merchant-create-order") {
+    if (nextStep === 1) await createDemoOrder(UserRole.MERCHANT);
+    if (nextStep === 2) await assignRequisiteToOrder();
+    if (nextStep === 3) {
+      const order = await ensureWaitingPaymentOrder();
+      await changeOrderStatus(order.id, OrderStatus.PAID, UserRole.OPERATOR);
+    }
+  }
+
+  if (key === "assign-requisite") {
+    if (nextStep === 1) await createDemoOrder(UserRole.PLATFORM_ADMIN);
+    if (nextStep === 2) await assignRequisiteToOrder();
+    if (nextStep === 3) {
+      const requisite = await prisma.paymentRequisite.findFirst({ orderBy: { linkedOrders: "desc" } });
+      if (requisite) {
+        await prisma.paymentRequisite.update({
+          where: { id: requisite.id },
+          data: { linkedOrders: { increment: 1 } }
+        });
+      }
+      await writeScenarioCheckpoint(key, nextStep, "Проверены лимиты реквизитов", "Платформа зафиксировала использование реквизита и обновила операционный журнал.", requisite?.merchantId, UserRole.OPERATOR);
+    }
+  }
 
   if (key === "order-status-flow") {
     const order =
       (await prisma.paymentOrder.findFirst({
         where: { status: { in: [OrderStatus.CREATED, OrderStatus.WAITING_PAYMENT, OrderStatus.PAID, OrderStatus.CONFIRMED] } },
-        orderBy: { createdAt: "desc" }
+        orderBy: { updatedAt: "desc" }
       })) ?? (await createDemoOrder(UserRole.PLATFORM_ADMIN));
     const flow = [OrderStatus.WAITING_PAYMENT, OrderStatus.PAID, OrderStatus.CONFIRMED, OrderStatus.COMPLETED, OrderStatus.COMPLETED];
     await changeOrderStatus(order.id, flow[nextStep - 1] ?? OrderStatus.COMPLETED, UserRole.OPERATOR);
   }
 
-  if (key === "balance-after-success" && nextStep === 1) {
-    const order =
-      (await prisma.paymentOrder.findFirst({
-        where: { status: { in: [OrderStatus.PAID, OrderStatus.CONFIRMED, OrderStatus.WAITING_PAYMENT] } },
-        orderBy: { createdAt: "desc" }
-      })) ?? (await createDemoOrder(UserRole.PLATFORM_ADMIN));
-    await changeOrderStatus(order.id, OrderStatus.COMPLETED, UserRole.FINANCE_MANAGER);
+  if (key === "balance-after-success") {
+    if (nextStep === 1) await ensurePaidOrder();
+    if (nextStep === 2) {
+      const order = await ensurePaidOrder();
+      await changeOrderStatus(order.id, OrderStatus.CONFIRMED, UserRole.OPERATOR);
+    }
+    if (nextStep === 3) {
+      const order = await ensureConfirmedOrder();
+      await changeOrderStatus(order.id, OrderStatus.COMPLETED, UserRole.FINANCE_MANAGER);
+    }
   }
 
-  if (key === "merchant-create-payout" && nextStep === 1) await createPayoutForMerchant();
-
-  if (key === "finance-approve-payout" && nextStep === 1) {
-    const payout =
-      (await prisma.payout.findFirst({
-        where: { status: { in: [PayoutStatus.PENDING_APPROVAL, PayoutStatus.HOLD, PayoutStatus.CREATED] } },
-        orderBy: { createdAt: "desc" }
-      })) ?? (await createPayoutForMerchant());
-    await resolvePayout(payout.id, PayoutStatus.COMPLETED);
+  if (key === "merchant-create-payout") {
+    if (nextStep === 1) await createPayoutForMerchant();
+    if (nextStep === 2) {
+      const payout = await ensureReviewablePayout();
+      await movePayoutToHold(payout.id);
+    }
+    if (nextStep === 3) {
+      const payout = await ensureReviewablePayout();
+      await writeScenarioCheckpoint(key, nextStep, "Выплата ожидает решения финансового менеджера", `Выплата ${payout.id} готова к подтверждению в финансовом кабинете.`, payout.merchantId, UserRole.FINANCE_MANAGER);
+    }
   }
 
-  if (key === "freeze-disputed" && nextStep === 1) {
-    const order =
-      (await prisma.paymentOrder.findFirst({
-        where: { status: { notIn: [OrderStatus.COMPLETED, OrderStatus.CANCELED, OrderStatus.DISPUTED] } },
-        orderBy: { createdAt: "desc" }
-      })) ?? (await createDemoOrder(UserRole.PLATFORM_ADMIN));
-    await changeOrderStatus(order.id, OrderStatus.DISPUTED, UserRole.OPERATOR);
+  if (key === "finance-approve-payout") {
+    if (nextStep === 1) await ensureReviewablePayout();
+    if (nextStep === 2) {
+      const payout = await ensureReviewablePayout();
+      await movePayoutToHold(payout.id);
+    }
+    if (nextStep === 3) {
+      const payout = await ensureReviewablePayout();
+      await resolvePayout(payout.id, PayoutStatus.COMPLETED);
+    }
   }
 
-  if (key === "create-appeal" && nextStep === 1) await createAppealForOrder();
-
-  if (key === "support-review-appeal" && nextStep === 1) {
-    const appeal =
-      (await prisma.appeal.findFirst({ where: { status: { in: [AppealStatus.NEW, AppealStatus.OPEN] } }, orderBy: { createdAt: "desc" } })) ??
-      (await createAppealForOrder());
-    await openAppeal(appeal.id);
+  if (key === "freeze-disputed") {
+    if (nextStep === 1) await ensurePaidOrder();
+    if (nextStep === 2) await ensureDisputedOrder();
+    if (nextStep === 3) {
+      const order = await ensureDisputedOrder();
+      await writeScenarioCheckpoint(key, nextStep, "Спор передан в обработку", `По ордеру ${order.externalId} создан операционный контекст для support и финансового контроля.`, order.merchantId, UserRole.SUPPORT);
+    }
   }
 
-  if (key === "appeal-resolution-balance" && nextStep === 1) {
-    const appeal =
-      (await prisma.appeal.findFirst({ where: { status: { in: [AppealStatus.NEW, AppealStatus.OPEN] } }, orderBy: { createdAt: "desc" } })) ??
-      (await createAppealForOrder());
-    await resolveAppeal(appeal.id, "merchant");
+  if (key === "create-appeal") {
+    if (nextStep === 1) await ensureDisputedOrder();
+    if (nextStep === 2) await createAppealForOrder();
+    if (nextStep === 3) {
+      const appeal = await prisma.appeal.findFirst({ where: { status: { in: [AppealStatus.NEW, AppealStatus.OPEN] } }, orderBy: { updatedAt: "desc" } });
+      await writeScenarioCheckpoint(key, nextStep, "Апелляция готова к разбору", `Обращение ${appeal?.id ?? "demo"} ожидает действий support-команды.`, appeal?.merchantId, UserRole.SUPPORT);
+    }
+  }
+
+  if (key === "support-review-appeal") {
+    if (nextStep === 1) await ensureOpenAppeal();
+    if (nextStep === 2) await addAppealReviewComment("Support проверил комментарии мерчанта и запросил сверку у провайдера.");
+    if (nextStep === 3) await addAppealReviewComment("Провайдер прислал предварительный ответ, апелляция готова к финальному решению.");
+  }
+
+  if (key === "appeal-resolution-balance") {
+    if (nextStep === 1) await ensureOpenAppeal();
+    if (nextStep === 2) await addAppealReviewComment("Support подготовил решение: подтверждение оплаты признано достаточным.");
+    if (nextStep === 3) {
+      const appeal = await ensureOpenAppeal();
+      await resolveAppeal(appeal.id, "merchant");
+    }
   }
 
   const updatedState = await prisma.scenarioState.update({
