@@ -1,10 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRole } from "@/components/role-provider";
 import { defaultMerchantId, roleOptions, DemoRole } from "@/lib/roles";
 
-const merchants = [
+type MerchantOption = {
+  id: string;
+  label: string;
+};
+
+const fallbackMerchants: MerchantOption[] = [
   { id: "merchant-orbita", label: "Орбита" },
   { id: "merchant-nova", label: "Nova Games" },
   { id: "merchant-sigma", label: "Sigma Travel" }
@@ -12,6 +18,36 @@ const merchants = [
 
 export function Topbar() {
   const { role, setRole, merchantId, setMerchantId } = useRole();
+  const [merchants, setMerchants] = useState<MerchantOption[]>(fallbackMerchants);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadMerchants() {
+      try {
+        const response = await fetch("/api/merchants", { cache: "no-store" });
+        if (!response.ok) return;
+
+        const payload = (await response.json()) as Array<{ id: string; displayName: string }>;
+        if (!active || payload.length === 0) return;
+
+        const nextMerchants = payload.map((merchant) => ({ id: merchant.id, label: merchant.displayName }));
+        setMerchants(nextMerchants);
+
+        if (!nextMerchants.some((merchant) => merchant.id === merchantId)) {
+          setMerchantId(nextMerchants[0]?.id ?? defaultMerchantId);
+        }
+      } catch {
+        setMerchants(fallbackMerchants);
+      }
+    }
+
+    loadMerchants();
+
+    return () => {
+      active = false;
+    };
+  }, [merchantId, setMerchantId]);
 
   return (
     <header className="card flex flex-col gap-4 rounded-[2rem] p-4 md:flex-row md:items-center md:justify-between">
@@ -33,7 +69,7 @@ export function Topbar() {
           ))}
         </select>
         <select
-          value={role === "MERCHANT" ? merchantId : defaultMerchantId}
+          value={role === "MERCHANT" ? merchantId : merchants[0]?.id ?? defaultMerchantId}
           onChange={(event) => setMerchantId(event.target.value)}
           className="focus-ring rounded-2xl border border-ink/10 bg-white/75 px-4 py-3 text-sm font-semibold text-ink shadow-insetSoft"
           aria-label="Текущий мерчант"
@@ -49,6 +85,12 @@ export function Topbar() {
           className="focus-ring rounded-2xl bg-ink px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-moss"
         >
           Запустить сценарии
+        </Link>
+        <Link
+          href="/commercial"
+          className="focus-ring rounded-2xl bg-jade px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-moss"
+        >
+          Экономика
         </Link>
       </div>
     </header>

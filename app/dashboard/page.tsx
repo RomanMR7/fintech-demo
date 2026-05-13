@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { EducationBlock } from "@/components/education-block";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
@@ -36,6 +37,24 @@ export default async function DashboardPage() {
         <MetricCard label="Доступно" value={formatMoney(available)} hint="Баланс, которым мерчанты могут распоряжаться." accent="moss" />
         <MetricCard label="Заморожено" value={formatMoney(frozen)} hint="Холды по выплатам и спорным операциям." accent="brass" />
         <MetricCard label="Апелляции" value={formatNumber(appeals.length)} hint="Все обращения support-команды." accent="red" />
+      </section>
+
+      <section className="card rounded-[1.75rem] bg-ink p-5 text-white">
+        <div className="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-center">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">Маршрут для презентации</p>
+            <h2 className="mt-2 font-display text-2xl font-semibold">Начните с экономики, затем покажите сценарии и баланс</h2>
+            <p className="mt-2 max-w-4xl text-sm leading-6 text-white/70">
+              Такой порядок лучше работает для инвестора или клиента: сначала объясняем, где деньги и ценность, затем показываем, как система проводит операции,
+              меняет статусы, фиксирует события и защищает баланс.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/commercial" className="rounded-2xl bg-jade px-4 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-ink">Экономика</Link>
+            <Link href="/scenarios" className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-ink">Сценарии</Link>
+            <Link href="/balances" className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-ink">Балансы</Link>
+          </div>
+        </div>
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">

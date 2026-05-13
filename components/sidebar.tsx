@@ -9,6 +9,7 @@ const sections = [
     title: "Обзор",
     items: [
       { href: "/dashboard", label: "Главный дашборд" },
+      { href: "/commercial", label: "Коммерческая модель" },
       { href: "/merchant", label: "Кабинет мерчанта" },
       { href: "/admin", label: "Админ-панель" },
       { href: "/operations", label: "Операционный кабинет" }
