@@ -7,8 +7,8 @@ Content-Type: application/json
 {
   "merchantId": "merchant-orbita",
   "externalId": "API-ORDER-10001",
-  "amount": 125000,
-  "currency": "RUB",
+  "amount": 1250,
+  "currency": "USD",
   "payType": "C2C",
   "resultMode": "json"
 }`;
@@ -17,9 +17,10 @@ const apiResponse = `{
   "id": "clx_demo_order",
   "externalId": "API-ORDER-10001",
   "status": "CREATED",
-  "amount": "125000",
-  "commission": "3125",
-  "merchantNet": "121875",
+  "amount": "1250",
+  "currency": "USD",
+  "commission": "31.25",
+  "merchantNet": "1218.75",
   "paymentUrl": "https://pay.local/api/..."
 }`;
 
@@ -29,7 +30,8 @@ const webhook = `POST /demo/webhook/provider
   "orderId": "clx_demo_order",
   "providerOrderId": "fireex-7791",
   "status": "paid",
-  "paidAmount": 125000,
+  "paidAmount": 1250,
+  "currency": "USD",
   "signature": "demo_signature"
 }`;
 

@@ -2,7 +2,7 @@ import { EducationBlock } from "@/components/education-block";
 import { BalanceAdjustClient } from "@/components/balance-adjust-client";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
-import { formatDate, formatMoney, toNumber } from "@/lib/format";
+import { formatDate, formatMoney, formatMoneyBreakdown, toNumber, totalByCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -14,9 +14,9 @@ export default async function BalancesPage() {
     prisma.merchant.findMany({ orderBy: { displayName: "asc" } })
   ]);
 
-  const available = balances.filter((item) => item.type === "AVAILABLE").reduce((sum, item) => sum + toNumber(item.amount), 0);
-  const frozen = balances.filter((item) => item.type === "FROZEN").reduce((sum, item) => sum + toNumber(item.amount), 0);
-  const fees = balances.filter((item) => item.type === "FEES").reduce((sum, item) => sum + toNumber(item.amount), 0);
+  const available = totalByCurrency(balances.filter((item) => item.type === "AVAILABLE"), (item) => item.amount, (item) => item.currency);
+  const frozen = totalByCurrency(balances.filter((item) => item.type === "FROZEN"), (item) => item.amount, (item) => item.currency);
+  const fees = totalByCurrency(balances.filter((item) => item.type === "FEES"), (item) => item.amount, (item) => item.currency);
 
   return (
     <div className="grid gap-5">
@@ -26,9 +26,9 @@ export default async function BalancesPage() {
         description="Баланс показывает, какие средства доступны мерчанту, какие заморожены по выплатам/спорам и сколько удержано комиссий."
       />
       <section className="grid gap-4 md:grid-cols-3">
-        <MetricCard label="Доступный баланс" value={formatMoney(available)} hint="Можно использовать для выплат или операций." accent="moss" />
-        <MetricCard label="Замороженный баланс" value={formatMoney(frozen)} hint="Холды по выплатам и апелляциям." accent="brass" />
-        <MetricCard label="Комиссии" value={formatMoney(fees)} hint="Удержанные комиссии платформы и провайдеров." />
+        <MetricCard label="Доступный баланс" value={formatMoneyBreakdown(available)} hint="Можно использовать для выплат или операций." accent="moss" />
+        <MetricCard label="Замороженный баланс" value={formatMoneyBreakdown(frozen)} hint="Холды по выплатам и апелляциям." accent="brass" />
+        <MetricCard label="Комиссии" value={formatMoneyBreakdown(fees)} hint="Удержанные комиссии платформы и провайдеров." />
       </section>
 
       <BalanceAdjustClient merchants={merchants.map((merchant) => ({ id: merchant.id, displayName: merchant.displayName }))} />

@@ -14,6 +14,6 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  const payout = await createPayoutForMerchant(body.merchantId ?? "merchant-orbita");
+  const payout = await createPayoutForMerchant(body.merchantId ?? "merchant-orbita", body.currency);
   return NextResponse.json(payout, { status: 201 });
 }

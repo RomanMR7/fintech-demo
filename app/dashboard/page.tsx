@@ -3,7 +3,7 @@ import { EducationBlock } from "@/components/education-block";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
-import { formatDate, formatMoney, formatNumber, toNumber } from "@/lib/format";
+import { formatDate, formatMoney, formatMoneyBreakdown, formatNumber, toNumber, totalByCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -16,9 +16,17 @@ export default async function DashboardPage() {
     prisma.eventLog.findMany({ orderBy: { createdAt: "desc" }, take: 8 })
   ]);
 
-  const turnover = orders.reduce((sum, order) => sum + toNumber(order.amount), 0);
-  const available = balances.filter((item) => item.type === "AVAILABLE").reduce((sum, item) => sum + toNumber(item.amount), 0);
-  const frozen = balances.filter((item) => item.type === "FROZEN").reduce((sum, item) => sum + toNumber(item.amount), 0);
+  const turnover = totalByCurrency(orders, (order) => order.amount, (order) => order.currency);
+  const available = totalByCurrency(
+    balances.filter((item) => item.type === "AVAILABLE"),
+    (item) => item.amount,
+    (item) => item.currency
+  );
+  const frozen = totalByCurrency(
+    balances.filter((item) => item.type === "FROZEN"),
+    (item) => item.amount,
+    (item) => item.currency
+  );
 
   return (
     <div className="grid gap-5">
@@ -33,9 +41,9 @@ export default async function DashboardPage() {
         <MetricCard label="Успешные" value={formatNumber(orders.filter((order) => order.status === "COMPLETED").length)} hint="Операции, которые уже обновили баланс." accent="moss" />
         <MetricCard label="В ожидании" value={formatNumber(orders.filter((order) => ["CREATED", "WAITING_PAYMENT", "PAID", "CONFIRMED"].includes(order.status)).length)} hint="Очередь операционной обработки." accent="brass" />
         <MetricCard label="Споры" value={formatNumber(orders.filter((order) => order.status === "DISPUTED").length + appeals.filter((appeal) => ["NEW", "OPEN"].includes(appeal.status)).length)} hint="Операции и апелляции, где есть риск." accent="red" />
-        <MetricCard label="Оборот" value={formatMoney(turnover)} hint="Сумма всех платежных ордеров." />
-        <MetricCard label="Доступно" value={formatMoney(available)} hint="Баланс, которым мерчанты могут распоряжаться." accent="moss" />
-        <MetricCard label="Заморожено" value={formatMoney(frozen)} hint="Холды по выплатам и спорным операциям." accent="brass" />
+        <MetricCard label="Оборот" value={formatMoneyBreakdown(turnover)} hint="Сумма всех платежных ордеров по валютам." />
+        <MetricCard label="Доступно" value={formatMoneyBreakdown(available)} hint="Баланс, которым мерчанты могут распоряжаться." accent="moss" />
+        <MetricCard label="Заморожено" value={formatMoneyBreakdown(frozen)} hint="Холды по выплатам и спорным операциям." accent="brass" />
         <MetricCard label="Апелляции" value={formatNumber(appeals.length)} hint="Все обращения support-команды." accent="red" />
       </section>
 

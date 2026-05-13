@@ -38,6 +38,7 @@ export function BalanceAdjustClient({ merchants }: { merchants: MerchantOption[]
           merchantId: formData.get("merchantId"),
           operation: formData.get("operation"),
           amount: formData.get("amount"),
+          currency: formData.get("currency"),
           description: formData.get("description")
         })
       });
@@ -88,7 +89,14 @@ export function BalanceAdjustClient({ merchants }: { merchants: MerchantOption[]
           </select>
         </label>
         <label className="grid gap-1 text-sm font-semibold">
-          Сумма, RUB
+          Валюта
+          <select name="currency" required className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 font-normal outline-none transition focus:border-jade">
+            <option value="RUB">RUB — рубли</option>
+            <option value="USD">USD — доллары</option>
+          </select>
+        </label>
+        <label className="grid gap-1 text-sm font-semibold">
+          Сумма
           <input name="amount" type="number" min="1" step="100" required placeholder="100000" className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 font-normal outline-none transition focus:border-jade" />
         </label>
         <label className="grid gap-1 text-sm font-semibold">

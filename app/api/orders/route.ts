@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createDemoOrder } from "@/lib/domain";
 import { EventType, OrderStatus, UserRole } from "@/lib/constants";
+import { normalizeCurrency } from "@/lib/currency";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +16,13 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
+  const currency = normalizeCurrency(body.currency);
 
   if (!body.amount || !body.merchantId) {
-    const order = await createDemoOrder(UserRole.MERCHANT);
+    const order = await createDemoOrder(UserRole.MERCHANT, {
+      merchantId: body.merchantId ? String(body.merchantId) : undefined,
+      currency
+    });
     return NextResponse.json(order, { status: 201 });
   }
 
@@ -31,6 +36,7 @@ export async function POST(request: Request) {
       externalId: body.externalId ?? `API-${Date.now().toString().slice(-7)}`,
       merchantId: merchant.id,
       amount,
+      currency,
       status: OrderStatus.CREATED,
       commission,
       platformFee: amount * 0.006,
@@ -49,7 +55,7 @@ export async function POST(request: Request) {
       entityType: "PaymentOrder",
       entityId: order.id,
       title: "Ордер создан через API",
-      description: `Создан API-ордер ${order.externalId} на ${amount} RUB.`
+      description: `Создан API-ордер ${order.externalId} на ${amount} ${currency}.`
     }
   });
 

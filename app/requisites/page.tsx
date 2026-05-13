@@ -29,6 +29,7 @@ export default async function RequisitesPage() {
           status: item.status,
           dailyLimit: toNumber(item.dailyLimit),
           dailyUsed: toNumber(item.dailyUsed),
+          currency: item.currency,
           linkedOrders: item.linkedOrders,
           merchantName: item.merchant?.displayName ?? "Пул платформы"
         }))}

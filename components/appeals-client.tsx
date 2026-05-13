@@ -48,7 +48,7 @@ export function AppealsClient({ appeals }: { appeals: UiAppeal[] }) {
                 <StatusBadge status={appeal.status} type="appeal" />
               </div>
               <p className="mt-2 text-sm text-graphite/70">
-                Ордер {appeal.orderExternalId} · {appeal.merchantName} · холд {formatMoney(appeal.frozenAmount)}
+                Ордер {appeal.orderExternalId} · {appeal.merchantName} · холд {formatMoney(appeal.frozenAmount, appeal.currency)}
               </p>
               <p className="mt-4 rounded-2xl bg-white/60 p-4 text-sm leading-6 text-graphite/78">{appeal.reason}</p>
             </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRole } from "@/components/role-provider";
+import { VisualModeSwitcher } from "@/components/visual-mode-switcher";
 import { defaultMerchantId, roleOptions, DemoRole } from "@/lib/roles";
 
 type MerchantOption = {
@@ -56,6 +57,9 @@ export function Topbar() {
         <p className="mt-1 text-sm leading-6 text-graphite/70">Данные моковые, роли переключаются без авторизации.</p>
       </div>
       <div className="grid gap-2 sm:grid-cols-2 xl:flex xl:items-center xl:gap-3">
+        <div className="sm:col-span-2 xl:col-span-1">
+          <VisualModeSwitcher />
+        </div>
         <select
           value={role}
           onChange={(event) => setRole(event.target.value as DemoRole)}

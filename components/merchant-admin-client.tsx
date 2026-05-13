@@ -31,6 +31,7 @@ export function MerchantAdminClient({ merchants }: { merchants: MerchantOption[]
           legalName: formData.get("legalName"),
           trustLimit: formData.get("trustLimit"),
           initialBalance: formData.get("initialBalance"),
+          initialCurrency: formData.get("initialCurrency"),
           payinFeeRate: Number(formData.get("payinFeeRate") || 2.5) / 100,
           payoutFeeRate: Number(formData.get("payoutFeeRate") || 1.5) / 100
         })
@@ -77,11 +78,18 @@ export function MerchantAdminClient({ merchants }: { merchants: MerchantOption[]
           <input name="legalName" placeholder="ООО Орбита Маркет" className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 font-normal outline-none transition focus:border-jade" />
         </label>
         <label className="grid gap-1 text-sm font-semibold">
-          Стартовый доступный баланс, RUB
+          Стартовый доступный баланс
           <input name="initialBalance" type="number" min="0" step="1000" defaultValue="250000" className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 font-normal outline-none transition focus:border-jade" />
         </label>
         <label className="grid gap-1 text-sm font-semibold">
-          Trust limit, RUB
+          Валюта стартового баланса
+          <select name="initialCurrency" defaultValue="RUB" className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 font-normal outline-none transition focus:border-jade">
+            <option value="RUB">RUB — рубли</option>
+            <option value="USD">USD — доллары</option>
+          </select>
+        </label>
+        <label className="grid gap-1 text-sm font-semibold">
+          Trust limit, базовая валюта RUB
           <input name="trustLimit" type="number" min="0" step="1000" defaultValue="1000000" className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 font-normal outline-none transition focus:border-jade" />
         </label>
         <label className="grid gap-1 text-sm font-semibold">

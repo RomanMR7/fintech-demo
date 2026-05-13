@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRole } from "@/components/role-provider";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -10,6 +10,7 @@ import { UiPayout } from "@/lib/ui-types";
 export function PayoutsClient({ payouts }: { payouts: UiPayout[] }) {
   const router = useRouter();
   const { role, merchantId } = useRole();
+  const [currency, setCurrency] = useState("RUB");
   const [isPending, startTransition] = useTransition();
 
   const visiblePayouts = useMemo(
@@ -31,21 +32,32 @@ export function PayoutsClient({ payouts }: { payouts: UiPayout[] }) {
           <p className="font-display text-2xl font-semibold">Выплаты</p>
           <p className="mt-1 text-sm text-graphite/65">Создание выплаты резервирует сумму и комиссию на замороженном балансе.</p>
         </div>
-        <button
-          disabled={isPending}
-          onClick={() =>
-            mutate(async () => {
-              await fetch("/api/payouts", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ merchantId })
-              });
-            })
-          }
-          className="focus-ring rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss disabled:opacity-50"
-        >
-          Создать выплату
-        </button>
+        <div className="grid gap-2 sm:grid-cols-[auto_auto]">
+          <select
+            value={currency}
+            onChange={(event) => setCurrency(event.target.value)}
+            className="focus-ring rounded-2xl border border-ink/10 bg-white/75 px-4 py-3 text-sm font-semibold text-ink shadow-insetSoft"
+            aria-label="Валюта новой выплаты"
+          >
+            <option value="RUB">Выплата в RUB</option>
+            <option value="USD">Выплата в USD</option>
+          </select>
+          <button
+            disabled={isPending}
+            onClick={() =>
+              mutate(async () => {
+                await fetch("/api/payouts", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ merchantId, currency })
+                });
+              })
+            }
+            className="focus-ring rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss disabled:opacity-50"
+          >
+            Создать выплату
+          </button>
+        </div>
       </div>
 
       <div className="mt-5 grid gap-3 lg:hidden">

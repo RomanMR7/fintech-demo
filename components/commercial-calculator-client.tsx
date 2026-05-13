@@ -5,6 +5,7 @@ import { formatMoney } from "@/lib/format";
 
 export function CommercialCalculatorClient() {
   const [payinTurnover, setPayinTurnover] = useState(10000000);
+  const [currency, setCurrency] = useState("RUB");
   const [payinFee, setPayinFee] = useState(2.5);
   const [payoutShare, setPayoutShare] = useState(40);
   const [payoutFee, setPayoutFee] = useState(1.5);
@@ -40,13 +41,24 @@ export function CommercialCalculatorClient() {
         </div>
         <div className="rounded-2xl bg-ink px-5 py-4 text-white">
           <p className="text-xs uppercase tracking-[0.18em] text-white/55">Потенциал / месяц</p>
-          <p className="mt-1 font-display text-3xl font-semibold">{formatMoney(model.monthlyGross)}</p>
+          <p className="mt-1 font-display text-3xl font-semibold">{formatMoney(model.monthlyGross, currency)}</p>
         </div>
       </div>
 
       <div className="mt-5 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="grid gap-3">
-          <NumberField label="Оборот приема в месяц" suffix="RUB" value={payinTurnover} min={1000000} step={500000} onChange={setPayinTurnover} />
+          <label className="grid gap-1 text-sm font-semibold">
+            Валюта модели
+            <select
+              value={currency}
+              onChange={(event) => setCurrency(event.target.value)}
+              className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 font-normal outline-none transition focus:border-jade"
+            >
+              <option value="RUB">RUB — рублевая модель</option>
+              <option value="USD">USD — долларовая модель</option>
+            </select>
+          </label>
+          <NumberField label="Оборот приема в месяц" suffix={currency} value={payinTurnover} min={1000} step={currency === "USD" ? 1000 : 500000} onChange={setPayinTurnover} />
           <NumberField label="Комиссия приема" suffix="%" value={payinFee} min={0.1} step={0.1} onChange={setPayinFee} />
           <NumberField label="Доля выплат от оборота" suffix="%" value={payoutShare} min={0} step={5} onChange={setPayoutShare} />
           <NumberField label="Комиссия выплат" suffix="%" value={payoutFee} min={0} step={0.1} onChange={setPayoutFee} />
@@ -54,10 +66,10 @@ export function CommercialCalculatorClient() {
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
-          <ResultCard label="Комиссия приема" value={formatMoney(model.payinRevenue)} hint={`${formatMoney(payinTurnover)} × ${payinFee}%`} />
-          <ResultCard label="Комиссия выплат" value={formatMoney(model.payoutRevenue)} hint={`${formatMoney(model.payoutTurnover)} × ${payoutFee}%`} />
-          <ResultCard label="Снижение потерь" value={formatMoney(model.riskSaving)} hint={`Оценочный эффект ${riskSavingRate}% от оборота`} />
-          <ResultCard label="Потенциал / год" value={formatMoney(model.annualGross)} hint="Месячная модель × 12" accent />
+          <ResultCard label="Комиссия приема" value={formatMoney(model.payinRevenue, currency)} hint={`${formatMoney(payinTurnover, currency)} × ${payinFee}%`} />
+          <ResultCard label="Комиссия выплат" value={formatMoney(model.payoutRevenue, currency)} hint={`${formatMoney(model.payoutTurnover, currency)} × ${payoutFee}%`} />
+          <ResultCard label="Снижение потерь" value={formatMoney(model.riskSaving, currency)} hint={`Оценочный эффект ${riskSavingRate}% от оборота`} />
+          <ResultCard label="Потенциал / год" value={formatMoney(model.annualGross, currency)} hint="Месячная модель × 12" accent />
         </div>
       </div>
     </div>

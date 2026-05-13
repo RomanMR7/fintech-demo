@@ -10,6 +10,7 @@ export async function POST(request: Request) {
       merchantId: String(body.merchantId ?? ""),
       operation: body.operation,
       amount: Number(body.amount ?? 0),
+      currency: body.currency ? String(body.currency) : undefined,
       description: body.description ? String(body.description) : undefined
     });
 

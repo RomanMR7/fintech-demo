@@ -32,6 +32,7 @@ body {
   font-family: "Aptos", "Manrope", "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
+  transition: color 180ms ease, background 180ms ease;
 }
 
 button,
@@ -69,6 +70,155 @@ textarea {
 
 .timeline-line {
   background: linear-gradient(180deg, rgba(13, 118, 108, 0.85), rgba(181, 134, 59, 0.55));
+}
+
+html.theme-dark {
+  --bg: #07110f;
+  --panel: rgba(12, 23, 21, 0.86);
+  --ink: #eef7f3;
+  --muted: #aab8b3;
+  --line: rgba(218, 236, 228, 0.12);
+  --jade: #47d5c5;
+  --moss: #2ba394;
+  --brass: #ddb66d;
+  background:
+    radial-gradient(circle at 15% 8%, rgba(71, 213, 197, 0.16), transparent 26rem),
+    radial-gradient(circle at 88% 4%, rgba(221, 182, 109, 0.12), transparent 28rem),
+    linear-gradient(145deg, #050908 0%, #091714 48%, #0b100d 100%);
+}
+
+html.theme-cosmic {
+  --bg: #050816;
+  --panel: rgba(9, 13, 35, 0.78);
+  --ink: #f3f7ff;
+  --muted: #b8c1df;
+  --line: rgba(189, 207, 255, 0.16);
+  --jade: #7dd3fc;
+  --moss: #38bdf8;
+  --brass: #f0abfc;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(125, 211, 252, 0.24), transparent 22rem),
+    radial-gradient(circle at 78% 10%, rgba(240, 171, 252, 0.2), transparent 24rem),
+    radial-gradient(circle at 44% 86%, rgba(99, 102, 241, 0.18), transparent 28rem),
+    linear-gradient(145deg, #030712 0%, #0b1029 48%, #140821 100%);
+}
+
+html.theme-cosmic body::before {
+  pointer-events: none;
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.46;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.85) 0 1px, transparent 1.4px),
+    radial-gradient(circle, rgba(125, 211, 252, 0.65) 0 1px, transparent 1.3px);
+  background-position: 0 0, 38px 62px;
+  background-size: 120px 120px, 170px 170px;
+}
+
+html.theme-dark body,
+html.theme-cosmic body {
+  color: var(--ink);
+}
+
+html.theme-dark .mesh-bg,
+html.theme-cosmic .mesh-bg {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+    radial-gradient(circle at 18% 18%, rgba(71, 213, 197, 0.12), transparent 18rem),
+    radial-gradient(circle at 82% 10%, rgba(221, 182, 109, 0.12), transparent 18rem);
+}
+
+html.theme-cosmic .mesh-bg {
+  background:
+    linear-gradient(135deg, rgba(125, 211, 252, 0.11), rgba(240, 171, 252, 0.05)),
+    radial-gradient(circle at 16% 18%, rgba(125, 211, 252, 0.18), transparent 18rem),
+    radial-gradient(circle at 82% 12%, rgba(240, 171, 252, 0.16), transparent 18rem);
+}
+
+html.theme-dark .card,
+html.theme-cosmic .card {
+  border-color: var(--line);
+  background: var(--panel);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+html.theme-cosmic .card {
+  box-shadow: 0 18px 64px rgba(20, 32, 92, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+html.theme-dark :is(.text-ink, .text-graphite, .text-graphite\/45, .text-graphite\/48, .text-graphite\/50, .text-graphite\/55, .text-graphite\/60, .text-graphite\/65, .text-graphite\/68, .text-graphite\/70, .text-graphite\/72, .text-graphite\/75, .text-graphite\/78),
+html.theme-cosmic :is(.text-ink, .text-graphite, .text-graphite\/45, .text-graphite\/48, .text-graphite\/50, .text-graphite\/55, .text-graphite\/60, .text-graphite\/65, .text-graphite\/68, .text-graphite\/70, .text-graphite\/72, .text-graphite\/75, .text-graphite\/78) {
+  color: var(--ink);
+}
+
+html.theme-dark :is(.text-graphite\/45, .text-graphite\/48, .text-graphite\/50, .text-graphite\/55, .text-graphite\/60, .text-graphite\/65, .text-graphite\/68, .text-graphite\/70, .text-graphite\/72, .text-graphite\/75, .text-graphite\/78) {
+  color: rgba(170, 184, 179, 0.86);
+}
+
+html.theme-cosmic :is(.text-graphite\/45, .text-graphite\/48, .text-graphite\/50, .text-graphite\/55, .text-graphite\/60, .text-graphite\/65, .text-graphite\/68, .text-graphite\/70, .text-graphite\/72, .text-graphite\/75, .text-graphite\/78) {
+  color: rgba(184, 193, 223, 0.88);
+}
+
+html.theme-dark :is(.bg-white\/10, .bg-white\/45, .bg-white\/50, .bg-white\/55, .bg-white\/60, .bg-white\/65, .bg-white\/70, .bg-white\/75, .bg-white\/80),
+html.theme-cosmic :is(.bg-white\/10, .bg-white\/45, .bg-white\/50, .bg-white\/55, .bg-white\/60, .bg-white\/65, .bg-white\/70, .bg-white\/75, .bg-white\/80) {
+  background-color: rgba(255, 255, 255, 0.075);
+}
+
+html.theme-dark :is(.border-ink\/8, .border-ink\/10, .border-ink\/15),
+html.theme-cosmic :is(.border-ink\/8, .border-ink\/10, .border-ink\/15) {
+  border-color: var(--line);
+}
+
+html.theme-dark :is(input, select, textarea),
+html.theme-cosmic :is(input, select, textarea) {
+  color: var(--ink);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+html.theme-dark option,
+html.theme-cosmic option {
+  color: #15231f;
+  background: #ffffff;
+}
+
+html.theme-dark .text-jade,
+html.theme-dark .text-moss {
+  color: #47d5c5;
+}
+
+html.theme-dark .bg-jade {
+  background-color: #179f91;
+}
+
+html.theme-dark .bg-moss {
+  background-color: #10665d;
+}
+
+html.theme-dark .text-brass {
+  color: #ddb66d;
+}
+
+html.theme-cosmic .text-jade,
+html.theme-cosmic .text-moss {
+  color: #7dd3fc;
+}
+
+html.theme-cosmic .bg-jade {
+  background-color: #2563eb;
+}
+
+html.theme-cosmic .bg-moss {
+  background-color: #0ea5e9;
+}
+
+html.theme-cosmic .text-brass {
+  color: #f0abfc;
+}
+
+html.theme-cosmic .bg-brass {
+  background-color: #d946ef;
 }
 
 .no-scrollbar {

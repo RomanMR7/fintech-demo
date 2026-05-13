@@ -3,7 +3,7 @@ import { CommercialCalculatorClient } from "@/components/commercial-calculator-c
 import { EducationBlock } from "@/components/education-block";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
-import { formatMoney, formatNumber, toNumber } from "@/lib/format";
+import { formatMoneyBreakdown, formatNumber, sumMoneyTotals, totalByCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -18,13 +18,13 @@ export default async function CommercialPage() {
     prisma.provider.findMany({ orderBy: { displayName: "asc" } })
   ]);
 
-  const payinTurnover = orders.reduce((sum, order) => sum + toNumber(order.amount), 0);
-  const payoutTurnover = payouts.reduce((sum, payout) => sum + toNumber(payout.amount), 0);
-  const payinFees = orders.reduce((sum, order) => sum + toNumber(order.commission), 0);
-  const payoutFees = payouts.reduce((sum, payout) => sum + toNumber(payout.commission), 0);
-  const frozen = balances.filter((balance) => balance.type === "FROZEN").reduce((sum, balance) => sum + toNumber(balance.amount), 0);
+  const payinTurnover = totalByCurrency(orders, (order) => order.amount, (order) => order.currency);
+  const payoutTurnover = totalByCurrency(payouts, (payout) => payout.amount, (payout) => payout.currency);
+  const payinFees = totalByCurrency(orders, (order) => order.commission, (order) => order.currency);
+  const payoutFees = totalByCurrency(payouts, (payout) => payout.commission, (payout) => payout.currency);
+  const frozen = totalByCurrency(balances.filter((balance) => balance.type === "FROZEN"), (balance) => balance.amount, (balance) => balance.currency);
   const activeAppeals = appeals.filter((appeal) => ["NEW", "OPEN"].includes(appeal.status)).length;
-  const grossFees = payinFees + payoutFees;
+  const grossFees = sumMoneyTotals(payinFees, payoutFees);
 
   return (
     <div className="grid gap-5">
@@ -35,10 +35,10 @@ export default async function CommercialPage() {
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Оборот приема" value={formatMoney(payinTurnover)} hint="Сумма платежных ордеров в демо-базе." accent="moss" />
-        <MetricCard label="Оборот выплат" value={formatMoney(payoutTurnover)} hint="Сумма созданных выплат." accent="brass" />
-        <MetricCard label="Комиссии в демо" value={formatMoney(grossFees)} hint="Комиссии приема и выплат на мок-данных." />
-        <MetricCard label="Активные риски" value={formatNumber(activeAppeals)} hint={`Холды: ${formatMoney(frozen)}`} accent="red" />
+        <MetricCard label="Оборот приема" value={formatMoneyBreakdown(payinTurnover)} hint="Сумма платежных ордеров в демо-базе." accent="moss" />
+        <MetricCard label="Оборот выплат" value={formatMoneyBreakdown(payoutTurnover)} hint="Сумма созданных выплат." accent="brass" />
+        <MetricCard label="Комиссии в демо" value={formatMoneyBreakdown(grossFees)} hint="Комиссии приема и выплат на мок-данных." />
+        <MetricCard label="Активные риски" value={formatNumber(activeAppeals)} hint={`Холды: ${formatMoneyBreakdown(frozen)}`} accent="red" />
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[1fr_0.95fr]">

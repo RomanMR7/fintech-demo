@@ -207,6 +207,22 @@ async function main() {
         linkedOrders: 2
       },
       {
+        id: "req-orbita-usd",
+        merchantId: "merchant-orbita",
+        providerId: "provider-fireex",
+        type: "USD_ACCOUNT",
+        bank: "Demo Global Bank",
+        maskedNumber: "USD **** 1842",
+        holder: "Orbita Demo",
+        status: RequisiteStatus.ACTIVE,
+        currency: "USD",
+        dailyLimit: "25000",
+        dailyUsed: "4200",
+        minAmount: "100",
+        maxAmount: "5000",
+        linkedOrders: 1
+      },
+      {
         id: "req-vtb-account",
         merchantId: "merchant-nova",
         providerId: "provider-titan",
@@ -237,6 +253,22 @@ async function main() {
         linkedOrders: 2
       },
       {
+        id: "req-sigma-usd",
+        merchantId: "merchant-sigma",
+        providerId: "provider-cascade",
+        type: "SWIFT",
+        bank: "Demo Trust USD",
+        maskedNumber: "SWIFT **** 7730",
+        holder: "Sigma Demo",
+        status: RequisiteStatus.ACTIVE,
+        currency: "USD",
+        dailyLimit: "30000",
+        dailyUsed: "6100",
+        minAmount: "100",
+        maxAmount: "7000",
+        linkedOrders: 1
+      },
+      {
         id: "req-ozon-c2c",
         merchantId: "merchant-nova",
         providerId: "provider-test",
@@ -256,32 +288,41 @@ async function main() {
 
   await prisma.balanceAccount.createMany({
     data: [
-      { id: "bal-orbita-available", merchantId: "merchant-orbita", type: BalanceType.AVAILABLE, amount: "1432500.00" },
-      { id: "bal-orbita-frozen", merchantId: "merchant-orbita", type: BalanceType.FROZEN, amount: "185000.00" },
-      { id: "bal-orbita-fees", merchantId: "merchant-orbita", type: BalanceType.FEES, amount: "82450.00" },
-      { id: "bal-nova-available", merchantId: "merchant-nova", type: BalanceType.AVAILABLE, amount: "782300.00" },
-      { id: "bal-nova-frozen", merchantId: "merchant-nova", type: BalanceType.FROZEN, amount: "64000.00" },
-      { id: "bal-nova-fees", merchantId: "merchant-nova", type: BalanceType.FEES, amount: "39480.00" },
-      { id: "bal-sigma-available", merchantId: "merchant-sigma", type: BalanceType.AVAILABLE, amount: "1105400.00" },
-      { id: "bal-sigma-frozen", merchantId: "merchant-sigma", type: BalanceType.FROZEN, amount: "121000.00" },
-      { id: "bal-sigma-fees", merchantId: "merchant-sigma", type: BalanceType.FEES, amount: "51720.00" }
+      { id: "bal-orbita-available", merchantId: "merchant-orbita", type: BalanceType.AVAILABLE, currency: "RUB", amount: "1432500.00" },
+      { id: "bal-orbita-frozen", merchantId: "merchant-orbita", type: BalanceType.FROZEN, currency: "RUB", amount: "185000.00" },
+      { id: "bal-orbita-fees", merchantId: "merchant-orbita", type: BalanceType.FEES, currency: "RUB", amount: "82450.00" },
+      { id: "bal-orbita-usd-available", merchantId: "merchant-orbita", type: BalanceType.AVAILABLE, currency: "USD", amount: "12500.00" },
+      { id: "bal-orbita-usd-frozen", merchantId: "merchant-orbita", type: BalanceType.FROZEN, currency: "USD", amount: "800.00" },
+      { id: "bal-orbita-usd-fees", merchantId: "merchant-orbita", type: BalanceType.FEES, currency: "USD", amount: "420.00" },
+      { id: "bal-nova-available", merchantId: "merchant-nova", type: BalanceType.AVAILABLE, currency: "RUB", amount: "782300.00" },
+      { id: "bal-nova-frozen", merchantId: "merchant-nova", type: BalanceType.FROZEN, currency: "RUB", amount: "64000.00" },
+      { id: "bal-nova-fees", merchantId: "merchant-nova", type: BalanceType.FEES, currency: "RUB", amount: "39480.00" },
+      { id: "bal-nova-usd-available", merchantId: "merchant-nova", type: BalanceType.AVAILABLE, currency: "USD", amount: "7400.00" },
+      { id: "bal-nova-usd-frozen", merchantId: "merchant-nova", type: BalanceType.FROZEN, currency: "USD", amount: "1221.60" },
+      { id: "bal-nova-usd-fees", merchantId: "merchant-nova", type: BalanceType.FEES, currency: "USD", amount: "210.00" },
+      { id: "bal-sigma-available", merchantId: "merchant-sigma", type: BalanceType.AVAILABLE, currency: "RUB", amount: "1105400.00" },
+      { id: "bal-sigma-frozen", merchantId: "merchant-sigma", type: BalanceType.FROZEN, currency: "RUB", amount: "121000.00" },
+      { id: "bal-sigma-fees", merchantId: "merchant-sigma", type: BalanceType.FEES, currency: "RUB", amount: "51720.00" },
+      { id: "bal-sigma-usd-available", merchantId: "merchant-sigma", type: BalanceType.AVAILABLE, currency: "USD", amount: "9800.00" },
+      { id: "bal-sigma-usd-frozen", merchantId: "merchant-sigma", type: BalanceType.FROZEN, currency: "USD", amount: "1200.00" },
+      { id: "bal-sigma-usd-fees", merchantId: "merchant-sigma", type: BalanceType.FEES, currency: "USD", amount: "315.00" }
     ]
   });
 
   const orders = [
-    ["ord-1001", "M-1001", "merchant-orbita", "provider-cascade", "req-sber-c2c", 125000, OrderStatus.COMPLETED, 0.025, daysAgo(6)],
-    ["ord-1002", "M-1002", "merchant-orbita", "provider-fireex", "req-tinkoff-phone", 78000, OrderStatus.WAITING_PAYMENT, 0.025, daysAgo(5)],
-    ["ord-1003", "M-1003", "merchant-orbita", "provider-cascade", "req-sber-c2c", 216000, OrderStatus.DISPUTED, 0.025, daysAgo(4)],
-    ["ord-1004", "N-2201", "merchant-nova", "provider-titan", "req-vtb-account", 94000, OrderStatus.PAID, 0.028, daysAgo(3)],
-    ["ord-1005", "N-2202", "merchant-nova", "provider-test", "req-ozon-c2c", 51000, OrderStatus.FAILED, 0.028, daysAgo(3)],
-    ["ord-1006", "S-3010", "merchant-sigma", "provider-flow", "req-alfa-sbp", 188000, OrderStatus.CONFIRMED, 0.022, daysAgo(2)],
-    ["ord-1007", "S-3011", "merchant-sigma", "provider-flow", "req-alfa-sbp", 67000, OrderStatus.CREATED, 0.022, daysAgo(2)],
-    ["ord-1008", "M-1008", "merchant-orbita", "provider-cascade", "req-sber-c2c", 305000, OrderStatus.COMPLETED, 0.025, daysAgo(1)],
-    ["ord-1009", "N-2209", "merchant-nova", "provider-titan", "req-vtb-account", 116000, OrderStatus.CANCELED, 0.028, hoursAgo(16)],
-    ["ord-1010", "S-3020", "merchant-sigma", "provider-cascade", "req-alfa-sbp", 149000, OrderStatus.WAITING_PAYMENT, 0.022, hoursAgo(8)]
+    ["ord-1001", "M-1001", "merchant-orbita", "provider-cascade", "req-sber-c2c", 125000, "RUB", OrderStatus.COMPLETED, 0.025, daysAgo(6)],
+    ["ord-1002", "M-1002", "merchant-orbita", "provider-fireex", "req-orbita-usd", 1250, "USD", OrderStatus.WAITING_PAYMENT, 0.025, daysAgo(5)],
+    ["ord-1003", "M-1003", "merchant-orbita", "provider-cascade", "req-sber-c2c", 216000, "RUB", OrderStatus.DISPUTED, 0.025, daysAgo(4)],
+    ["ord-1004", "N-2201", "merchant-nova", "provider-titan", "req-vtb-account", 94000, "RUB", OrderStatus.PAID, 0.028, daysAgo(3)],
+    ["ord-1005", "N-2202", "merchant-nova", "provider-test", "req-ozon-c2c", 51000, "RUB", OrderStatus.FAILED, 0.028, daysAgo(3)],
+    ["ord-1006", "S-3010", "merchant-sigma", "provider-flow", "req-alfa-sbp", 188000, "RUB", OrderStatus.CONFIRMED, 0.022, daysAgo(2)],
+    ["ord-1007", "S-3011", "merchant-sigma", "provider-cascade", "req-sigma-usd", 1750, "USD", OrderStatus.CREATED, 0.022, daysAgo(2)],
+    ["ord-1008", "M-1008", "merchant-orbita", "provider-cascade", "req-sber-c2c", 305000, "RUB", OrderStatus.COMPLETED, 0.025, daysAgo(1)],
+    ["ord-1009", "N-2209", "merchant-nova", "provider-titan", "req-vtb-account", 116000, "RUB", OrderStatus.CANCELED, 0.028, hoursAgo(16)],
+    ["ord-1010", "S-3020", "merchant-sigma", "provider-cascade", "req-alfa-sbp", 149000, "RUB", OrderStatus.WAITING_PAYMENT, 0.022, hoursAgo(8)]
   ] as const;
 
-  for (const [id, externalId, merchantId, providerId, requisiteId, amount, status, rate, createdAt] of orders) {
+  for (const [id, externalId, merchantId, providerId, requisiteId, amount, currency, status, rate, createdAt] of orders) {
     const fee = commission(amount, rate);
     await prisma.paymentOrder.create({
       data: {
@@ -291,6 +332,7 @@ async function main() {
         providerId,
         requisiteId,
         amount: money(amount),
+        currency,
         status,
         commission: money(fee),
         platformFee: money(commission(amount, 0.006)),
@@ -309,7 +351,7 @@ async function main() {
     data: [
       { id: "payout-501", merchantId: "merchant-orbita", amount: "250000.00", status: PayoutStatus.COMPLETED, recipient: "USDT TRC20: TX9q...K2a", commission: "3750.00", completedAt: daysAgo(2), createdAt: daysAgo(3) },
       { id: "payout-502", merchantId: "merchant-orbita", amount: "110000.00", status: PayoutStatus.PENDING_APPROVAL, recipient: "Счет 40817...7711", commission: "1650.00", createdAt: hoursAgo(10) },
-      { id: "payout-503", merchantId: "merchant-nova", amount: "64000.00", status: PayoutStatus.HOLD, recipient: "USDT TRC20: TK7m...R81", commission: "1152.00", createdAt: hoursAgo(20) },
+      { id: "payout-503", merchantId: "merchant-nova", amount: "1200.00", currency: "USD", status: PayoutStatus.HOLD, recipient: "SWIFT USD: DEMO-781", commission: "21.60", createdAt: hoursAgo(20) },
       { id: "payout-504", merchantId: "merchant-sigma", amount: "121000.00", status: PayoutStatus.DISPUTED, recipient: "СБП +7 905 *** 55-10", commission: "1694.00", createdAt: daysAgo(1) },
       { id: "payout-505", merchantId: "merchant-sigma", amount: "83000.00", status: PayoutStatus.CANCELED, recipient: "Счет 40817...4202", commission: "1162.00", createdAt: daysAgo(4) }
     ]
@@ -377,14 +419,14 @@ async function main() {
 
   await prisma.balanceTransaction.createMany({
     data: [
-      { id: "tx-1", merchantId: "merchant-orbita", balanceId: "bal-orbita-available", orderId: "ord-1001", type: "Начисление по ордеру", direction: BalanceDirection.CREDIT, amount: "121875.00", beforeAmount: "1010000.00", afterAmount: "1131875.00", description: "Ордер M-1001 завершен." },
-      { id: "tx-2", merchantId: "merchant-orbita", balanceId: "bal-orbita-fees", orderId: "ord-1001", type: "Комиссия", direction: BalanceDirection.CREDIT, amount: "3125.00", beforeAmount: "72000.00", afterAmount: "75125.00", description: "Удержана комиссия по ордеру." },
-      { id: "tx-3", merchantId: "merchant-orbita", balanceId: "bal-orbita-frozen", appealId: "appeal-701", type: "Заморозка", direction: BalanceDirection.FREEZE, amount: "32400.00", beforeAmount: "152600.00", afterAmount: "185000.00", description: "Холд по апелляции appeal-701." },
-      { id: "tx-4", merchantId: "merchant-orbita", balanceId: "bal-orbita-frozen", payoutId: "payout-502", type: "Резерв выплаты", direction: BalanceDirection.FREEZE, amount: "111650.00", beforeAmount: "73350.00", afterAmount: "185000.00", description: "Создана выплата payout-502." },
-      { id: "tx-5", merchantId: "merchant-nova", balanceId: "bal-nova-frozen", payoutId: "payout-503", type: "Резерв выплаты", direction: BalanceDirection.FREEZE, amount: "65152.00", beforeAmount: "0.00", afterAmount: "65152.00", description: "Выплата ожидает подтверждения." },
-      { id: "tx-6", merchantId: "merchant-sigma", balanceId: "bal-sigma-frozen", appealId: "appeal-703", type: "Заморозка", direction: BalanceDirection.FREEZE, amount: "28200.00", beforeAmount: "92800.00", afterAmount: "121000.00", description: "Спор по сумме чека." },
-      { id: "tx-7", merchantId: "merchant-orbita", balanceId: "bal-orbita-available", payoutId: "payout-501", type: "Списание выплаты", direction: BalanceDirection.DEBIT, amount: "253750.00", beforeAmount: "1686250.00", afterAmount: "1432500.00", description: "Выплата подтверждена финансовым менеджером." },
-      { id: "tx-8", merchantId: "merchant-sigma", balanceId: "bal-sigma-available", orderId: "ord-1006", type: "Ожидаемое начисление", direction: BalanceDirection.CREDIT, amount: "183864.00", beforeAmount: "921536.00", afterAmount: "1105400.00", description: "Ордер подтвержден, ожидает финального завершения." }
+      { id: "tx-1", merchantId: "merchant-orbita", balanceId: "bal-orbita-available", orderId: "ord-1001", type: "Начисление по ордеру", direction: BalanceDirection.CREDIT, amount: "121875.00", currency: "RUB", beforeAmount: "1010000.00", afterAmount: "1131875.00", description: "Ордер M-1001 завершен." },
+      { id: "tx-2", merchantId: "merchant-orbita", balanceId: "bal-orbita-fees", orderId: "ord-1001", type: "Комиссия", direction: BalanceDirection.CREDIT, amount: "3125.00", currency: "RUB", beforeAmount: "72000.00", afterAmount: "75125.00", description: "Удержана комиссия по ордеру." },
+      { id: "tx-3", merchantId: "merchant-orbita", balanceId: "bal-orbita-frozen", appealId: "appeal-701", type: "Заморозка", direction: BalanceDirection.FREEZE, amount: "32400.00", currency: "RUB", beforeAmount: "152600.00", afterAmount: "185000.00", description: "Холд по апелляции appeal-701." },
+      { id: "tx-4", merchantId: "merchant-orbita", balanceId: "bal-orbita-frozen", payoutId: "payout-502", type: "Резерв выплаты", direction: BalanceDirection.FREEZE, amount: "111650.00", currency: "RUB", beforeAmount: "73350.00", afterAmount: "185000.00", description: "Создана выплата payout-502." },
+      { id: "tx-5", merchantId: "merchant-nova", balanceId: "bal-nova-usd-frozen", payoutId: "payout-503", type: "Резерв выплаты", direction: BalanceDirection.FREEZE, amount: "1221.60", currency: "USD", beforeAmount: "0.00", afterAmount: "1221.60", description: "USD-выплата ожидает подтверждения." },
+      { id: "tx-6", merchantId: "merchant-sigma", balanceId: "bal-sigma-frozen", appealId: "appeal-703", type: "Заморозка", direction: BalanceDirection.FREEZE, amount: "28200.00", currency: "RUB", beforeAmount: "92800.00", afterAmount: "121000.00", description: "Спор по сумме чека." },
+      { id: "tx-7", merchantId: "merchant-orbita", balanceId: "bal-orbita-available", payoutId: "payout-501", type: "Списание выплаты", direction: BalanceDirection.DEBIT, amount: "253750.00", currency: "RUB", beforeAmount: "1686250.00", afterAmount: "1432500.00", description: "Выплата подтверждена финансовым менеджером." },
+      { id: "tx-8", merchantId: "merchant-sigma", balanceId: "bal-sigma-available", orderId: "ord-1006", type: "Ожидаемое начисление", direction: BalanceDirection.CREDIT, amount: "183864.00", currency: "RUB", beforeAmount: "921536.00", afterAmount: "1105400.00", description: "Ордер подтвержден, ожидает финального завершения." }
     ]
   });
 
@@ -392,7 +434,7 @@ async function main() {
     [EventType.ORDER_CREATED, UserRole.MERCHANT, "Илья Соколов", "Ордер M-1001 создан", "Мерчант создал платежный ордер на 125 000 RUB.", "PaymentOrder", "ord-1001"],
     [EventType.STATUS_CHANGED, UserRole.OPERATOR, "Мария Лебедева", "Статус M-1001 изменен", "Оператор подтвердил оплату и завершил ордер.", "PaymentOrder", "ord-1001"],
     [EventType.BALANCE_CHANGED, UserRole.FINANCE_MANAGER, "Глеб Фомин", "Баланс Орбиты обновлен", "Доступный баланс увеличен после успешного ордера.", "BalanceAccount", "bal-orbita-available"],
-    [EventType.ORDER_CREATED, UserRole.MERCHANT, "Илья Соколов", "Ордер M-1002 создан", "Ожидает оплаты по реквизиту Т-Банк.", "PaymentOrder", "ord-1002"],
+    [EventType.ORDER_CREATED, UserRole.MERCHANT, "Илья Соколов", "Ордер M-1002 создан", "Ожидает оплаты по USD-реквизиту Demo Global Bank.", "PaymentOrder", "ord-1002"],
     [EventType.APPEAL_CREATED, UserRole.MERCHANT, "Илья Соколов", "Создана апелляция", "По ордеру M-1003 открыт спор.", "Appeal", "appeal-701"],
     [EventType.BALANCE_FROZEN, UserRole.SUPPORT, "Надежда Ким", "Заморожена спорная сумма", "По апелляции appeal-701 заморожено 32 400 RUB.", "Appeal", "appeal-701"],
     [EventType.PAYOUT_CREATED, UserRole.MERCHANT, "Илья Соколов", "Создана выплата", "Выплата payout-502 ожидает подтверждения.", "Payout", "payout-502"],
@@ -406,8 +448,8 @@ async function main() {
     [EventType.STATUS_CHANGED, UserRole.OPERATOR, "Мария Лебедева", "Ордер N-2209 отменен", "Истекло время ожидания оплаты.", "PaymentOrder", "ord-1009"],
     [EventType.ORDER_CREATED, UserRole.MERCHANT, "API Sigma", "Ордер S-3020 создан", "Ожидает оплаты через каскад.", "PaymentOrder", "ord-1010"],
     [EventType.REQUISITE_CHANGED, UserRole.OPERATOR, "Мария Лебедева", "Реквизит Т-Банк ограничен", "Достигнут дневной лимит, новые ордера временно не назначаются.", "PaymentRequisite", "req-tinkoff-phone"],
-    [EventType.PAYOUT_CREATED, UserRole.MERCHANT, "API Nova", "Выплата payout-503 создана", "Средства переведены в холд до проверки.", "Payout", "payout-503"],
-    [EventType.BALANCE_FROZEN, UserRole.FINANCE_MANAGER, "Глеб Фомин", "Холд по выплате Nova", "Зарезервирована сумма выплаты и комиссия.", "Payout", "payout-503"],
+    [EventType.PAYOUT_CREATED, UserRole.MERCHANT, "API Nova", "USD-выплата payout-503 создана", "Средства переведены в долларовый холд до проверки.", "Payout", "payout-503"],
+    [EventType.BALANCE_FROZEN, UserRole.FINANCE_MANAGER, "Глеб Фомин", "Холд по USD-выплате Nova", "Зарезервирована сумма выплаты и комиссия в USD.", "Payout", "payout-503"],
     [EventType.NOTIFICATION_CREATED, UserRole.PLATFORM_ADMIN, "Система", "Сформированы уведомления", "Уведомления распределены по ролям демо-продукта.", "Notification", "seed"]
   ] as const;
 
@@ -439,7 +481,7 @@ async function main() {
       { id: "notif-6", role: UserRole.MERCHANT, title: "Реквизит близок к лимиту", message: "Т-Банк PHONE использовал 92% дневного лимита.", type: NotificationType.WARNING, merchantId: "merchant-orbita", createdAt: hoursAgo(12) },
       { id: "notif-7", role: UserRole.OPERATOR, title: "Провайдер TitanPay деградирует", message: "Доступность провайдера снизилась до 84%.", type: NotificationType.WARNING, createdAt: hoursAgo(18) },
       { id: "notif-8", role: UserRole.PLATFORM_ADMIN, title: "Seed-данные готовы", message: "Локальный демо-контур заполнен мок-данными.", type: NotificationType.INFO, createdAt: hoursAgo(1) },
-      { id: "notif-9", role: UserRole.FINANCE_MANAGER, title: "Холд Nova", message: "По payout-503 зарезервировано 65 152 RUB.", type: NotificationType.INFO, merchantId: "merchant-nova", createdAt: hoursAgo(20) },
+      { id: "notif-9", role: UserRole.FINANCE_MANAGER, title: "USD-холд Nova", message: "По payout-503 зарезервировано 1 221.60 USD.", type: NotificationType.INFO, merchantId: "merchant-nova", createdAt: hoursAgo(20) },
       { id: "notif-10", role: UserRole.SUPPORT, title: "Апелляция отклонена", message: "appeal-702 закрыта с решением в пользу платформы.", type: NotificationType.SUCCESS, merchantId: "merchant-nova", createdAt: hoursAgo(22) }
     ]
   });

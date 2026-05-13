@@ -37,6 +37,7 @@ export type UiAppeal = {
   author: string;
   assignee: string;
   frozenAmount: number;
+  currency: string;
   decision?: string | null;
   createdAt: string;
   comments: Array<{ id: string; authorRole: string; message: string; createdAt: string }>;

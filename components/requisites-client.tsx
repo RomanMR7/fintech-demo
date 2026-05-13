@@ -14,6 +14,7 @@ type Requisite = {
   status: string;
   dailyLimit: number;
   dailyUsed: number;
+  currency: string;
   linkedOrders: number;
   merchantName: string;
 };
@@ -56,7 +57,7 @@ export function RequisitesClient({ requisites }: { requisites: Requisite[] }) {
               </div>
               <div className="rounded-2xl bg-ink/[0.04] p-3">
                 <p className="text-xs uppercase tracking-[0.14em] text-graphite/45">Лимит</p>
-                <p className="mt-1 font-semibold">{formatMoney(requisite.dailyUsed)} / {formatMoney(requisite.dailyLimit)}</p>
+                <p className="mt-1 font-semibold">{formatMoney(requisite.dailyUsed, requisite.currency)} / {formatMoney(requisite.dailyLimit, requisite.currency)}</p>
               </div>
               <div className="rounded-2xl bg-ink/[0.04] p-3">
                 <p className="text-xs uppercase tracking-[0.14em] text-graphite/45">Операции</p>
@@ -99,7 +100,7 @@ export function RequisitesClient({ requisites }: { requisites: Requisite[] }) {
                 <td className="px-4 py-3">
                   <StatusBadge status={requisite.status} type="requisite" />
                 </td>
-                <td className="px-4 py-3">{formatMoney(requisite.dailyUsed)} / {formatMoney(requisite.dailyLimit)}</td>
+                <td className="px-4 py-3">{formatMoney(requisite.dailyUsed, requisite.currency)} / {formatMoney(requisite.dailyLimit, requisite.currency)}</td>
                 <td className="px-4 py-3">{requisite.linkedOrders}</td>
                 <td className="rounded-r-2xl px-4 py-3">
                   <button

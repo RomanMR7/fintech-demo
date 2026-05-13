@@ -17,6 +17,7 @@ import {
   type NotificationTypeValue,
   type OrderStatusValue
 } from "@/lib/constants";
+import { demoAmountForCurrency, normalizeCurrency, SUPPORTED_CURRENCIES } from "@/lib/currency";
 import { prisma } from "@/lib/prisma";
 
 type DbClient = Prisma.TransactionClient | PrismaClient;
@@ -26,9 +27,10 @@ const scenarioActor = {
   role: UserRole.PLATFORM_ADMIN
 };
 
-async function getBalance(db: DbClient, merchantId: string, type: BalanceTypeValue) {
+async function getBalance(db: DbClient, merchantId: string, type: BalanceTypeValue, currencyInput: string = "RUB") {
+  const currency = normalizeCurrency(currencyInput);
   const existing = await db.balanceAccount.findUnique({
-    where: { merchantId_type_currency: { merchantId, type, currency: "RUB" } }
+    where: { merchantId_type_currency: { merchantId, type, currency } }
   });
 
   if (existing) return existing;
@@ -37,7 +39,7 @@ async function getBalance(db: DbClient, merchantId: string, type: BalanceTypeVal
     data: {
       merchantId,
       type,
-      currency: "RUB",
+      currency,
       amount: "0"
     }
   });
@@ -51,12 +53,14 @@ async function moveBalance(
     direction: BalanceDirectionValue;
     amount: Prisma.Decimal;
     description: string;
+    currency?: string;
     orderId?: string;
     payoutId?: string;
     appealId?: string;
   }
 ) {
-  const balance = await getBalance(db, params.merchantId, params.type);
+  const currency = normalizeCurrency(params.currency);
+  const balance = await getBalance(db, params.merchantId, params.type, currency);
   const before = new Prisma.Decimal(balance.amount);
   const signedAmount =
     params.direction === BalanceDirection.CREDIT || params.direction === BalanceDirection.UNFREEZE || params.direction === BalanceDirection.FREEZE
@@ -79,6 +83,7 @@ async function moveBalance(
       type: params.description,
       direction: params.direction,
       amount: params.amount,
+      currency,
       beforeAmount: before,
       afterAmount: after,
       description: params.description
@@ -133,12 +138,15 @@ function statusTimestamp(status: OrderStatusValue) {
   return {};
 }
 
-export async function createDemoOrder(actorRole: string = UserRole.MERCHANT) {
-  const merchant = await prisma.merchant.findFirst({ orderBy: { createdAt: "asc" } });
+export async function createDemoOrder(actorRole: string = UserRole.MERCHANT, options: { merchantId?: string; currency?: string } = {}) {
+  const currency = normalizeCurrency(options.currency);
+  const merchant = options.merchantId
+    ? await prisma.merchant.findUnique({ where: { id: options.merchantId } })
+    : await prisma.merchant.findFirst({ orderBy: { createdAt: "asc" } });
   const provider = await prisma.provider.findFirst({ where: { payinAvailable: true, status: { not: ProviderStatus.DISABLED } } });
   if (!merchant) throw new Error("Нет мерчанта для создания ордера.");
 
-  const amount = new Prisma.Decimal(70000 + Math.floor(Math.random() * 90000));
+  const amount = new Prisma.Decimal(demoAmountForCurrency(currency));
   const commission = amount.mul(merchant.payinFeeRate);
   const idSuffix = `${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
 
@@ -149,7 +157,7 @@ export async function createDemoOrder(actorRole: string = UserRole.MERCHANT) {
         merchantId: merchant.id,
         providerId: provider?.id,
         amount,
-        currency: "RUB",
+        currency,
         status: OrderStatus.CREATED,
         commission,
         platformFee: amount.mul("0.006"),
@@ -167,7 +175,7 @@ export async function createDemoOrder(actorRole: string = UserRole.MERCHANT) {
       entityType: "PaymentOrder",
       entityId: order.id,
       title: "Создан платежный ордер",
-      description: `Создан демо-ордер ${order.externalId} на ${order.amount.toString()} RUB.`,
+      description: `Создан демо-ордер ${order.externalId} на ${order.amount.toString()} ${currency}.`,
       notifyRole: UserRole.OPERATOR,
       merchantId: merchant.id,
       notificationType: NotificationType.ACTION_REQUIRED
@@ -187,15 +195,33 @@ export async function assignRequisiteToOrder(orderId?: string) {
             orderBy: { createdAt: "desc" }
           })) ?? (await createDemoOrder(UserRole.PLATFORM_ADMIN));
 
-    const requisite = await db.paymentRequisite.findFirst({
+    let requisite = await db.paymentRequisite.findFirst({
       where: {
         merchantId: order.merchantId,
+        currency: order.currency,
         status: { in: [RequisiteStatus.ACTIVE, RequisiteStatus.LIMITED] }
       },
       orderBy: { linkedOrders: "asc" }
     });
 
-    if (!requisite) throw new Error("Нет доступных реквизитов для назначения.");
+    if (!requisite) {
+      requisite = await db.paymentRequisite.create({
+        data: {
+          merchantId: order.merchantId,
+          providerId: order.providerId,
+          type: order.currency === "USD" ? "SWIFT" : "C2C",
+          bank: order.currency === "USD" ? "Demo Global Bank" : "Демо Банк",
+          maskedNumber: order.currency === "USD" ? `USD **** ${Date.now().toString().slice(-4)}` : `2200 **** **** ${Date.now().toString().slice(-4)}`,
+          holder: "Демо-получатель",
+          status: RequisiteStatus.ACTIVE,
+          currency: order.currency,
+          dailyLimit: order.currency === "USD" ? "30000" : "900000",
+          dailyUsed: "0",
+          minAmount: order.currency === "USD" ? "100" : "1000",
+          maxAmount: order.currency === "USD" ? "7000" : "150000"
+        }
+      });
+    }
 
     const updated = await db.paymentOrder.update({
       where: { id: order.id },
@@ -257,6 +283,7 @@ export async function changeOrderStatus(orderId: string, nextStatus: OrderStatus
         type: BalanceType.AVAILABLE,
         direction: BalanceDirection.CREDIT,
         amount: net,
+        currency: order.currency,
         orderId: order.id,
         description: `Начисление по завершенному ордеру ${order.externalId}`
       });
@@ -266,6 +293,7 @@ export async function changeOrderStatus(orderId: string, nextStatus: OrderStatus
         type: BalanceType.FEES,
         direction: BalanceDirection.CREDIT,
         amount: fee,
+        currency: order.currency,
         orderId: order.id,
         description: `Удержанная комиссия по ордеру ${order.externalId}`
       });
@@ -279,6 +307,7 @@ export async function changeOrderStatus(orderId: string, nextStatus: OrderStatus
         type: BalanceType.AVAILABLE,
         direction: BalanceDirection.DEBIT,
         amount: disputedHold,
+        currency: order.currency,
         orderId: order.id,
         description: `Списание в холд по спорному ордеру ${order.externalId}`
       });
@@ -288,6 +317,7 @@ export async function changeOrderStatus(orderId: string, nextStatus: OrderStatus
         type: BalanceType.FROZEN,
         direction: BalanceDirection.FREEZE,
         amount: disputedHold,
+        currency: order.currency,
         orderId: order.id,
         description: `Заморозка спорной суммы по ордеру ${order.externalId}`
       });
@@ -310,12 +340,13 @@ export async function changeOrderStatus(orderId: string, nextStatus: OrderStatus
   });
 }
 
-export async function createPayoutForMerchant(merchantId = "merchant-orbita") {
+export async function createPayoutForMerchant(merchantId = "merchant-orbita", currencyInput: string = "RUB") {
+  const currency = normalizeCurrency(currencyInput);
   return prisma.$transaction(async (db) => {
     const merchant = await db.merchant.findUnique({ where: { id: merchantId } });
     if (!merchant) throw new Error("Мерчант не найден.");
 
-    const amount = new Prisma.Decimal(85000 + Math.floor(Math.random() * 60000));
+    const amount = new Prisma.Decimal(currency === "USD" ? 1000 + Math.floor(Math.random() * 1800) : 85000 + Math.floor(Math.random() * 60000));
     const payoutCommission = amount.mul(merchant.payoutFeeRate);
     const total = amount.plus(payoutCommission);
 
@@ -324,6 +355,7 @@ export async function createPayoutForMerchant(merchantId = "merchant-orbita") {
       type: BalanceType.AVAILABLE,
       direction: BalanceDirection.DEBIT,
       amount: total,
+      currency,
       description: "Резерв выплаты из доступного баланса"
     });
 
@@ -332,6 +364,7 @@ export async function createPayoutForMerchant(merchantId = "merchant-orbita") {
       type: BalanceType.FROZEN,
       direction: BalanceDirection.FREEZE,
       amount: total,
+      currency,
       description: "Заморозка суммы выплаты до подтверждения"
     });
 
@@ -339,9 +372,10 @@ export async function createPayoutForMerchant(merchantId = "merchant-orbita") {
       data: {
         merchantId,
         amount,
+        currency,
         commission: payoutCommission,
         status: PayoutStatus.PENDING_APPROVAL,
-        recipient: `USDT TRC20: T${Date.now().toString().slice(-8)}...demo`,
+        recipient: currency === "USD" ? `SWIFT USD: DEMO${Date.now().toString().slice(-6)}` : `USDT TRC20: T${Date.now().toString().slice(-8)}...demo`,
         sourceBalance: "Доступный баланс"
       }
     });
@@ -353,7 +387,7 @@ export async function createPayoutForMerchant(merchantId = "merchant-orbita") {
       entityType: "Payout",
       entityId: payout.id,
       title: "Создана выплата",
-      description: `Выплата на ${amount.toString()} RUB ожидает подтверждения финансовым менеджером.`,
+      description: `Выплата на ${amount.toString()} ${currency} ожидает подтверждения финансовым менеджером.`,
       notifyRole: UserRole.FINANCE_MANAGER,
       merchantId,
       notificationType: NotificationType.ACTION_REQUIRED
@@ -376,6 +410,7 @@ export async function resolvePayout(payoutId: string, status: typeof PayoutStatu
       type: BalanceType.FROZEN,
       direction: BalanceDirection.DEBIT,
       amount: total,
+      currency: payout.currency,
       payoutId,
       description: status === PayoutStatus.COMPLETED ? "Списание холда после подтверждения выплаты" : "Снятие холда после отмены выплаты"
     });
@@ -386,6 +421,7 @@ export async function resolvePayout(payoutId: string, status: typeof PayoutStatu
         type: BalanceType.AVAILABLE,
         direction: BalanceDirection.CREDIT,
         amount: total,
+        currency: payout.currency,
         payoutId,
         description: "Возврат выплаты в доступный баланс"
       });
@@ -442,6 +478,7 @@ export async function createAppealForOrder(orderId?: string) {
         type: BalanceType.AVAILABLE,
         direction: BalanceDirection.DEBIT,
         amount: frozenAmount,
+        currency: order.currency,
         orderId: order.id,
         description: `Списание в холд по апелляции ордера ${order.externalId}`
       });
@@ -450,6 +487,7 @@ export async function createAppealForOrder(orderId?: string) {
         type: BalanceType.FROZEN,
         direction: BalanceDirection.FREEZE,
         amount: frozenAmount,
+        currency: order.currency,
         orderId: order.id,
         description: `Заморозка по апелляции ордера ${order.externalId}`
       });
@@ -541,6 +579,7 @@ export async function resolveAppeal(appealId: string, resolution: "merchant" | "
         type: BalanceType.FROZEN,
         direction: BalanceDirection.DEBIT,
         amount: frozenAmount,
+        currency: appeal.order.currency,
         appealId,
         description: "Снятие холда после решения апелляции"
       });
@@ -551,6 +590,7 @@ export async function resolveAppeal(appealId: string, resolution: "merchant" | "
           type: BalanceType.AVAILABLE,
           direction: BalanceDirection.CREDIT,
           amount: frozenAmount,
+          currency: appeal.order.currency,
           appealId,
           description: "Возврат спорной суммы мерчанту"
         });
@@ -616,6 +656,7 @@ export async function createMerchantProfile(params: {
   legalName?: string;
   trustLimit?: number;
   initialBalance?: number;
+  initialCurrency?: string;
   payinFeeRate?: number;
   payoutFeeRate?: number;
 }) {
@@ -628,6 +669,7 @@ export async function createMerchantProfile(params: {
   const legalName = params.legalName?.trim() || `ООО ${displayName}`;
   const trustLimit = new Prisma.Decimal(params.trustLimit ?? 0);
   const initialBalance = new Prisma.Decimal(params.initialBalance ?? 0);
+  const initialCurrency = normalizeCurrency(params.initialCurrency);
   const payinFeeRate = new Prisma.Decimal(params.payinFeeRate ?? 0.025);
   const payoutFeeRate = new Prisma.Decimal(params.payoutFeeRate ?? 0.015);
 
@@ -647,30 +689,31 @@ export async function createMerchantProfile(params: {
       }
     });
 
-    const available = await db.balanceAccount.create({
-      data: {
-        merchantId: merchant.id,
-        type: BalanceType.AVAILABLE,
-        currency: "RUB",
-        amount: initialBalance
-      }
-    });
-
-    await db.balanceAccount.createMany({
-      data: [
-        { merchantId: merchant.id, type: BalanceType.FROZEN, currency: "RUB", amount: "0" },
-        { merchantId: merchant.id, type: BalanceType.FEES, currency: "RUB", amount: "0" }
-      ]
-    });
+    const createdBalances = await Promise.all(
+      SUPPORTED_CURRENCIES.flatMap((currency) =>
+        [BalanceType.AVAILABLE, BalanceType.FROZEN, BalanceType.FEES].map((type) =>
+          db.balanceAccount.create({
+            data: {
+              merchantId: merchant.id,
+              type,
+              currency,
+              amount: type === BalanceType.AVAILABLE && currency === initialCurrency ? initialBalance : "0"
+            }
+          })
+        )
+      )
+    );
+    const available = createdBalances.find((balance) => balance.type === BalanceType.AVAILABLE && balance.currency === initialCurrency);
 
     if (initialBalance.greaterThan(0)) {
       await db.balanceTransaction.create({
         data: {
           merchantId: merchant.id,
-          balanceId: available.id,
+          balanceId: available?.id,
           type: "Стартовое пополнение",
           direction: BalanceDirection.CREDIT,
           amount: initialBalance,
+          currency: initialCurrency,
           beforeAmount: "0",
           afterAmount: initialBalance,
           description: "Стартовый баланс нового мерчанта"
@@ -695,7 +738,7 @@ export async function createMerchantProfile(params: {
       entityType: "Merchant",
       entityId: merchant.id,
       title: "Добавлен новый мерчант",
-      description: `Мерчант ${displayName} подключен к демо-контуру со стартовым балансом ${initialBalance.toString()} RUB.`,
+      description: `Мерчант ${displayName} подключен к демо-контуру со стартовым балансом ${initialBalance.toString()} ${initialCurrency}.`,
       notifyRole: UserRole.PLATFORM_ADMIN,
       merchantId: merchant.id,
       notificationType: NotificationType.SUCCESS
@@ -709,9 +752,11 @@ export async function adjustMerchantBalance(params: {
   merchantId: string;
   operation: "credit_available" | "debit_available" | "freeze" | "unfreeze" | "credit_fees" | "debit_fees";
   amount: number;
+  currency?: string;
   description?: string;
 }) {
   const amount = new Prisma.Decimal(params.amount);
+  const currency = normalizeCurrency(params.currency);
   if (amount.lessThanOrEqualTo(0)) throw new Error("Сумма должна быть больше нуля.");
 
   const description = params.description?.trim() || "Ручная корректировка баланса";
@@ -721,7 +766,7 @@ export async function adjustMerchantBalance(params: {
     if (!merchant) throw new Error("Мерчант не найден.");
 
     const ensureEnough = async (type: BalanceTypeValue) => {
-      const balance = await getBalance(db, params.merchantId, type);
+      const balance = await getBalance(db, params.merchantId, type, currency);
       if (new Prisma.Decimal(balance.amount).lessThan(amount)) {
         throw new Error("Недостаточно средств на выбранном балансе.");
       }
@@ -733,6 +778,7 @@ export async function adjustMerchantBalance(params: {
         type: BalanceType.AVAILABLE,
         direction: BalanceDirection.CREDIT,
         amount,
+        currency,
         description
       });
     }
@@ -744,6 +790,7 @@ export async function adjustMerchantBalance(params: {
         type: BalanceType.AVAILABLE,
         direction: BalanceDirection.DEBIT,
         amount,
+        currency,
         description
       });
     }
@@ -755,6 +802,7 @@ export async function adjustMerchantBalance(params: {
         type: BalanceType.AVAILABLE,
         direction: BalanceDirection.DEBIT,
         amount,
+        currency,
         description: `${description}: списание в холд`
       });
       await moveBalance(db, {
@@ -762,6 +810,7 @@ export async function adjustMerchantBalance(params: {
         type: BalanceType.FROZEN,
         direction: BalanceDirection.FREEZE,
         amount,
+        currency,
         description: `${description}: заморозка`
       });
     }
@@ -773,6 +822,7 @@ export async function adjustMerchantBalance(params: {
         type: BalanceType.FROZEN,
         direction: BalanceDirection.DEBIT,
         amount,
+        currency,
         description: `${description}: снятие холда`
       });
       await moveBalance(db, {
@@ -780,6 +830,7 @@ export async function adjustMerchantBalance(params: {
         type: BalanceType.AVAILABLE,
         direction: BalanceDirection.CREDIT,
         amount,
+        currency,
         description: `${description}: возврат в доступный баланс`
       });
     }
@@ -790,6 +841,7 @@ export async function adjustMerchantBalance(params: {
         type: BalanceType.FEES,
         direction: BalanceDirection.CREDIT,
         amount,
+        currency,
         description
       });
     }
@@ -801,6 +853,7 @@ export async function adjustMerchantBalance(params: {
         type: BalanceType.FEES,
         direction: BalanceDirection.DEBIT,
         amount,
+        currency,
         description
       });
     }
@@ -812,7 +865,7 @@ export async function adjustMerchantBalance(params: {
       entityType: "Merchant",
       entityId: params.merchantId,
       title: "Ручная корректировка баланса",
-      description: `${merchant.displayName}: ${description} на ${amount.toString()} RUB.`,
+      description: `${merchant.displayName}: ${description} на ${amount.toString()} ${currency}.`,
       notifyRole: UserRole.MERCHANT,
       merchantId: params.merchantId,
       notificationType: NotificationType.INFO

@@ -20,6 +20,7 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
   const { role, merchantId } = useRole();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("ALL");
+  const [currency, setCurrency] = useState("RUB");
   const [isPending, startTransition] = useTransition();
 
   const visibleOrders = useMemo(() => {
@@ -62,6 +63,15 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
             <option value="COMPLETED">Завершен</option>
             <option value="DISPUTED">Спор</option>
           </select>
+          <select
+            value={currency}
+            onChange={(event) => setCurrency(event.target.value)}
+            className="focus-ring rounded-2xl border border-ink/10 bg-white/75 px-4 py-3 text-sm"
+            aria-label="Валюта нового ордера"
+          >
+            <option value="RUB">Новый ордер: RUB</option>
+            <option value="USD">Новый ордер: USD</option>
+          </select>
         </div>
         <button
           disabled={isPending}
@@ -70,7 +80,7 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
               await fetch("/api/orders", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ merchantId })
+                body: JSON.stringify({ merchantId, currency })
               });
             })
           }

@@ -35,7 +35,7 @@ export default async function OperationsPage() {
               <Link key={order.id} href={`/orders/${order.id}`} className="flex items-center justify-between gap-3 rounded-2xl bg-white/60 p-4 transition hover:bg-white">
                 <div>
                   <p className="font-semibold">{order.externalId} · {order.merchant.displayName}</p>
-                  <p className="text-sm text-graphite/55">{formatMoney(toNumber(order.amount))} · {formatDate(order.createdAt)}</p>
+                  <p className="text-sm text-graphite/55">{formatMoney(toNumber(order.amount), order.currency)} · {formatDate(order.createdAt)}</p>
                 </div>
                 <StatusBadge status={order.status} />
               </Link>

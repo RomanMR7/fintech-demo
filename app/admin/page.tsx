@@ -4,7 +4,7 @@ import { MerchantAdminClient } from "@/components/merchant-admin-client";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
-import { formatNumber } from "@/lib/format";
+import { formatMoney, formatNumber, toNumber } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +41,7 @@ export default async function AdminPage() {
             {merchants.map((merchant) => (
               <div key={merchant.id} className="rounded-2xl bg-white/60 p-4">
                 <p className="font-semibold">{merchant.displayName}</p>
-                <p className="mt-1 text-sm text-graphite/55">{merchant.name} · trust limit {merchant.trustLimit.toString()} RUB</p>
+                <p className="mt-1 text-sm text-graphite/55">{merchant.name} · trust limit {formatMoney(toNumber(merchant.trustLimit), "RUB")}</p>
               </div>
             ))}
           </div>

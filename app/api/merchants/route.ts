@@ -21,6 +21,7 @@ export async function POST(request: Request) {
       legalName: body.legalName ? String(body.legalName) : undefined,
       trustLimit: Number(body.trustLimit ?? 0),
       initialBalance: Number(body.initialBalance ?? 0),
+      initialCurrency: body.initialCurrency ? String(body.initialCurrency) : undefined,
       payinFeeRate: Number(body.payinFeeRate ?? 0.025),
       payoutFeeRate: Number(body.payoutFeeRate ?? 0.015)
     });

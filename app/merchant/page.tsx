@@ -3,7 +3,7 @@ import { EducationBlock } from "@/components/education-block";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
-import { formatDate, formatMoney, toNumber } from "@/lib/format";
+import { formatDate, formatMoney, formatMoneyBreakdown, toNumber, totalByCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -22,9 +22,9 @@ export default async function MerchantCabinetPage() {
 
   if (!merchant) return null;
 
-  const available = merchant.balances.find((balance) => balance.type === "AVAILABLE");
-  const frozen = merchant.balances.find((balance) => balance.type === "FROZEN");
-  const fees = merchant.balances.find((balance) => balance.type === "FEES");
+  const available = totalByCurrency(merchant.balances.filter((balance) => balance.type === "AVAILABLE"), (balance) => balance.amount, (balance) => balance.currency);
+  const frozen = totalByCurrency(merchant.balances.filter((balance) => balance.type === "FROZEN"), (balance) => balance.amount, (balance) => balance.currency);
+  const fees = totalByCurrency(merchant.balances.filter((balance) => balance.type === "FEES"), (balance) => balance.amount, (balance) => balance.currency);
 
   return (
     <div className="grid gap-5">
@@ -39,9 +39,9 @@ export default async function MerchantCabinetPage() {
       </PageHeader>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <MetricCard label="Доступно" value={formatMoney(toNumber(available?.amount ?? 0))} hint="Можно использовать для выплат." accent="moss" />
-        <MetricCard label="В холде" value={formatMoney(toNumber(frozen?.amount ?? 0))} hint="Споры и выплаты на проверке." accent="brass" />
-        <MetricCard label="Комиссии" value={formatMoney(toNumber(fees?.amount ?? 0))} hint="Удержанные комиссии по операциям." />
+        <MetricCard label="Доступно" value={formatMoneyBreakdown(available)} hint="Можно использовать для выплат." accent="moss" />
+        <MetricCard label="В холде" value={formatMoneyBreakdown(frozen)} hint="Споры и выплаты на проверке." accent="brass" />
+        <MetricCard label="Комиссии" value={formatMoneyBreakdown(fees)} hint="Удержанные комиссии по операциям." />
       </section>
 
       <section className="grid gap-5 xl:grid-cols-2">
@@ -52,7 +52,7 @@ export default async function MerchantCabinetPage() {
               <div key={order.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white/60 p-4">
                 <div>
                   <p className="font-semibold">{order.externalId}</p>
-                  <p className="text-sm text-graphite/55">{formatMoney(toNumber(order.amount))} · {formatDate(order.createdAt)}</p>
+                  <p className="text-sm text-graphite/55">{formatMoney(toNumber(order.amount), order.currency)} · {formatDate(order.createdAt)}</p>
                 </div>
                 <StatusBadge status={order.status} />
               </div>

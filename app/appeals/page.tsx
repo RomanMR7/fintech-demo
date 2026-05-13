@@ -37,6 +37,7 @@ export default async function AppealsPage() {
           author: appeal.author?.name ?? "Система",
           assignee: appeal.assignee?.name ?? "Не назначен",
           frozenAmount: toNumber(appeal.frozenAmount),
+          currency: appeal.order.currency,
           decision: appeal.decision,
           createdAt: appeal.createdAt.toISOString(),
           comments: appeal.comments.map((comment) => ({
