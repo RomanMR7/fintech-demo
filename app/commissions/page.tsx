@@ -43,7 +43,7 @@ export default async function CommissionsPage() {
               {merchants.map((merchant) => (
                 <div key={merchant.id} className="flex justify-between rounded-2xl bg-white/60 p-4 text-sm">
                   <span className="font-semibold">{merchant.displayName}</span>
-                  <span>Pay-in {(toNumber(merchant.payinFeeRate) * 100).toFixed(2)}% · Выплаты {(toNumber(merchant.payoutFeeRate) * 100).toFixed(2)}%</span>
+                  <span>Прием {(toNumber(merchant.payinFeeRate) * 100).toFixed(2)}% · Выплаты {(toNumber(merchant.payoutFeeRate) * 100).toFixed(2)}%</span>
                 </div>
               ))}
             </div>

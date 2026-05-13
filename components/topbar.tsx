@@ -50,16 +50,16 @@ export function Topbar() {
   }, [merchantId, setMerchantId]);
 
   return (
-    <header className="card flex flex-col gap-4 rounded-[2rem] p-4 md:flex-row md:items-center md:justify-between">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-jade">Демо-режим без реальных операций</p>
-        <p className="mt-1 text-sm text-graphite/70">Данные моковые, роли переключаются без авторизации.</p>
+    <header className="card flex flex-col gap-3 rounded-[1.5rem] p-4 sm:gap-4 sm:rounded-[2rem] md:flex-row md:items-center md:justify-between">
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-jade sm:text-xs sm:tracking-[0.28em]">Демо-режим без реальных операций</p>
+        <p className="mt-1 text-sm leading-6 text-graphite/70">Данные моковые, роли переключаются без авторизации.</p>
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="grid gap-2 sm:grid-cols-2 xl:flex xl:items-center xl:gap-3">
         <select
           value={role}
           onChange={(event) => setRole(event.target.value as DemoRole)}
-          className="focus-ring rounded-2xl border border-ink/10 bg-white/75 px-4 py-3 text-sm font-semibold text-ink shadow-insetSoft"
+          className="focus-ring min-w-0 rounded-2xl border border-ink/10 bg-white/75 px-4 py-2.5 text-sm font-semibold text-ink shadow-insetSoft sm:py-3"
           aria-label="Переключатель роли"
         >
           {roleOptions.map((item) => (
@@ -71,7 +71,7 @@ export function Topbar() {
         <select
           value={role === "MERCHANT" ? merchantId : merchants[0]?.id ?? defaultMerchantId}
           onChange={(event) => setMerchantId(event.target.value)}
-          className="focus-ring rounded-2xl border border-ink/10 bg-white/75 px-4 py-3 text-sm font-semibold text-ink shadow-insetSoft"
+          className="focus-ring min-w-0 rounded-2xl border border-ink/10 bg-white/75 px-4 py-2.5 text-sm font-semibold text-ink shadow-insetSoft sm:py-3"
           aria-label="Текущий мерчант"
         >
           {merchants.map((merchant) => (
@@ -82,13 +82,13 @@ export function Topbar() {
         </select>
         <Link
           href="/scenarios"
-          className="focus-ring rounded-2xl bg-ink px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-moss"
+          className="focus-ring rounded-2xl bg-ink px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-moss sm:py-3"
         >
           Запустить сценарии
         </Link>
         <Link
           href="/commercial"
-          className="focus-ring rounded-2xl bg-jade px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-moss"
+          className="focus-ring rounded-2xl bg-jade px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-moss sm:py-3"
         >
           Экономика
         </Link>

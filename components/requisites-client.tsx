@@ -35,7 +35,46 @@ export function RequisitesClient({ requisites }: { requisites: Requisite[] }) {
 
   return (
     <div className="card rounded-[1.75rem] p-5">
-      <div className="overflow-x-auto">
+      <div className="grid gap-3 lg:hidden">
+        {requisites.map((requisite) => (
+          <article key={requisite.id} className="rounded-[1.25rem] border border-ink/10 bg-white/70 p-4 shadow-insetSoft">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-display text-lg font-semibold">{requisite.bank}</p>
+                <p className="mt-1 text-sm text-graphite/60">{requisite.maskedNumber} · {requisite.holder}</p>
+              </div>
+              <StatusBadge status={requisite.status} type="requisite" />
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-2xl bg-ink/[0.04] p-3">
+                <p className="text-xs uppercase tracking-[0.14em] text-graphite/45">Тип</p>
+                <p className="mt-1 font-semibold">{requisite.type}</p>
+              </div>
+              <div className="rounded-2xl bg-ink/[0.04] p-3">
+                <p className="text-xs uppercase tracking-[0.14em] text-graphite/45">Мерчант</p>
+                <p className="mt-1 font-semibold">{requisite.merchantName}</p>
+              </div>
+              <div className="rounded-2xl bg-ink/[0.04] p-3">
+                <p className="text-xs uppercase tracking-[0.14em] text-graphite/45">Лимит</p>
+                <p className="mt-1 font-semibold">{formatMoney(requisite.dailyUsed)} / {formatMoney(requisite.dailyLimit)}</p>
+              </div>
+              <div className="rounded-2xl bg-ink/[0.04] p-3">
+                <p className="text-xs uppercase tracking-[0.14em] text-graphite/45">Операции</p>
+                <p className="mt-1 font-semibold">{requisite.linkedOrders}</p>
+              </div>
+            </div>
+            <button
+              disabled={isPending}
+              onClick={() => toggle(requisite.id, requisite.status === "ACTIVE" ? "PAUSED" : "ACTIVE")}
+              className="mt-4 w-full rounded-2xl bg-ink px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-moss disabled:opacity-50"
+            >
+              {requisite.status === "ACTIVE" ? "Поставить на паузу" : "Активировать"}
+            </button>
+          </article>
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto lg:block">
         <table className="w-full min-w-[900px] border-separate border-spacing-y-2 text-left text-sm">
           <thead className="text-xs uppercase tracking-[0.18em] text-graphite/48">
             <tr>

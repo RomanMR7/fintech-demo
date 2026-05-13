@@ -85,11 +85,11 @@ export function MerchantAdminClient({ merchants }: { merchants: MerchantOption[]
           <input name="trustLimit" type="number" min="0" step="1000" defaultValue="1000000" className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 font-normal outline-none transition focus:border-jade" />
         </label>
         <label className="grid gap-1 text-sm font-semibold">
-          Комиссия pay-in, %
+          Комиссия приема, %
           <input name="payinFeeRate" type="number" min="0" step="0.1" defaultValue="2.5" className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 font-normal outline-none transition focus:border-jade" />
         </label>
         <label className="grid gap-1 text-sm font-semibold">
-          Комиссия payout, %
+          Комиссия выплат, %
           <input name="payoutFeeRate" type="number" min="0" step="0.1" defaultValue="1.5" className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 font-normal outline-none transition focus:border-jade" />
         </label>
         <button disabled={isSubmitting} className="focus-ring rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss disabled:opacity-50 md:col-span-2">

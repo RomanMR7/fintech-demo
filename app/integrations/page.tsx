@@ -14,7 +14,7 @@ export default async function IntegrationsPage() {
       <PageHeader
         eyebrow="Внешний контур"
         title="Интеграции"
-        description="Провайдеры и интеграторы в демо показывают доступность, комиссии, тестовый режим и возможность pay-in/pay-out."
+        description="Провайдеры и интеграторы в демо показывают доступность, комиссии, тестовый режим и возможность приема платежей/выплат."
       />
       <section className="grid gap-4 lg:grid-cols-2">
         {providers.map((provider) => (
@@ -36,10 +36,10 @@ export default async function IntegrationsPage() {
                 <p className="mt-2 font-display text-2xl font-semibold">{provider.availability}%</p>
               </div>
               <div className="rounded-2xl bg-white/60 p-4 text-sm">
-                Pay-in: {provider.payinAvailable ? "доступен" : "нет"}
+                Прием: {provider.payinAvailable ? "доступен" : "нет"}
               </div>
               <div className="rounded-2xl bg-white/60 p-4 text-sm">
-                Pay-out: {provider.payoutAvailable ? "доступен" : "нет"}
+                Выплаты: {provider.payoutAvailable ? "доступны" : "нет"}
               </div>
             </div>
           </article>

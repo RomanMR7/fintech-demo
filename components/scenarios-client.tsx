@@ -31,9 +31,9 @@ const STORAGE_KEY = "fintech-demo-scenario-progress";
 const guides: Record<string, ScenarioGuide> = {
   "merchant-create-order": {
     simple: "Клиент мерчанта хочет оплатить услугу. Мерчант создает платежный ордер, а платформа готовит оплату.",
-    why: "Так начинается pay-in: без ордера нельзя связать сумму, мерчанта, реквизиты, статус и будущий баланс.",
+    why: "Так начинается прием платежа: без ордера нельзя связать сумму, мерчанта, реквизиты, статус и будущий баланс.",
     businessResult: "Платформа получает управляемую операцию, которую можно провести, проверить и показать в отчетности.",
-    money: "Заработок появляется на комиссии pay-in. Пример: оборот 10 000 000 RUB в месяц при комиссии 2.5% дает 250 000 RUB валовой комиссии.",
+    money: "Заработок появляется на комиссии приема. Пример: оборот 10 000 000 RUB в месяц при комиссии 2.5% дает 250 000 RUB валовой комиссии.",
     lookAt: "После шага смотрите разделы «Ордера», «Уведомления» и «Журнал событий».",
     steps: [
       { title: "Мерчант создал ордер", detail: "Фиксируется сумма, валюта, мерчант и внешний ID.", result: "В системе появляется новая операция в статусе CREATED." },
@@ -83,7 +83,7 @@ const guides: Record<string, ScenarioGuide> = {
     simple: "Мерчант хочет вывести деньги со своего баланса.",
     why: "Выплата показывает обратный поток: деньги уходят с платформы получателю.",
     businessResult: "Средства резервируются, чтобы мерчант не смог потратить одну и ту же сумму дважды.",
-    money: "Платформа может зарабатывать на payout-комиссии. Пример: вывод 500 000 RUB при комиссии 1.5% дает 7 500 RUB комиссии.",
+    money: "Платформа может зарабатывать на комиссии выплат. Пример: вывод 500 000 RUB при комиссии 1.5% дает 7 500 RUB комиссии.",
     lookAt: "Смотрите «Выплаты», «Балансы» и «Журнал событий».",
     steps: [
       { title: "Мерчант создал выплату", detail: "Указывается сумма, получатель и источник средств.", result: "Появляется заявка на выплату." },
@@ -95,7 +95,7 @@ const guides: Record<string, ScenarioGuide> = {
     simple: "Финансовый менеджер проверяет выплату и подтверждает ее.",
     why: "Нужен контроль перед тем, как деньги окончательно уйдут из системы.",
     businessResult: "Платформа закрывает выплату, снимает холд и фиксирует финансовое событие.",
-    money: "Чем больше payout-оборот и чем ниже ручные ошибки, тем стабильнее комиссия и меньше потери на спорных выводах.",
+    money: "Чем больше оборот выплат и чем ниже ручные ошибки, тем стабильнее комиссия и меньше потери на спорных выводах.",
     lookAt: "Смотрите «Выплаты», «Балансы» и «Финансовые события».",
     steps: [
       { title: "Выплата найдена", detail: "Система выбирает выплату в статусе CREATED/PENDING/HOLD.", result: "Есть объект для проверки." },
@@ -274,7 +274,7 @@ export function ScenariosClient({ scenarios }: { scenarios: Scenario[] }) {
 
   return (
     <div className="grid gap-5">
-      <section className="grid gap-4 rounded-[2rem] border border-ink/10 bg-white/70 p-5 shadow-soft xl:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid gap-4 rounded-[1.5rem] border border-ink/10 bg-white/70 p-4 shadow-soft sm:rounded-[2rem] sm:p-5 xl:grid-cols-[1.1fr_0.9fr]">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-moss">Как читать демо</p>
           <h2 className="mt-2 font-display text-2xl font-semibold">Каждый сценарий - это маленькая история движения денег</h2>
@@ -286,18 +286,18 @@ export function ScenariosClient({ scenarios }: { scenarios: Scenario[] }) {
         <div className="rounded-[1.5rem] bg-ink p-5 text-white">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/55">Где здесь заработок</p>
           <p className="mt-3 text-sm leading-6 text-white/78">
-            Базовая формула: доход платформы = pay-in оборот × комиссия приема + payout оборот × комиссия вывода + дополнительная маржа
+            Базовая формула: доход платформы = оборот приема × комиссия приема + оборот выплат × комиссия вывода + дополнительная маржа
             на маршрутизации и снижении спорных потерь.
           </p>
           <p className="mt-3 text-sm leading-6 text-white/78">
-            Пример: 10 000 000 RUB pay-in при 2.5% = 250 000 RUB валовой комиссии. Если еще 4 000 000 RUB выводов при 1.5%,
+            Пример: 10 000 000 RUB приема при 2.5% = 250 000 RUB валовой комиссии. Если еще 4 000 000 RUB выводов при 1.5%,
             это еще 60 000 RUB. Итого в демо-модели: около 310 000 RUB валовой комиссии до расходов.
           </p>
         </div>
       </section>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-3">
+      <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
           <Link href="/orders" className="rounded-2xl bg-white/75 px-4 py-3 text-sm font-semibold text-ink">Ордера</Link>
           <Link href="/balances" className="rounded-2xl bg-white/75 px-4 py-3 text-sm font-semibold text-ink">Балансы</Link>
           <Link href="/appeals" className="rounded-2xl bg-white/75 px-4 py-3 text-sm font-semibold text-ink">Апелляции</Link>
@@ -329,14 +329,14 @@ export function ScenariosClient({ scenarios }: { scenarios: Scenario[] }) {
           const nextText = safeStep >= scenario.totalSteps ? "Сценарий можно пройти заново" : guide.steps[safeStep]?.title;
 
           return (
-            <article key={scenario.key} className="card rounded-[1.75rem] p-5">
+            <article key={scenario.key} className="card rounded-[1.5rem] p-4 sm:rounded-[1.75rem] sm:p-5">
               <div className="flex items-start gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-ink font-display text-lg font-semibold text-white">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-ink font-display text-base font-semibold text-white sm:h-11 sm:w-11 sm:text-lg">
                   {index + 1}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="font-display text-xl font-semibold">{scenario.title}</h2>
+                    <h2 className="font-display text-lg font-semibold sm:text-xl">{scenario.title}</h2>
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${status.className}`}>
                       {status.label}
                     </span>
@@ -345,7 +345,7 @@ export function ScenariosClient({ scenarios }: { scenarios: Scenario[] }) {
                 </div>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-ink/8 bg-white/55 p-4">
+              <div className="mt-4 rounded-2xl border border-ink/8 bg-white/55 p-3 sm:mt-5 sm:p-4">
                 <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.18em] text-graphite/50">
                   <span>Выполнено {safeStep} из {scenario.totalSteps}</span>
                   <span>{percent}%</span>
@@ -377,8 +377,8 @@ export function ScenariosClient({ scenarios }: { scenarios: Scenario[] }) {
                           <span className="font-semibold">{step.title}</span>
                           {isNext ? <span className="ml-auto rounded-full bg-white/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-brass">следующий</span> : null}
                         </div>
-                        <p className="mt-2 pl-9 leading-5 opacity-80">{step.detail}</p>
-                        {isDone ? <p className="mt-1 pl-9 text-xs font-semibold opacity-80">Результат: {step.result}</p> : null}
+                        <p className="mt-2 pl-0 leading-5 opacity-80 sm:pl-9">{step.detail}</p>
+                        {isDone ? <p className="mt-1 pl-0 text-xs font-semibold opacity-80 sm:pl-9">Результат: {step.result}</p> : null}
                       </div>
                     );
                   })}

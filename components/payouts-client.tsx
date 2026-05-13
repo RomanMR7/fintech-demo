@@ -48,7 +48,75 @@ export function PayoutsClient({ payouts }: { payouts: UiPayout[] }) {
         </button>
       </div>
 
-      <div className="mt-5 overflow-x-auto">
+      <div className="mt-5 grid gap-3 lg:hidden">
+        {visiblePayouts.map((payout) => (
+          <article key={payout.id} className="rounded-[1.25rem] border border-ink/10 bg-white/70 p-4 shadow-insetSoft">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-display text-lg font-semibold">{payout.id}</p>
+                <p className="mt-1 text-sm text-graphite/60">{payout.merchantName}</p>
+              </div>
+              <StatusBadge status={payout.status} type="payout" />
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-2xl bg-ink/[0.04] p-3">
+                <p className="text-xs uppercase tracking-[0.14em] text-graphite/45">Сумма</p>
+                <p className="mt-1 font-semibold">{formatMoney(payout.amount, payout.currency)}</p>
+              </div>
+              <div className="rounded-2xl bg-ink/[0.04] p-3">
+                <p className="text-xs uppercase tracking-[0.14em] text-graphite/45">Комиссия</p>
+                <p className="mt-1 font-semibold">{formatMoney(payout.commission, payout.currency)}</p>
+              </div>
+              <div className="rounded-2xl bg-ink/[0.04] p-3">
+                <p className="text-xs uppercase tracking-[0.14em] text-graphite/45">Получатель</p>
+                <p className="mt-1 break-words font-semibold">{payout.recipient}</p>
+              </div>
+              <div className="rounded-2xl bg-ink/[0.04] p-3">
+                <p className="text-xs uppercase tracking-[0.14em] text-graphite/45">Дата</p>
+                <p className="mt-1 font-semibold">{formatDate(payout.createdAt)}</p>
+              </div>
+            </div>
+            {["CREATED", "PENDING_APPROVAL", "HOLD"].includes(payout.status) ? (
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <button
+                  disabled={isPending}
+                  onClick={() =>
+                    mutate(async () => {
+                      await fetch(`/api/payouts/${payout.id}/status`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ status: "COMPLETED" })
+                      });
+                    })
+                  }
+                  className="rounded-2xl bg-jade px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-moss disabled:opacity-50"
+                >
+                  Подтвердить
+                </button>
+                <button
+                  disabled={isPending}
+                  onClick={() =>
+                    mutate(async () => {
+                      await fetch(`/api/payouts/${payout.id}/status`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ status: "CANCELED" })
+                      });
+                    })
+                  }
+                  className="rounded-2xl bg-stone-100 px-3 py-2.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-200 disabled:opacity-50"
+                >
+                  Отменить
+                </button>
+              </div>
+            ) : (
+              <p className="mt-4 rounded-2xl bg-ink/[0.04] px-3 py-2 text-xs font-semibold text-graphite/55">Выплата закрыта</p>
+            )}
+          </article>
+        ))}
+      </div>
+
+      <div className="mt-5 hidden overflow-x-auto lg:block">
         <table className="w-full min-w-[900px] border-separate border-spacing-y-2 text-left text-sm">
           <thead className="text-xs uppercase tracking-[0.18em] text-graphite/48">
             <tr>

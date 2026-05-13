@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { useRole } from "@/components/role-provider";
 
-const sections = [
+export const navigationSections = [
   {
     title: "Обзор",
     items: [
@@ -65,7 +66,7 @@ export function Sidebar() {
       </div>
 
       <nav className="mt-5 space-y-5">
-        {sections.map((section) => (
+        {navigationSections.map((section) => (
           <div key={section.title}>
             <p className="px-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-graphite/50">{section.title}</p>
             <div className="mt-2 space-y-1">
@@ -88,5 +89,106 @@ export function Sidebar() {
         ))}
       </nav>
     </aside>
+  );
+}
+
+export function MobileNavigation() {
+  const pathname = usePathname();
+  const { currentRoleLabel } = useRole();
+  const [isOpen, setIsOpen] = useState(false);
+  const quickItems = [
+    navigationSections[0].items[0],
+    navigationSections[0].items[1],
+    navigationSections[3].items[0],
+    navigationSections[1].items[0],
+    navigationSections[2].items[0]
+  ];
+
+  return (
+    <div className="mb-3 grid gap-3 lg:hidden">
+      <div className="card rounded-[1.5rem] px-4 py-3">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+          <div className="min-w-0 overflow-hidden">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-jade">Мобильное меню</p>
+            <p className="mt-1 truncate text-sm font-semibold text-ink">Платежная платформа · {currentRoleLabel}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsOpen(true)}
+            className="focus-ring relative z-10 shrink-0 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-moss"
+            aria-expanded={isOpen}
+            aria-controls="mobile-navigation-drawer"
+          >
+            Все разделы
+          </button>
+        </div>
+      </div>
+
+      {isOpen ? (
+        <div className="fixed inset-0 z-50 bg-ink/45 px-3 py-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Мобильное меню разделов">
+          <div
+            id="mobile-navigation-drawer"
+            className="card mx-auto flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-[1.75rem] bg-porcelain"
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-ink/10 p-4">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-jade">Все разделы демо</p>
+                <p className="mt-1 text-sm font-semibold text-ink">Роль: {currentRoleLabel}</p>
+                <p className="mt-1 text-xs leading-5 text-graphite/60">Здесь весь боковой список, который на компьютере находится слева.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="focus-ring rounded-full bg-ink px-3 py-2 text-xs font-semibold text-white"
+                aria-label="Закрыть мобильное меню"
+              >
+                Закрыть
+              </button>
+            </div>
+            <nav className="overflow-y-auto px-3 pb-4">
+              {navigationSections.map((section) => (
+                <div key={section.title} className="pt-4">
+                  <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-graphite/45">{section.title}</p>
+                  <div className="mt-2 grid gap-1.5">
+                    {section.items.map((item) => {
+                      const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                      return (
+                        <Link
+                          href={item.href}
+                          key={item.href}
+                          onClick={() => setIsOpen(false)}
+                          className={`rounded-2xl px-3 py-3 text-sm font-semibold transition ${
+                            active ? "bg-jade text-white shadow-soft" : "bg-white/65 text-graphite hover:bg-white hover:text-ink"
+                          }`}
+                        >
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </nav>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="no-scrollbar -mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:px-0">
+        {quickItems.map((item) => {
+          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          return (
+            <Link
+              href={item.href}
+              key={item.href}
+              className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold shadow-insetSoft transition ${
+                active ? "bg-ink text-white" : "border border-ink/10 bg-white/70 text-graphite hover:bg-white"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
   );
 }

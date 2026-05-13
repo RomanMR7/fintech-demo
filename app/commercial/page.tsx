@@ -29,15 +29,15 @@ export default async function CommercialPage() {
   return (
     <div className="grid gap-5">
       <PageHeader
-        eyebrow="Investor / client view"
+        eyebrow="Для инвестора и клиента"
         title="Коммерческая модель"
         description="Страница для разговора с инвестором или клиентом: как продукт зарабатывает, какие рычаги роста есть и какую ценность дает операционный контроль."
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Pay-in оборот" value={formatMoney(payinTurnover)} hint="Сумма платежных ордеров в демо-базе." accent="moss" />
-        <MetricCard label="Payout оборот" value={formatMoney(payoutTurnover)} hint="Сумма созданных выплат." accent="brass" />
-        <MetricCard label="Комиссии в демо" value={formatMoney(grossFees)} hint="Pay-in и payout комиссии на мок-данных." />
+        <MetricCard label="Оборот приема" value={formatMoney(payinTurnover)} hint="Сумма платежных ордеров в демо-базе." accent="moss" />
+        <MetricCard label="Оборот выплат" value={formatMoney(payoutTurnover)} hint="Сумма созданных выплат." accent="brass" />
+        <MetricCard label="Комиссии в демо" value={formatMoney(grossFees)} hint="Комиссии приема и выплат на мок-данных." />
         <MetricCard label="Активные риски" value={formatNumber(activeAppeals)} hint={`Холды: ${formatMoney(frozen)}`} accent="red" />
       </section>
 
@@ -47,10 +47,10 @@ export default async function CommercialPage() {
           <h2 className="mt-2 font-display text-2xl font-semibold">Продукт упаковывает платежный оборот в управляемую систему</h2>
           <div className="mt-5 grid gap-3">
             {[
-              ["Оборот", "Чем больше pay-in и payout операций проходит через платформу, тем выше комиссия."],
+              ["Оборот", "Чем больше операций приема и выплат проходит через платформу, тем выше комиссия."],
               ["Контроль", "Статусы, холды и журнал событий снижают хаос и помогают объяснить каждую финансовую операцию."],
               ["Риски", "Апелляции и заморозки защищают платформу от спорных выводов и ручных ошибок."],
-              ["Upsell", "API, кастомные лимиты, аналитика, SLA и интеграции могут продаваться как premium-модули."]
+              ["Дополнительная продажа", "API, индивидуальные лимиты, аналитика, SLA и интеграции могут продаваться как расширенные модули."]
             ].map((item, index) => (
               <div key={item[0]} className="rounded-2xl border border-ink/10 bg-white/60 p-4">
                 <div className="flex items-start gap-3">
@@ -71,10 +71,10 @@ export default async function CommercialPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/50">Простая формула</p>
           <h2 className="mt-2 font-display text-2xl font-semibold">Доход = оборот × комиссия + снижение потерь</h2>
           <div className="mt-5 grid gap-3 text-sm leading-6 text-white/76">
-            <p><span className="font-semibold text-white">Pay-in:</span> мерчант платит комиссию за прием платежей.</p>
-            <p><span className="font-semibold text-white">Payout:</span> мерчант платит комиссию за вывод средств.</p>
-            <p><span className="font-semibold text-white">Risk saving:</span> платформа меньше теряет на спорных операциях, ошибках и ручной обработке.</p>
-            <p><span className="font-semibold text-white">Premium:</span> крупные клиенты могут платить за SLA, кастомные лимиты, интеграции и аналитику.</p>
+            <p><span className="font-semibold text-white">Прием платежей:</span> мерчант платит комиссию за прием платежей.</p>
+            <p><span className="font-semibold text-white">Выплаты:</span> мерчант платит комиссию за вывод средств.</p>
+            <p><span className="font-semibold text-white">Снижение потерь:</span> платформа меньше теряет на спорных операциях, ошибках и ручной обработке.</p>
+            <p><span className="font-semibold text-white">Расширенные модули:</span> крупные клиенты могут платить за SLA, индивидуальные лимиты, интеграции и аналитику.</p>
           </div>
           <div className="mt-6 rounded-2xl bg-white/10 p-4">
             <p className="text-xs uppercase tracking-[0.18em] text-white/45">Демо-контур</p>
@@ -90,7 +90,7 @@ export default async function CommercialPage() {
       <section className="grid gap-4 xl:grid-cols-3">
         {[
           ["Пилот для клиента", "Настроить роли, комиссии, сценарии и демо-данные под конкретного мерчанта. Цель: быстро проверить, подходит ли продукт процессам клиента."],
-          ["SaaS-подписка", "Продавать платформу как back-office для платежей, выплат, балансов и апелляций. Цель: регулярный доход поверх платежного оборота."],
+          ["SaaS-подписка", "Продавать платформу как операционный кабинет для платежей, выплат, балансов и апелляций. Цель: регулярный доход поверх платежного оборота."],
           ["Партнерская модель", "Подключать провайдеров, интеграторов и платежные команды. Цель: масштабировать продажи через совместные внедрения."]
         ].map((item) => (
           <div key={item[0]} className="card rounded-[1.75rem] p-5">
@@ -108,9 +108,9 @@ export default async function CommercialPage() {
 
       <EducationBlock
         items={[
-          "Эта страница помогает объяснить продукт человеку, который впервые видит платежный back-office.",
+          "Эта страница помогает объяснить продукт человеку, который впервые видит платежный операционный контур.",
           "Расчеты являются демонстрационной моделью, а не обещанием доходности.",
-          "Главные рычаги экономики: оборот, комиссии, конверсия платежей, снижение спорных потерь и premium-модули.",
+          "Главные рычаги экономики: оборот, комиссии, конверсия платежей, снижение спорных потерь и расширенные модули.",
           "Для реального запуска нужно уточнить юнит-экономику, стоимость провайдеров, налоги, риск-профиль и операционные расходы."
         ]}
       />
