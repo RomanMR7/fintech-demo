@@ -355,6 +355,21 @@ textarea {
   box-shadow: var(--shadow-control);
 }
 
+.economy-input-shell {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--ink);
+}
+
+.economy-input-shell input {
+  color: var(--ink);
+}
+
+.economy-input-suffix {
+  border-color: var(--line);
+  color: color-mix(in srgb, var(--muted) 84%, var(--ink));
+}
+
 .enterprise-table {
   border-collapse: separate;
   border-spacing: 0 0.45rem;
@@ -543,6 +558,11 @@ html.theme-cosmic :is(input, select, textarea) {
 
 html.theme-dark :is(.surface, .control, .field, .btn-secondary, .money-row, .enterprise-table tbody tr),
 html.theme-cosmic :is(.surface, .control, .field, .btn-secondary, .money-row, .enterprise-table tbody tr) {
+  background: color-mix(in srgb, var(--panel-solid) 82%, transparent);
+}
+
+html.theme-dark .economy-input-shell,
+html.theme-cosmic .economy-input-shell {
   background: color-mix(in srgb, var(--panel-solid) 82%, transparent);
 }
 

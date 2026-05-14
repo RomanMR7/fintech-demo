@@ -25,7 +25,6 @@ export function CommercialCalculatorClient({ usdRubRate }: { usdRubRate: number 
     const disputeLoss = payinTurnover * (disputeLossRate / 100);
     const netMargin = monthlyGross - providerCost - operatingCost - disputeLoss;
     const takeRate = payinTurnover > 0 ? (netMargin / payinTurnover) * 100 : 0;
-    const breakEvenTurnover = payinFee + payoutFee * (payoutShare / 100) + riskSavingRate > providerFeeRate + operatingCostRate + disputeLossRate ? 0 : payinTurnover;
 
     return {
       payoutTurnover,
@@ -38,7 +37,6 @@ export function CommercialCalculatorClient({ usdRubRate }: { usdRubRate: number 
       disputeLoss,
       netMargin,
       takeRate,
-      breakEvenTurnover,
       annualGross: monthlyGross * 12,
       annualNet: netMargin * 12,
       monthlyBaseRub: currency === "USD" && usdRubRate ? monthlyGross * usdRubRate : monthlyGross,
@@ -128,7 +126,6 @@ export function CommercialCalculatorClient({ usdRubRate }: { usdRubRate: number 
           <ResultCard label="Risk / dispute loss" value={formatMoney(model.disputeLoss, currency)} hint={`${formatMoney(payinTurnover, currency)} × ${disputeLossRate}%`} />
           <ResultCard label="Чистая маржа / месяц" value={formatMoney(model.netMargin, currency)} hint={`Take rate после расходов: ${formatRate(model.takeRate)}%`} accent={model.netMargin > 0} />
           <ResultCard label="Чистая маржа / год" value={formatMoney(model.annualNet, currency)} hint="Чистая маржа × 12. Не является обещанием доходности." accent={model.netMargin > 0} />
-          <ResultCard label="Break-even" value={model.breakEvenTurnover === 0 ? "Модель выше break-even" : formatMoney(model.breakEvenTurnover, currency)} hint="Упрощенная оценка точки безубыточности для demo." />
           {currency === "USD" ? (
             <ResultCard
               label="Эквивалент / год"
@@ -183,7 +180,7 @@ function NumberField({
   return (
     <label className="grid gap-1 text-sm font-semibold text-ink">
       {label}
-      <div className="flex items-center overflow-hidden rounded-2xl border border-ink/10 bg-white/90 shadow-insetSoft">
+      <div className="economy-input-shell flex items-center overflow-hidden rounded-2xl shadow-insetSoft">
         <input
           type="number"
           value={draftValue}
@@ -209,9 +206,9 @@ function NumberField({
               event.currentTarget.blur();
             }
           }}
-          className="min-w-0 flex-1 bg-transparent px-4 py-3 font-normal text-ink outline-none"
+          className="min-w-0 flex-1 bg-transparent px-4 py-3 font-normal outline-none"
         />
-        <span className="border-l border-ink/10 px-4 py-3 text-graphite/70">{suffix}</span>
+        <span className="economy-input-suffix border-l px-4 py-3">{suffix}</span>
       </div>
       <span className="text-xs font-medium leading-5 text-graphite/65">{helper}</span>
     </label>
