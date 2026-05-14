@@ -37,15 +37,15 @@ function FinanceKpiCard({
   }[tone];
 
   return (
-    <article className="card rounded-[1.6rem] p-5">
+    <article className="card kpi-card">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-graphite/48">{label}</p>
-          <div className="mt-3 break-words font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{value}</div>
+          <p className="eyebrow text-graphite/48">{label}</p>
+          <div className="amount mt-3 break-words text-ink">{value}</div>
         </div>
-        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${toneClass}`}>{delta}</span>
+        <span className={`pill shrink-0 ${toneClass}`}>{delta}</span>
       </div>
-      <p className="mt-3 text-sm leading-6 text-graphite/68">{description}</p>
+      <p className="copy-sm mt-3">{description}</p>
     </article>
   );
 }
@@ -54,7 +54,7 @@ function MiniBarChart({ points }: { points: ChartPoint[] }) {
   const max = Math.max(...points.map((point) => point.value), 1);
 
   return (
-    <div className="mt-5 flex h-44 items-end gap-2 rounded-[1.35rem] border border-ink/10 bg-white/45 p-4">
+    <div className="mt-5 flex h-44 items-end gap-2 rounded-[var(--radius-lg)] border border-ink/10 bg-white/45 p-4">
       {points.map((point) => {
         const height = Math.max((point.value / max) * 100, point.value > 0 ? 12 : 4);
         return (
@@ -78,13 +78,13 @@ function SuccessRateChart({ value }: { value: number }) {
   const safeValue = Math.min(Math.max(value, 0), 100);
 
   return (
-    <div className="mt-5 grid gap-4 rounded-[1.35rem] border border-ink/10 bg-white/45 p-4">
+    <div className="mt-5 grid gap-4 rounded-[var(--radius-lg)] border border-ink/10 bg-white/45 p-4">
       <div className="flex items-end justify-between">
         <div>
           <p className="text-sm font-semibold text-ink">Конверсия в успешные операции</p>
           <p className="mt-1 text-xs text-graphite/60">Completed / все платежные ордера</p>
         </div>
-        <p className="font-display text-3xl font-semibold text-ink">{safeValue.toFixed(1)}%</p>
+        <p className="amount text-ink">{safeValue.toFixed(1)}%</p>
       </div>
       <div className="h-3 overflow-hidden rounded-full bg-ink/10">
         <div className="h-full rounded-full bg-gradient-to-r from-jade to-emerald-300" style={{ width: `${safeValue}%` }} />
@@ -95,7 +95,7 @@ function SuccessRateChart({ value }: { value: number }) {
 
 function InsightRow({ label, value, hint }: { label: string; value: React.ReactNode; hint: string }) {
   return (
-    <div className="rounded-2xl border border-ink/10 bg-white/55 p-4">
+    <div className="rounded-[var(--radius-lg)] border border-ink/10 bg-white/55 p-4">
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-semibold text-ink">{label}</p>
         <div className="text-right font-semibold text-ink">{value}</div>
@@ -166,14 +166,14 @@ export default async function DashboardPage() {
   });
 
   return (
-    <div className="grid gap-5">
+    <div className="page-stack">
       <PageHeader
         eyebrow="Общий обзор"
         title="Главный dashboard"
         description="Финансовый control room платежной платформы: где деньги, что в холде, какие операции требуют внимания и как чувствует себя API-контур."
       />
 
-      <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+      <section className="kpi-grid">
         <FinanceKpiCard
           label="Available balance"
           value={<MoneyBreakdown totals={available} />}
@@ -218,12 +218,12 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
-        <div className="card rounded-[1.75rem] p-5">
+        <div className="section-card">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Payment volume</p>
-              <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Оборот за 7 дней</h2>
-              <p className="mt-2 text-sm leading-6 text-graphite/68">
+              <p className="eyebrow">Payment volume</p>
+              <h2 className="section-title mt-2 text-ink">Оборот за 7 дней</h2>
+              <p className="copy mt-2">
                 График показывает управленческий RUB-эквивалент оборота. Исходные суммы RUB и USD в таблицах не смешиваются и показываются отдельно.
               </p>
             </div>
@@ -236,30 +236,30 @@ export default async function DashboardPage() {
         </div>
 
         <div className="grid gap-5">
-          <div className="card rounded-[1.75rem] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Quality</p>
-            <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Success rate</h2>
+          <div className="section-card">
+            <p className="eyebrow">Quality</p>
+            <h2 className="section-title mt-2 text-ink">Success rate</h2>
             <SuccessRateChart value={successRate} />
           </div>
-          <div className="card rounded-[1.75rem] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Currency split</p>
-            <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Раздельно RUB и USD</h2>
+          <div className="section-card">
+            <p className="eyebrow">Currency split</p>
+            <h2 className="section-title mt-2 text-ink">Раздельно RUB и USD</h2>
             <div className="mt-4">
               <MoneyBreakdown totals={turnover} showZero />
             </div>
-            <p className="mt-3 text-sm leading-6 text-graphite/68">
+            <p className="copy mt-3">
               Это не “рубли и их долларовый эквивалент”, а реальные суммы в разных валютах. Для сводной аналитики отдельно считается RUB-эквивалент по курсу.
             </p>
           </div>
         </div>
       </section>
 
-      <section className="card rounded-[1.75rem] p-5">
+      <section className="section-card">
         <div className="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-center">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Курсы валют</p>
-            <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Базовая валюта отчетности: RUB</h2>
-            <p className="mt-2 text-sm leading-6 text-graphite/68">
+            <p className="eyebrow">Курсы валют</p>
+            <h2 className="section-title mt-2 text-ink">Базовая валюта отчетности: RUB</h2>
+            <p className="copy mt-2">
               RUB и USD хранятся как разные валюты. Для общей картины dashboard использует управленческий пересчет USD в RUB.
               {fx.usdRubRate ? ` Текущий курс: ${formatRate(fx.usdRubRate)} RUB за 1 USD.` : " Курс USD/RUB пока не задан."}
               {fx.usdRate ? ` Источник: ${fx.usdRate.source}, дата курса: ${formatDate(fx.usdRate.sourceDate)}.` : null}
@@ -275,9 +275,9 @@ export default async function DashboardPage() {
       <QuickScenarioLauncher />
 
       <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-        <div className="card rounded-[1.75rem] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Risk queue</p>
-          <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Что требует внимания</h2>
+        <div className="section-card">
+          <p className="eyebrow">Risk queue</p>
+          <h2 className="section-title mt-2 text-ink">Что требует внимания</h2>
           <div className="mt-4 grid gap-3">
             {openAppeals.slice(0, 3).map((appeal) => (
               <InsightRow
@@ -301,9 +301,9 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="card rounded-[1.75rem] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">API health</p>
-          <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Интеграции и webhooks</h2>
+        <div className="section-card">
+          <p className="eyebrow">API health</p>
+          <h2 className="section-title mt-2 text-ink">Интеграции и webhooks</h2>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             <InsightRow label="Provider uptime" value={`${providerHealth.toFixed(1)}%`} hint="Средняя доступность подключенных демо-провайдеров." />
             <InsightRow label="Webhook events" value={formatNumber(events.filter((event) => event.type.includes("STATUS") || event.type.includes("SCENARIO")).length)} hint="События, которые можно показывать как callback/webhook поток." />
@@ -327,11 +327,11 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="card rounded-[1.75rem] p-5">
+        <div className="section-card">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Payments</p>
-              <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Последние операции</h2>
+              <p className="eyebrow">Payments</p>
+              <h2 className="section-title mt-2 text-ink">Последние операции</h2>
             </div>
             <Link href="/orders" className="rounded-full border border-ink/10 bg-white/55 px-3 py-2 text-xs font-semibold text-ink transition hover:bg-white">
               Все ордера
@@ -352,11 +352,11 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="card rounded-[1.75rem] p-5">
+        <div className="section-card">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Audit log</p>
-              <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Последние события</h2>
+              <p className="eyebrow">Audit log</p>
+              <h2 className="section-title mt-2 text-ink">Последние события</h2>
             </div>
             <Link href="/events" className="rounded-full border border-ink/10 bg-white/55 px-3 py-2 text-xs font-semibold text-ink transition hover:bg-white">
               Журнал

@@ -110,13 +110,13 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
   };
 
   return (
-    <div className="card rounded-[1.75rem] p-5">
+    <div className="section-card">
       <div className="grid gap-4">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Payments table</p>
-            <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Ордера и маршрутизация</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-graphite/68">
+            <p className="eyebrow">Payments table</p>
+            <h2 className="section-title mt-2 text-ink">Ордера и маршрутизация</h2>
+            <p className="copy mt-2 max-w-3xl">
               Суммы показываются в валюте самой операции. Фильтр валюты не пересчитывает деньги, а просто показывает RUB или USD ордера отдельно.
             </p>
           </div>
@@ -134,20 +134,20 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
                 );
               })
             }
-            className="focus-ring rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss disabled:opacity-50"
+            className="btn btn-primary focus-ring disabled:opacity-50"
           >
             Создать ордер
           </button>
         </div>
 
-        <div className="grid gap-2 lg:grid-cols-[minmax(0,1.2fr)_repeat(4,minmax(10rem,auto))]">
+        <div className="filter-grid lg:grid-cols-[minmax(0,1.2fr)_repeat(4,minmax(10rem,auto))]">
           <input
             value={query}
             onChange={(event) => updateFilter(() => setQuery(event.target.value))}
             placeholder="Поиск по ID, мерчанту, методу или провайдеру"
-            className="control focus-ring w-full rounded-2xl px-4 py-3 text-sm text-ink"
+            className="field focus-ring w-full"
           />
-          <select value={status} onChange={(event) => updateFilter(() => setStatus(event.target.value))} className="control focus-ring rounded-2xl px-4 py-3 text-sm text-ink">
+          <select value={status} onChange={(event) => updateFilter(() => setStatus(event.target.value))} className="field focus-ring">
             {statusOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -157,14 +157,14 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
           <select
             value={currencyFilter}
             onChange={(event) => updateFilter(() => setCurrencyFilter(event.target.value))}
-            className="control focus-ring rounded-2xl px-4 py-3 text-sm text-ink"
+            className="field focus-ring"
             aria-label="Фильтр по валюте"
           >
             <option value="ALL">Все валюты</option>
             <option value="RUB">Только RUB</option>
             <option value="USD">Только USD</option>
           </select>
-          <select value={sortBy} onChange={(event) => updateFilter(() => setSortBy(event.target.value))} className="control focus-ring rounded-2xl px-4 py-3 text-sm text-ink" aria-label="Сортировка">
+          <select value={sortBy} onChange={(event) => updateFilter(() => setSortBy(event.target.value))} className="field focus-ring" aria-label="Сортировка">
             <option value="created-desc">Сначала новые</option>
             <option value="amount-desc">Сначала крупные</option>
             <option value="risk-desc">Сначала риск</option>
@@ -172,7 +172,7 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
           <select
             value={newOrderCurrency}
             onChange={(event) => setNewOrderCurrency(event.target.value)}
-            className="control focus-ring rounded-2xl px-4 py-3 text-sm text-ink"
+            className="field focus-ring"
             aria-label="Валюта нового ордера"
           >
             <option value="RUB">Новый ордер: RUB</option>
@@ -277,8 +277,8 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
             <tr>
               <th className="px-4 py-2">Order ID</th>
               <th className="px-4 py-2">Merchant</th>
-              <th className="px-4 py-2">Amount</th>
-              <th className="px-4 py-2">Currency</th>
+              <th className="px-4 py-2 text-right">Amount</th>
+              <th className="px-4 py-2 text-right">Currency</th>
               <th className="px-4 py-2">Method</th>
               <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2">Risk</th>
@@ -295,8 +295,8 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
                   </Link>
                 </td>
                 <td className="px-4 py-3 font-semibold text-ink">{order.merchantName}</td>
-                <td className="px-4 py-3 font-mono text-ink">{formatMoney(order.amount, order.currency)}</td>
-                <td className="px-4 py-3">{order.currency}</td>
+                <td className="px-4 py-3 text-right font-mono text-ink tabular-nums">{formatMoney(order.amount, order.currency)}</td>
+                <td className="px-4 py-3 text-right font-mono text-ink">{order.currency}</td>
                 <td className="px-4 py-3">{order.method ?? "API"}</td>
                 <td className="px-4 py-3">
                   <StatusBadge status={order.status} />

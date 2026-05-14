@@ -30,13 +30,13 @@ export default async function MerchantCabinetPage() {
   const activeRequisites = merchant.requisites.filter((item) => item.status === "ACTIVE").length;
 
   return (
-    <div className="grid gap-5">
+    <div className="page-stack">
       <PageHeader
         eyebrow="Роль мерчанта"
         title={`Кабинет ${merchant.displayName}`}
         description="Мерчант видит только свои деньги и операции: доступный баланс, холды, выплаты, последние ордера, реквизиты и параметры API-интеграции."
       >
-        <Link href="/api-demo" className="focus-ring rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss">
+        <Link href="/api-demo" className="btn btn-primary focus-ring">
           Смотреть API
         </Link>
       </PageHeader>
@@ -48,7 +48,7 @@ export default async function MerchantCabinetPage() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="card rounded-[1.75rem] p-5">
+        <div className="section-card">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Orders</p>
@@ -73,7 +73,7 @@ export default async function MerchantCabinetPage() {
           </div>
         </div>
 
-        <div className="card rounded-[1.75rem] p-5">
+        <div className="section-card">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Payouts</p>
@@ -101,7 +101,7 @@ export default async function MerchantCabinetPage() {
 
       <MerchantIntegrationPanel apiKey={merchant.apiKey} callbackUrl={merchant.callbackUrl} activeRequisites={activeRequisites} totalRequisites={merchant.requisites.length} />
 
-      <section className="card rounded-[1.75rem] p-5">
+      <section className="section-card">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Notifications</p>
         <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Что важно мерчанту</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-2">

@@ -12,11 +12,11 @@ export function MoneyBreakdown({
   const visibleRows = rows.length ? rows : ["RUB" as SupportedCurrency];
 
   return (
-    <div className="grid gap-1.5 text-left">
+    <div className="money-stack text-left">
       {visibleRows.map((currency) => (
-        <div key={currency} className="flex items-baseline justify-between gap-3 rounded-2xl bg-ink/[0.04] px-3 py-2 shadow-insetSoft">
-          <span className="font-sans text-xs font-bold uppercase tracking-[0.16em] text-graphite/45">{currency}</span>
-          <span className="font-display text-xl font-semibold tracking-tight text-ink sm:text-2xl">{formatMoney(totals[currency] ?? 0, currency)}</span>
+        <div key={currency} className="money-row">
+          <span className="money-code">{currency}</span>
+          <span className="amount-sm text-ink">{formatMoney(totals[currency] ?? 0, currency)}</span>
         </div>
       ))}
     </div>

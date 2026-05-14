@@ -48,14 +48,14 @@ export function MerchantIntegrationPanel({
   }
 
   return (
-    <section className="card rounded-[1.75rem] p-5">
+    <section className="section-card">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Integration</p>
-          <h2 className="mt-2 font-display text-2xl font-semibold text-ink">API key и webhook</h2>
-          <p className="mt-2 text-sm leading-6 text-graphite/68">Это зона подключения мерчанта: ключ API, callback URL, статус webhook и чеклист готовности к боевому трафику.</p>
+          <p className="eyebrow">Integration</p>
+          <h2 className="section-title mt-2 text-ink">API key и webhook</h2>
+          <p className="copy mt-2">Это зона подключения мерчанта: ключ API, callback URL, статус webhook и чеклист готовности к боевому трафику.</p>
         </div>
-        <button type="button" onClick={rotateKey} className="focus-ring rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss">
+        <button type="button" onClick={rotateKey} className="btn btn-primary focus-ring">
           Rotate key
         </button>
       </div>
@@ -69,7 +69,7 @@ export function MerchantIntegrationPanel({
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-graphite/45">API key</p>
               <p className="mt-1 truncate font-mono text-sm font-semibold text-ink">{currentApiKey}</p>
             </div>
-            <button type="button" onClick={() => copy(currentApiKey, "API key")} className="focus-ring rounded-full border border-ink/10 bg-white/70 px-3 py-2 text-xs font-semibold text-ink transition hover:bg-white">
+            <button type="button" onClick={() => copy(currentApiKey, "API key")} className="btn btn-secondary btn-sm focus-ring">
               Copy
             </button>
           </div>
@@ -80,7 +80,7 @@ export function MerchantIntegrationPanel({
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-graphite/45">Callback URL</p>
               <p className="mt-1 break-all font-mono text-sm font-semibold text-ink">{callbackUrl}</p>
             </div>
-            <button type="button" onClick={() => copy(callbackUrl, "Callback URL")} className="focus-ring rounded-full border border-ink/10 bg-white/70 px-3 py-2 text-xs font-semibold text-ink transition hover:bg-white">
+            <button type="button" onClick={() => copy(callbackUrl, "Callback URL")} className="btn btn-secondary btn-sm focus-ring">
               Copy
             </button>
           </div>

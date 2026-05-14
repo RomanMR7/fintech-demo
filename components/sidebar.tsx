@@ -95,15 +95,13 @@ function MiniNavLink({ item, active, onClick }: { item: NavItem; active: boolean
     <Link
       href={item.href}
       onClick={onClick}
-      className={`group grid grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-2xl px-3 py-2.5 text-sm transition ${
-        active ? "bg-jade text-white shadow-soft" : "text-graphite/78 hover:bg-white/70 hover:text-ink"
+      title={item.description}
+      className={`group grid min-h-10 grid-cols-[1rem_minmax(0,1fr)] items-center gap-2.5 rounded-[0.95rem] px-2.5 text-sm transition ${
+        active ? "bg-ink text-white shadow-insetSoft" : "text-graphite/76 hover:bg-white/64 hover:text-ink"
       }`}
     >
-      <span className={`mt-1.5 h-1.5 w-1.5 rounded-full ${active ? "bg-white" : "bg-graphite/25 group-hover:bg-jade"}`} />
-      <span className="min-w-0">
-        <span className="block truncate font-semibold">{item.label}</span>
-        <span className={`mt-0.5 hidden truncate text-xs sm:block ${active ? "text-white/66" : "text-graphite/48"}`}>{item.description}</span>
-      </span>
+      <span className={`mx-auto h-1.5 w-1.5 rounded-full ${active ? "bg-jade" : "bg-graphite/22 group-hover:bg-jade"}`} />
+      <span className="truncate font-semibold">{item.label}</span>
     </Link>
   );
 }
@@ -114,25 +112,26 @@ export function Sidebar() {
   const sections = useMemo(() => getVisibleNavigationSections(role), [role]);
 
   return (
-    <aside className="card sticky top-4 hidden h-[calc(100vh-2rem)] overflow-y-auto rounded-[1.8rem] p-4 lg:block">
-      <div className="rounded-[1.35rem] bg-ink p-5 text-white shadow-soft">
-        <div className="flex items-center gap-2">
+    <aside className="card sticky top-6 hidden h-[calc(100vh-3rem)] overflow-y-auto rounded-[var(--radius-xl)] p-3 lg:block">
+      <div className="rounded-[1.2rem] bg-ink px-4 py-4 text-white shadow-soft">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-white/48">Payment Platform</p>
+            <h1 className="mt-1 text-lg font-semibold leading-tight tracking-[-0.03em]">Fintech OS</h1>
+          </div>
           <span className="status-dot bg-emerald-300" />
-          <p className="text-xs uppercase tracking-[0.24em] text-white/55">Sandbox live</p>
         </div>
-        <h1 className="mt-4 font-display text-2xl font-semibold leading-tight">Payment Platform</h1>
-        <p className="mt-3 text-sm leading-6 text-white/66">Оркестрация платежей, выплат, холдов, апелляций и API-интеграций в одном demo-контуре.</p>
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/8 px-3 py-2">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Текущая роль</p>
-          <p className="mt-1 text-sm font-semibold text-white">{currentRoleLabel}</p>
+        <div className="mt-3 rounded-[0.95rem] border border-white/10 bg-white/8 px-3 py-2">
+          <p className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-white/42">Роль</p>
+          <p className="mt-1 truncate text-sm font-semibold text-white">{currentRoleLabel}</p>
         </div>
       </div>
 
-      <nav className="mt-5 space-y-4" aria-label="Основная навигация">
+      <nav className="mt-4 space-y-3" aria-label="Основная навигация">
         {sections.map((section) => (
           <div key={section.title}>
-            <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-graphite/45">{section.title}</p>
-            <div className="mt-2 space-y-1">
+            <p className="px-2.5 text-[0.66rem] font-bold uppercase tracking-[0.12em] text-graphite/42">{section.title}</p>
+            <div className="mt-1.5 space-y-1">
               {section.items.map((item) => (
                 <MiniNavLink item={item} active={isActivePath(pathname, item.href)} key={item.href} />
               ))}
@@ -153,19 +152,13 @@ export function MobileNavigation() {
 
   return (
     <div className="mb-3 grid gap-3 lg:hidden">
-      <div className="card rounded-[1.35rem] px-4 py-3">
+      <div className="card rounded-[var(--radius-lg)] px-4 py-3">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           <div className="min-w-0 overflow-hidden">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-jade">Мобильная навигация</p>
+            <p className="eyebrow">Мобильная навигация</p>
             <p className="mt-1 truncate text-sm font-semibold text-ink">Платежная платформа · {currentRoleLabel}</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsOpen(true)}
-            className="focus-ring relative z-10 shrink-0 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-moss"
-            aria-expanded={isOpen}
-            aria-controls="mobile-navigation-drawer"
-          >
+          <button type="button" onClick={() => setIsOpen(true)} className="btn btn-primary focus-ring min-h-10 px-4 text-sm" aria-expanded={isOpen} aria-controls="mobile-navigation-drawer">
             Все разделы
           </button>
         </div>
@@ -173,21 +166,21 @@ export function MobileNavigation() {
 
       {isOpen ? (
         <div className="fixed inset-0 z-50 bg-ink/45 px-3 py-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Мобильное меню разделов">
-          <div id="mobile-navigation-drawer" className="card mx-auto flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-[1.5rem] bg-porcelain">
+          <div id="mobile-navigation-drawer" className="card mx-auto flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-[var(--radius-xl)] bg-porcelain">
             <div className="flex items-start justify-between gap-3 border-b border-ink/10 p-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-jade">Все разделы demo</p>
+                <p className="eyebrow">Все разделы demo</p>
                 <p className="mt-1 text-sm font-semibold text-ink">Роль: {currentRoleLabel}</p>
-                <p className="mt-1 text-xs leading-5 text-graphite/60">Это тот же sidebar, но адаптированный под Safari и мобильный экран.</p>
+                <p className="copy-sm mt-1">Компактная версия sidebar для Safari и мобильного экрана.</p>
               </div>
-              <button type="button" onClick={() => setIsOpen(false)} className="focus-ring rounded-full bg-ink px-3 py-2 text-xs font-semibold text-white" aria-label="Закрыть мобильное меню">
+              <button type="button" onClick={() => setIsOpen(false)} className="btn btn-primary focus-ring min-h-9 px-3 text-xs" aria-label="Закрыть мобильное меню">
                 Закрыть
               </button>
             </div>
             <nav className="overflow-y-auto px-3 pb-4" aria-label="Мобильная навигация">
               {sections.map((section) => (
                 <div key={section.title} className="pt-4">
-                  <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-graphite/45">{section.title}</p>
+                  <p className="px-2 text-[0.66rem] font-bold uppercase tracking-[0.12em] text-graphite/45">{section.title}</p>
                   <div className="mt-2 grid gap-1.5">
                     {section.items.map((item) => (
                       <MiniNavLink item={item} active={isActivePath(pathname, item.href)} key={item.href} onClick={() => setIsOpen(false)} />
@@ -204,13 +197,7 @@ export function MobileNavigation() {
         {quickItems.map((item) => {
           const active = isActivePath(pathname, item.href);
           return (
-            <Link
-              href={item.href}
-              key={item.href}
-              className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold shadow-insetSoft transition ${
-                active ? "bg-ink text-white" : "border border-ink/10 bg-white/70 text-graphite hover:bg-white"
-              }`}
-            >
+            <Link href={item.href} key={item.href} className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold shadow-insetSoft transition ${active ? "bg-ink text-white" : "border border-ink/10 bg-white/70 text-graphite hover:bg-white"}`}>
               {item.label}
             </Link>
           );

@@ -47,7 +47,7 @@ export default async function AdminPage() {
   const openDisputes = appeals.filter((appeal) => ["NEW", "OPEN"].includes(appeal.status)).length + orders.filter((order) => order.status === "DISPUTED").length;
 
   return (
-    <div className="grid gap-5">
+    <div className="page-stack">
       <PageHeader
         eyebrow="Платформенный контроль"
         title="Админ-панель"
@@ -64,7 +64,7 @@ export default async function AdminPage() {
 
       <MerchantAdminClient merchants={merchants.map((merchant) => ({ id: merchant.id, displayName: merchant.displayName, name: merchant.name }))} />
 
-      <section className="card rounded-[1.75rem] p-5">
+      <section className="section-card">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Merchant portfolio</p>
@@ -137,7 +137,7 @@ export default async function AdminPage() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-2">
-        <div className="card rounded-[1.75rem] p-5">
+        <div className="section-card">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Providers</p>
           <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Провайдеры</h2>
           <div className="mt-4 grid gap-3">
@@ -155,7 +155,7 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        <div className="card rounded-[1.75rem] p-5">
+        <div className="section-card">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Users</p>
           <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Роли demo-контура</h2>
           <div className="mt-4 grid gap-3">

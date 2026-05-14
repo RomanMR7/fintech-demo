@@ -52,33 +52,24 @@ export function Topbar() {
   }, [merchantId, setMerchantId]);
 
   return (
-    <header className="card grid gap-3 rounded-[1.35rem] p-3 sm:p-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
-      <div className="grid min-w-0 gap-3 md:grid-cols-[auto_minmax(16rem,1fr)] md:items-center">
+    <header className="card grid min-h-[4.75rem] gap-3 rounded-[var(--radius-xl)] p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+      <div className="grid min-w-0 gap-3 xl:grid-cols-[auto_minmax(18rem,1fr)] xl:items-center">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/60 px-3 py-1.5 text-xs font-semibold text-ink">
+          <span className="pill bg-white/60 text-ink">
             <span className="status-dot" />
             Sandbox
           </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-            API health 99.4%
-          </span>
-          <span className="hidden rounded-full border border-ink/10 bg-white/45 px-3 py-1.5 text-xs font-semibold text-graphite/70 sm:inline-flex">
-            Demo без реальных финансовых операций
-          </span>
+          <span className="pill border-emerald-500/20 bg-emerald-500/10 text-emerald-700">API 99.4%</span>
+          <span className="pill hidden bg-white/45 text-graphite/70 2xl:inline-flex">Demo без реальных финансовых операций</span>
         </div>
         <GlobalSearch />
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2 xl:flex xl:items-center xl:gap-3">
+      <div className="grid gap-2 sm:grid-cols-2 xl:flex xl:items-center">
         <div className="sm:col-span-2 xl:col-span-1">
           <VisualModeSwitcher />
         </div>
-        <select
-          value={role}
-          onChange={(event) => setRole(event.target.value as DemoRole)}
-          className="control focus-ring min-w-0 rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink sm:py-3"
-          aria-label="Переключатель роли"
-        >
+        <select value={role} onChange={(event) => setRole(event.target.value as DemoRole)} className="field focus-ring min-w-0 xl:w-[220px]" aria-label="Переключатель роли">
           {roleOptions.map((item) => (
             <option key={item.value} value={item.value}>
               {item.label}
@@ -88,7 +79,7 @@ export function Topbar() {
         <select
           value={role === "MERCHANT" ? merchantId : merchants[0]?.id ?? defaultMerchantId}
           onChange={(event) => setMerchantId(event.target.value)}
-          className="control focus-ring min-w-0 rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink sm:py-3"
+          className="field focus-ring min-w-0 xl:w-[170px]"
           aria-label="Текущий мерчант"
         >
           {merchants.map((merchant) => (
@@ -97,7 +88,7 @@ export function Topbar() {
             </option>
           ))}
         </select>
-        <Link href="/scenarios" className="focus-ring rounded-2xl bg-ink px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-moss sm:py-3">
+        <Link href="/scenarios" className="btn btn-primary focus-ring whitespace-nowrap">
           Запустить сценарий
         </Link>
       </div>

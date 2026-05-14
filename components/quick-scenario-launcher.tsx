@@ -61,13 +61,13 @@ export function QuickScenarioLauncher() {
   }
 
   return (
-    <section className="card rounded-[1.75rem] p-5">
-      <div className="grid gap-3 xl:grid-cols-[0.75fr_1.25fr] xl:items-start">
+    <section className="section-card">
+      <div className="grid gap-4 xl:grid-cols-[0.72fr_1.28fr] xl:items-start">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Live demo</p>
-          <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Запустить рабочий сценарий</h2>
-          <p className="mt-2 text-sm leading-6 text-graphite/68">
-            Кнопки ниже реально меняют demo-данные: создают операции, двигают статусы, меняют балансы, добавляют уведомления и записи в audit log.
+          <p className="eyebrow">Live demo</p>
+          <h2 className="section-title mt-2 text-ink">Запустить рабочий сценарий</h2>
+          <p className="copy mt-2">
+            Кнопки реально меняют demo-данные: создают операции, двигают статусы, меняют балансы, добавляют уведомления и записи в audit log.
           </p>
         </div>
 
@@ -80,16 +80,16 @@ export function QuickScenarioLauncher() {
                 key={scenario.key}
                 onClick={() => runScenario(scenario.key, scenario.title)}
                 disabled={pendingKey !== null}
-                className="focus-ring group rounded-2xl border border-ink/10 bg-white/60 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white disabled:cursor-wait disabled:opacity-65"
+                className="focus-ring group rounded-[var(--radius-lg)] border border-ink/10 bg-white/60 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white disabled:cursor-wait disabled:opacity-65"
               >
-                <span className="text-sm font-semibold text-ink">{pending ? "Выполняю..." : scenario.title}</span>
-                <span className="mt-1 block text-xs leading-5 text-graphite/60">{scenario.description}</span>
+                <span className="card-title block text-ink">{pending ? "Выполняю..." : scenario.title}</span>
+                <span className="copy-sm mt-1 block">{scenario.description}</span>
               </button>
             );
           })}
         </div>
       </div>
-      {message ? <div className="mt-4 rounded-2xl border border-jade/20 bg-jade/10 px-4 py-3 text-sm font-semibold text-ink">{message}</div> : null}
+      {message ? <div className="mt-4 rounded-[var(--radius-lg)] border border-jade/20 bg-jade/10 px-4 py-3 text-sm font-semibold text-ink">{message}</div> : null}
     </section>
   );
 }

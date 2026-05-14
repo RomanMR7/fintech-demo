@@ -38,7 +38,7 @@ export default async function OperationsPage() {
   const highRiskTransactions = orders.filter((order) => order.status === OrderStatus.DISPUTED || toNumber(order.amount) > (order.currency === "USD" ? 2500 : 180000));
 
   return (
-    <div className="grid gap-5">
+    <div className="page-stack">
       <PageHeader
         eyebrow="Роль оператора"
         title="Операционный кабинет"
@@ -46,22 +46,22 @@ export default async function OperationsPage() {
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="card rounded-[1.6rem] p-5">
+        <div className="card kpi-card compact">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-graphite/45">Manual review</p>
           <p className="mt-3 font-display text-3xl font-semibold text-ink">{formatNumber(reviewOrders.length)}</p>
           <p className="mt-2 text-sm text-graphite/65">Ордера, где нужен оператор или сверка провайдера.</p>
         </div>
-        <div className="card rounded-[1.6rem] p-5">
+        <div className="card kpi-card compact">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-graphite/45">Payout queue</p>
           <p className="mt-3 font-display text-3xl font-semibold text-ink">{formatNumber(payouts.length)}</p>
           <p className="mt-2 text-sm text-graphite/65">Выплаты ждут подтверждения или снятия hold.</p>
         </div>
-        <div className="card rounded-[1.6rem] p-5">
+        <div className="card kpi-card compact">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-graphite/45">Open disputes</p>
           <p className="mt-3 font-display text-3xl font-semibold text-ink">{formatNumber(appeals.length)}</p>
           <p className="mt-2 text-sm text-graphite/65">Активные апелляции support-команды.</p>
         </div>
-        <div className="card rounded-[1.6rem] p-5">
+        <div className="card kpi-card compact">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-graphite/45">High risk</p>
           <p className="mt-3 font-display text-3xl font-semibold text-ink">{formatNumber(highRiskTransactions.length)}</p>
           <p className="mt-2 text-sm text-graphite/65">Крупные или спорные транзакции.</p>
@@ -69,7 +69,7 @@ export default async function OperationsPage() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="card rounded-[1.75rem] p-5">
+        <div className="section-card">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Task queue</p>
@@ -101,7 +101,7 @@ export default async function OperationsPage() {
         </div>
 
         <div className="grid gap-5">
-          <div className="card rounded-[1.75rem] p-5">
+          <div className="section-card">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Payout approvals</p>
             <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Очередь выплат</h2>
             <div className="mt-4 grid gap-3">
@@ -118,7 +118,7 @@ export default async function OperationsPage() {
               ))}
             </div>
           </div>
-          <div className="card rounded-[1.75rem] p-5">
+          <div className="section-card">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Payment details</p>
             <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Реквизиты внимания</h2>
             <div className="mt-4 grid gap-3">
@@ -139,7 +139,7 @@ export default async function OperationsPage() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-2">
-        <div className="card rounded-[1.75rem] p-5">
+        <div className="section-card">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Disputes</p>
           <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Спорные операции</h2>
           <div className="mt-4 grid gap-3">
@@ -157,7 +157,7 @@ export default async function OperationsPage() {
           </div>
         </div>
 
-        <div className="card rounded-[1.75rem] p-5">
+        <div className="section-card">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Audit pulse</p>
           <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Последние события</h2>
           <div className="mt-4 grid gap-3">

@@ -17,10 +17,10 @@ export function MetricCard({
   }[accent];
 
   return (
-    <div className="card rounded-[1.5rem] p-4 sm:rounded-[1.75rem] sm:p-5">
-      <div className={`inline-flex rounded-full bg-gradient-to-r px-3 py-1 text-xs font-semibold ${accentClass}`}>{label}</div>
-      <div className="mt-4 break-words font-display text-2xl font-semibold tracking-tight sm:mt-5 sm:text-3xl">{value}</div>
-      <p className="mt-2 text-sm leading-6 text-graphite/68">{hint}</p>
+    <div className="card kpi-card">
+      <div className={`pill border-transparent bg-gradient-to-r ${accentClass}`}>{label}</div>
+      <div className="amount mt-4 break-words text-ink">{value}</div>
+      <p className="copy-sm mt-3">{hint}</p>
     </div>
   );
 }

@@ -51,12 +51,12 @@ export function MerchantAdminClient({ merchants }: { merchants: MerchantOption[]
   };
 
   return (
-    <section className="card rounded-[1.75rem] p-5">
+    <section className="section-card">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Merchant onboarding</p>
-          <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Добавить мерчанта</h2>
-          <p className="mt-2 text-sm leading-6 text-graphite/60">
+          <p className="eyebrow">Merchant onboarding</p>
+          <h2 className="section-title mt-2 text-ink">Добавить мерчанта</h2>
+          <p className="copy mt-2">
             Например: “Орбита”, “Nova Games”, “Sigma Travel”. После создания появятся баланс, demo-user, событие и уведомление.
           </p>
         </div>
@@ -72,36 +72,36 @@ export function MerchantAdminClient({ merchants }: { merchants: MerchantOption[]
       <form onSubmit={submit} className="mt-5 grid gap-3 md:grid-cols-2">
         <label className="grid gap-1 text-sm font-semibold text-ink">
           Название в интерфейсе
-          <input name="displayName" required placeholder="Орбита" className="control focus-ring rounded-2xl px-4 py-3 font-normal text-ink" />
+          <input name="displayName" required placeholder="Орбита" className="field focus-ring font-normal" />
         </label>
         <label className="grid gap-1 text-sm font-semibold text-ink">
           Юридическое название
-          <input name="legalName" placeholder="ООО Орбита Маркет" className="control focus-ring rounded-2xl px-4 py-3 font-normal text-ink" />
+          <input name="legalName" placeholder="ООО Орбита Маркет" className="field focus-ring font-normal" />
         </label>
         <label className="grid gap-1 text-sm font-semibold text-ink">
           Стартовый доступный баланс
-          <input name="initialBalance" type="number" min="0" step="1000" defaultValue="250000" className="control focus-ring rounded-2xl px-4 py-3 font-normal text-ink" />
+          <input name="initialBalance" type="number" min="0" step="1000" defaultValue="250000" className="field focus-ring font-normal" />
         </label>
         <label className="grid gap-1 text-sm font-semibold text-ink">
           Валюта стартового баланса
-          <select name="initialCurrency" defaultValue="RUB" className="control focus-ring rounded-2xl px-4 py-3 font-normal text-ink">
+          <select name="initialCurrency" defaultValue="RUB" className="field focus-ring font-normal">
             <option value="RUB">RUB — рубли</option>
             <option value="USD">USD — доллары</option>
           </select>
         </label>
         <label className="grid gap-1 text-sm font-semibold text-ink">
           Trust limit, базовая валюта RUB
-          <input name="trustLimit" type="number" min="0" step="1000" defaultValue="1000000" className="control focus-ring rounded-2xl px-4 py-3 font-normal text-ink" />
+          <input name="trustLimit" type="number" min="0" step="1000" defaultValue="1000000" className="field focus-ring font-normal" />
         </label>
         <label className="grid gap-1 text-sm font-semibold text-ink">
           Комиссия приема, %
-          <input name="payinFeeRate" type="number" min="0" step="0.1" defaultValue="2.5" className="control focus-ring rounded-2xl px-4 py-3 font-normal text-ink" />
+          <input name="payinFeeRate" type="number" min="0" step="0.1" defaultValue="2.5" className="field focus-ring font-normal" />
         </label>
         <label className="grid gap-1 text-sm font-semibold text-ink">
           Комиссия выплат, %
-          <input name="payoutFeeRate" type="number" min="0" step="0.1" defaultValue="1.5" className="control focus-ring rounded-2xl px-4 py-3 font-normal text-ink" />
+          <input name="payoutFeeRate" type="number" min="0" step="0.1" defaultValue="1.5" className="field focus-ring font-normal" />
         </label>
-        <button disabled={isSubmitting} className="focus-ring rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss disabled:opacity-50 md:col-span-2">
+        <button disabled={isSubmitting} className="btn btn-primary focus-ring disabled:opacity-50 md:col-span-2">
           {isSubmitting ? "Создаю мерчанта..." : "Создать мерчанта"}
         </button>
       </form>

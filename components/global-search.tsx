@@ -41,7 +41,7 @@ export function GlobalSearch() {
       <label className="sr-only" htmlFor="global-command-search">
         Глобальный поиск
       </label>
-      <div className="control grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-2xl px-3 py-2.5">
+      <div className="field grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3">
         <span className="text-sm text-graphite/45" aria-hidden="true">
           /
         </span>
