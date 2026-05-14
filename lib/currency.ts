@@ -12,8 +12,18 @@ export const currencyShortLabels: Record<SupportedCurrency, string> = {
   USD: "USD"
 };
 
+export function isSupportedCurrency(value: unknown): value is SupportedCurrency {
+  return SUPPORTED_CURRENCIES.includes(String(value ?? "").toUpperCase() as SupportedCurrency);
+}
+
 export function normalizeCurrency(value: unknown): SupportedCurrency {
   return String(value ?? "RUB").toUpperCase() === "USD" ? "USD" : "RUB";
+}
+
+export function parseCurrency(value: unknown, fieldName = "currency"): SupportedCurrency {
+  const normalized = String(value ?? "").toUpperCase();
+  if (isSupportedCurrency(normalized)) return normalized;
+  throw new Error(`Некорректная валюта в поле ${fieldName}. Доступны только RUB и USD.`);
 }
 
 export function demoAmountForCurrency(currency: SupportedCurrency) {

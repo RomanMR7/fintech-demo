@@ -39,16 +39,33 @@ const statusChange = `PATCH /api/orders/{id}/status
 Content-Type: application/json
 
 {
-  "status": "COMPLETED",
+  "status": "WAITING_PAYMENT",
   "actorRole": "OPERATOR"
-}`;
+}
+
+Важно: статусы нельзя перескакивать.
+Правильная цепочка: CREATED -> WAITING_PAYMENT -> PAID -> CONFIRMED -> COMPLETED.`;
+
+const exchangeRate = `GET /api/exchange-rates
+
+{
+  "baseCurrency": "RUB",
+  "usdRubRate": 90.25,
+  "isStale": false,
+  "warning": null
+}
+
+POST /api/exchange-rates/refresh
+
+Обновляет сохраненный справочный курс USD/RUB через серверный API route.`;
 
 export default function ApiDemoPage() {
   const blocks = [
     ["Создание ордера", createOrder],
     ["Пример ответа API", apiResponse],
     ["Webhook-событие провайдера", webhook],
-    ["Изменение статуса", statusChange]
+    ["Изменение статуса", statusChange],
+    ["Курсы валют", exchangeRate]
   ];
 
   return (
@@ -70,7 +87,8 @@ export default function ApiDemoPage() {
         items={[
           "Мерчант создает ордер через API, а платформа возвращает ID, статус, сумму комиссии и платежную ссылку.",
           "Webhook от провайдера обычно сообщает изменение статуса: оплачен, отменен, ошибка или спор.",
-          "В демо изменение статуса выполняется локальным API route и сразу пересчитывает баланс.",
+          "В демо изменение статуса выполняется локальным API route, но только по разрешенной цепочке жизненного цикла.",
+          "Курсы валют нужны для управленческого эквивалента: исходные суммы остаются в RUB или USD, а дашборд показывает рублевую оценку.",
           "Подписи, IP whitelist и rate limits описаны как продуктовая логика, но не усложняют локальный прототип."
         ]}
       />

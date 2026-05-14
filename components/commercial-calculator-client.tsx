@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatRate } from "@/lib/format";
 
-export function CommercialCalculatorClient() {
+export function CommercialCalculatorClient({ usdRubRate }: { usdRubRate: number | null }) {
   const [payinTurnover, setPayinTurnover] = useState(10000000);
   const [currency, setCurrency] = useState("RUB");
   const [payinFee, setPayinFee] = useState(2.5);
@@ -24,9 +24,11 @@ export function CommercialCalculatorClient() {
       payoutRevenue,
       riskSaving,
       monthlyGross,
-      annualGross: monthlyGross * 12
+      annualGross: monthlyGross * 12,
+      monthlyBaseRub: currency === "USD" && usdRubRate ? monthlyGross * usdRubRate : monthlyGross,
+      annualBaseRub: currency === "USD" && usdRubRate ? monthlyGross * usdRubRate * 12 : monthlyGross * 12
     };
-  }, [payinTurnover, payinFee, payoutShare, payoutFee, riskSavingRate]);
+  }, [payinTurnover, payinFee, payoutShare, payoutFee, riskSavingRate, currency, usdRubRate]);
 
   return (
     <div className="card rounded-[1.5rem] p-4 sm:rounded-[1.75rem] sm:p-5">
@@ -42,6 +44,13 @@ export function CommercialCalculatorClient() {
         <div className="rounded-2xl bg-ink px-5 py-4 text-white">
           <p className="text-xs uppercase tracking-[0.18em] text-white/55">Потенциал / месяц</p>
           <p className="mt-1 font-display text-3xl font-semibold">{formatMoney(model.monthlyGross, currency)}</p>
+          <p className="mt-2 text-xs leading-5 text-white/60">
+            {currency === "USD"
+              ? usdRubRate
+                ? `Эквивалент: ${formatMoney(model.monthlyBaseRub, "RUB")} по ${formatRate(usdRubRate)} RUB за 1 USD.`
+                : "Рублевый эквивалент недоступен: курс USD/RUB не задан."
+              : "Модель уже в базовой валюте RUB."}
+          </p>
         </div>
       </div>
 
@@ -70,6 +79,14 @@ export function CommercialCalculatorClient() {
           <ResultCard label="Комиссия выплат" value={formatMoney(model.payoutRevenue, currency)} hint={`${formatMoney(model.payoutTurnover, currency)} × ${payoutFee}%`} />
           <ResultCard label="Снижение потерь" value={formatMoney(model.riskSaving, currency)} hint={`Оценочный эффект ${riskSavingRate}% от оборота`} />
           <ResultCard label="Потенциал / год" value={formatMoney(model.annualGross, currency)} hint="Месячная модель × 12" accent />
+          {currency === "USD" ? (
+            <ResultCard
+              label="Эквивалент / год"
+              value={usdRubRate ? formatMoney(model.annualBaseRub, "RUB") : "курс не задан"}
+              hint={usdRubRate ? `Пересчет по ${formatRate(usdRubRate)} RUB за 1 USD` : "Обновите курс на странице «Курсы валют»"}
+              accent
+            />
+          ) : null}
         </div>
       </div>
     </div>

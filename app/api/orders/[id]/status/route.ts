@@ -11,6 +11,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ message: "Некорректный статус ордера" }, { status: 400 });
   }
 
-  const updated = await changeOrderStatus(id, status, (body.actorRole as string) ?? UserRole.OPERATOR);
-  return NextResponse.json(updated);
+  try {
+    const updated = await changeOrderStatus(id, status, (body.actorRole as string) ?? UserRole.OPERATOR);
+    return NextResponse.json(updated);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Не удалось изменить статус ордера." }, { status: 409 });
+  }
 }

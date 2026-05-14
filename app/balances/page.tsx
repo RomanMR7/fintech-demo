@@ -2,21 +2,26 @@ import { EducationBlock } from "@/components/education-block";
 import { BalanceAdjustClient } from "@/components/balance-adjust-client";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
-import { formatDate, formatMoney, formatMoneyBreakdown, toNumber, totalByCurrency } from "@/lib/format";
+import { convertBreakdownToBase, getFxSnapshot } from "@/lib/fx";
+import { formatDate, formatMoney, formatMoneyBreakdown, formatRate, toNumber, totalByCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export default async function BalancesPage() {
-  const [balances, transactions, merchants] = await Promise.all([
+  const [balances, transactions, merchants, fx] = await Promise.all([
     prisma.balanceAccount.findMany({ include: { merchant: true }, orderBy: [{ merchantId: "asc" }, { type: "asc" }] }),
     prisma.balanceTransaction.findMany({ include: { merchant: true }, orderBy: { createdAt: "desc" }, take: 18 }),
-    prisma.merchant.findMany({ orderBy: { displayName: "asc" } })
+    prisma.merchant.findMany({ orderBy: { displayName: "asc" } }),
+    getFxSnapshot()
   ]);
 
   const available = totalByCurrency(balances.filter((item) => item.type === "AVAILABLE"), (item) => item.amount, (item) => item.currency);
   const frozen = totalByCurrency(balances.filter((item) => item.type === "FROZEN"), (item) => item.amount, (item) => item.currency);
   const fees = totalByCurrency(balances.filter((item) => item.type === "FEES"), (item) => item.amount, (item) => item.currency);
+  const availableBase = convertBreakdownToBase(available, fx);
+  const frozenBase = convertBreakdownToBase(frozen, fx);
+  const feesBase = convertBreakdownToBase(fees, fx);
 
   return (
     <div className="grid gap-5">
@@ -26,9 +31,25 @@ export default async function BalancesPage() {
         description="Баланс показывает, какие средства доступны мерчанту, какие заморожены по выплатам/спорам и сколько удержано комиссий."
       />
       <section className="grid gap-4 md:grid-cols-3">
-        <MetricCard label="Доступный баланс" value={formatMoneyBreakdown(available)} hint="Можно использовать для выплат или операций." accent="moss" />
-        <MetricCard label="Замороженный баланс" value={formatMoneyBreakdown(frozen)} hint="Холды по выплатам и апелляциям." accent="brass" />
-        <MetricCard label="Комиссии" value={formatMoneyBreakdown(fees)} hint="Удержанные комиссии платформы и провайдеров." />
+        <MetricCard label="Доступный баланс" value={formatMoneyBreakdown(available)} hint={`Эквивалент: ${availableBase === null ? "курс не задан" : formatMoney(availableBase, "RUB")}.`} accent="moss" />
+        <MetricCard label="Замороженный баланс" value={formatMoneyBreakdown(frozen)} hint={`Эквивалент: ${frozenBase === null ? "курс не задан" : formatMoney(frozenBase, "RUB")}.`} accent="brass" />
+        <MetricCard label="Комиссии" value={formatMoneyBreakdown(fees)} hint={`Эквивалент: ${feesBase === null ? "курс не задан" : formatMoney(feesBase, "RUB")}.`} />
+      </section>
+
+      <section className="card rounded-[1.75rem] p-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Пересчет валют</p>
+            <h2 className="mt-2 font-display text-2xl font-semibold">RUB и USD хранятся раздельно</h2>
+            <p className="mt-2 text-sm leading-6 text-graphite/68">
+              Балансы не конвертируются автоматически при движении денег. Курс используется только для управленческого рублевого эквивалента.
+              {fx.usdRubRate ? ` Текущий USD/RUB в демо: ${formatRate(fx.usdRubRate)}.` : " Курс USD/RUB пока не задан."}
+            </p>
+          </div>
+          <a href="/exchange-rates" className="rounded-2xl bg-ink px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-moss">
+            Управлять курсом
+          </a>
+        </div>
       </section>
 
       <BalanceAdjustClient merchants={merchants.map((merchant) => ({ id: merchant.id, displayName: merchant.displayName }))} />

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { EducationBlock } from "@/components/education-block";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
+import { convertMoneyToBase, getFxSnapshot } from "@/lib/fx";
 import { formatDate, formatMoney, toNumber } from "@/lib/format";
 import { orderStatusMeta } from "@/lib/status";
 import { prisma } from "@/lib/prisma";
@@ -23,10 +24,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       transactions: { orderBy: { createdAt: "desc" } }
     }
   });
+  const fx = await getFxSnapshot();
 
   if (!order) notFound();
 
   const currentIndex = lifecycle.indexOf(order.status);
+  const amountBase = convertMoneyToBase(order.amount, order.currency, fx);
 
   return (
     <div className="grid gap-5">
@@ -50,6 +53,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             {[
               ["Мерчант", order.merchant.displayName],
               ["Сумма", formatMoney(toNumber(order.amount), order.currency)],
+              ["Эквивалент в RUB", amountBase === null ? "курс не задан" : formatMoney(amountBase, "RUB")],
               ["Комиссия", formatMoney(toNumber(order.commission), order.currency)],
               ["К зачислению", formatMoney(toNumber(order.merchantNet), order.currency)],
               ["Провайдер", order.providerName ?? order.provider?.displayName ?? "Не назначен"],

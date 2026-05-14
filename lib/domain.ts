@@ -17,8 +17,9 @@ import {
   type NotificationTypeValue,
   type OrderStatusValue
 } from "@/lib/constants";
-import { demoAmountForCurrency, normalizeCurrency, SUPPORTED_CURRENCIES } from "@/lib/currency";
+import { demoAmountForCurrency, normalizeCurrency, parseCurrency, SUPPORTED_CURRENCIES } from "@/lib/currency";
 import { prisma } from "@/lib/prisma";
+import { assertOrderTransition, assertPayoutTransition } from "@/lib/state-machines";
 
 type DbClient = Prisma.TransactionClient | PrismaClient;
 
@@ -59,7 +60,7 @@ async function moveBalance(
     appealId?: string;
   }
 ) {
-  const currency = normalizeCurrency(params.currency);
+  const currency = parseCurrency(params.currency ?? "RUB");
   const balance = await getBalance(db, params.merchantId, params.type, currency);
   const before = new Prisma.Decimal(balance.amount);
   const signedAmount =
@@ -67,6 +68,10 @@ async function moveBalance(
       ? params.amount
       : params.amount.negated();
   const after = before.plus(signedAmount);
+
+  if (after.lessThan(0)) {
+    throw new Error(`Недостаточно средств на балансе ${params.type} ${currency}. Доступно ${before.toString()}, требуется ${params.amount.toString()}.`);
+  }
 
   await db.balanceAccount.update({
     where: { id: balance.id },
@@ -195,13 +200,25 @@ export async function assignRequisiteToOrder(orderId?: string) {
             orderBy: { createdAt: "desc" }
           })) ?? (await createDemoOrder(UserRole.PLATFORM_ADMIN));
 
-    let requisite = await db.paymentRequisite.findFirst({
+    assertOrderTransition(order.status, OrderStatus.WAITING_PAYMENT);
+
+    const orderAmount = new Prisma.Decimal(order.amount);
+    const candidates = await db.paymentRequisite.findMany({
       where: {
         merchantId: order.merchantId,
         currency: order.currency,
         status: { in: [RequisiteStatus.ACTIVE, RequisiteStatus.LIMITED] }
       },
       orderBy: { linkedOrders: "asc" }
+    });
+    let requisite = candidates.find((candidate) => {
+      const minAmount = new Prisma.Decimal(candidate.minAmount);
+      const maxAmount = new Prisma.Decimal(candidate.maxAmount);
+      const dailyLimit = new Prisma.Decimal(candidate.dailyLimit);
+      const dailyUsed = new Prisma.Decimal(candidate.dailyUsed);
+      const fitsAmount = orderAmount.greaterThanOrEqualTo(minAmount) && (maxAmount.isZero() || orderAmount.lessThanOrEqualTo(maxAmount));
+      const fitsDailyLimit = dailyLimit.isZero() || dailyUsed.plus(orderAmount).lessThanOrEqualTo(dailyLimit);
+      return fitsAmount && fitsDailyLimit;
     });
 
     if (!requisite) {
@@ -218,24 +235,35 @@ export async function assignRequisiteToOrder(orderId?: string) {
           dailyLimit: order.currency === "USD" ? "30000" : "900000",
           dailyUsed: "0",
           minAmount: order.currency === "USD" ? "100" : "1000",
-          maxAmount: order.currency === "USD" ? "7000" : "150000"
+          maxAmount: order.currency === "USD" ? "7000" : "250000"
         }
       });
     }
+
+    const provider = requisite.providerId ? await db.provider.findUnique({ where: { id: requisite.providerId } }) : null;
+    const nextDailyUsed = new Prisma.Decimal(requisite.dailyUsed).plus(orderAmount);
+    const dailyLimit = new Prisma.Decimal(requisite.dailyLimit);
+    const remainingLimit = dailyLimit.isZero() ? null : dailyLimit.minus(nextDailyUsed);
+    const nextStatus =
+      remainingLimit && remainingLimit.lessThan(new Prisma.Decimal(requisite.maxAmount)) ? RequisiteStatus.LIMITED : requisite.status;
 
     const updated = await db.paymentOrder.update({
       where: { id: order.id },
       data: {
         requisiteId: requisite.id,
         providerId: requisite.providerId,
-        providerName: requisite.providerId ? undefined : order.providerName,
+        providerName: provider?.displayName ?? order.providerName,
         status: OrderStatus.WAITING_PAYMENT
       }
     });
 
     await db.paymentRequisite.update({
       where: { id: requisite.id },
-      data: { linkedOrders: { increment: 1 } }
+      data: {
+        linkedOrders: { increment: 1 },
+        dailyUsed: nextDailyUsed,
+        status: nextStatus
+      }
     });
 
     await writeEventAndNotification(db, {
@@ -266,6 +294,7 @@ export async function changeOrderStatus(orderId: string, nextStatus: OrderStatus
     if (order.status === nextStatus) return order;
 
     const oldStatus = order.status;
+    assertOrderTransition(oldStatus, nextStatus);
     const updated = await db.paymentOrder.update({
       where: { id: order.id },
       data: {
@@ -275,28 +304,37 @@ export async function changeOrderStatus(orderId: string, nextStatus: OrderStatus
     });
 
     if (nextStatus === OrderStatus.COMPLETED && oldStatus !== OrderStatus.COMPLETED) {
-      const net = new Prisma.Decimal(order.merchantNet);
-      const fee = new Prisma.Decimal(order.commission);
-
-      await moveBalance(db, {
-        merchantId: order.merchantId,
-        type: BalanceType.AVAILABLE,
-        direction: BalanceDirection.CREDIT,
-        amount: net,
-        currency: order.currency,
-        orderId: order.id,
-        description: `Начисление по завершенному ордеру ${order.externalId}`
+      const alreadyCredited = await db.balanceTransaction.findFirst({
+        where: {
+          orderId: order.id,
+          direction: BalanceDirection.CREDIT,
+          description: { contains: "Начисление по завершенному ордеру" }
+        }
       });
+      if (!alreadyCredited) {
+        const net = new Prisma.Decimal(order.merchantNet);
+        const fee = new Prisma.Decimal(order.commission);
 
-      await moveBalance(db, {
-        merchantId: order.merchantId,
-        type: BalanceType.FEES,
-        direction: BalanceDirection.CREDIT,
-        amount: fee,
-        currency: order.currency,
-        orderId: order.id,
-        description: `Удержанная комиссия по ордеру ${order.externalId}`
-      });
+        await moveBalance(db, {
+          merchantId: order.merchantId,
+          type: BalanceType.AVAILABLE,
+          direction: BalanceDirection.CREDIT,
+          amount: net,
+          currency: order.currency,
+          orderId: order.id,
+          description: `Начисление по завершенному ордеру ${order.externalId}`
+        });
+
+        await moveBalance(db, {
+          merchantId: order.merchantId,
+          type: BalanceType.FEES,
+          direction: BalanceDirection.CREDIT,
+          amount: fee,
+          currency: order.currency,
+          orderId: order.id,
+          description: `Удержанная комиссия по ордеру ${order.externalId}`
+        });
+      }
     }
 
     if (nextStatus === OrderStatus.DISPUTED && oldStatus !== OrderStatus.DISPUTED) {
@@ -402,6 +440,7 @@ export async function resolvePayout(payoutId: string, status: typeof PayoutStatu
     const payout = await db.payout.findUnique({ where: { id: payoutId } });
     if (!payout) throw new Error("Выплата не найдена.");
     if (payout.status === status) return payout;
+    assertPayoutTransition(payout.status, status);
 
     const total = new Prisma.Decimal(payout.amount).plus(payout.commission);
 
@@ -571,6 +610,9 @@ export async function resolveAppeal(appealId: string, resolution: "merchant" | "
       include: { order: true }
     });
     if (!appeal) throw new Error("Апелляция не найдена.");
+    if (appeal.status !== AppealStatus.NEW && appeal.status !== AppealStatus.OPEN) {
+      return appeal;
+    }
 
     const frozenAmount = new Prisma.Decimal(appeal.frozenAmount);
     if (frozenAmount.greaterThan(0)) {
@@ -756,7 +798,7 @@ export async function adjustMerchantBalance(params: {
   description?: string;
 }) {
   const amount = new Prisma.Decimal(params.amount);
-  const currency = normalizeCurrency(params.currency);
+  const currency = parseCurrency(params.currency ?? "RUB");
   if (amount.lessThanOrEqualTo(0)) throw new Error("Сумма должна быть больше нуля.");
 
   const description = params.description?.trim() || "Ручная корректировка баланса";
@@ -934,6 +976,11 @@ async function ensureDisputedOrder() {
     (await findLatestOrder([OrderStatus.CONFIRMED, OrderStatus.PAID, OrderStatus.WAITING_PAYMENT, OrderStatus.CREATED])) ??
     (await createDemoOrder(UserRole.PLATFORM_ADMIN));
 
+  if (order.status === OrderStatus.CREATED) {
+    const waiting = await assignRequisiteToOrder(order.id);
+    return changeOrderStatus(waiting.id, OrderStatus.DISPUTED, UserRole.OPERATOR);
+  }
+
   return changeOrderStatus(order.id, OrderStatus.DISPUTED, UserRole.OPERATOR);
 }
 
@@ -953,6 +1000,7 @@ async function movePayoutToHold(payoutId: string) {
     const payout = await db.payout.findUnique({ where: { id: payoutId } });
     if (!payout) throw new Error("Выплата не найдена.");
     if (payout.status === PayoutStatus.HOLD || payout.status === PayoutStatus.COMPLETED) return payout;
+    assertPayoutTransition(payout.status, PayoutStatus.HOLD);
 
     const updated = await db.payout.update({
       where: { id: payoutId },
@@ -1046,13 +1094,30 @@ export async function runScenarioStep(key: string, targetStep?: number) {
   }
 
   if (key === "order-status-flow") {
-    const order =
-      (await prisma.paymentOrder.findFirst({
-        where: { status: { in: [OrderStatus.CREATED, OrderStatus.WAITING_PAYMENT, OrderStatus.PAID, OrderStatus.CONFIRMED] } },
-        orderBy: { updatedAt: "desc" }
-      })) ?? (await createDemoOrder(UserRole.PLATFORM_ADMIN));
-    const flow = [OrderStatus.WAITING_PAYMENT, OrderStatus.PAID, OrderStatus.CONFIRMED, OrderStatus.COMPLETED, OrderStatus.COMPLETED];
-    await changeOrderStatus(order.id, flow[nextStep - 1] ?? OrderStatus.COMPLETED, UserRole.OPERATOR);
+    if (nextStep === 1) await ensureWaitingPaymentOrder();
+    if (nextStep === 2) {
+      const order = await ensureWaitingPaymentOrder();
+      await changeOrderStatus(order.id, OrderStatus.PAID, UserRole.OPERATOR);
+    }
+    if (nextStep === 3) {
+      const order = await ensurePaidOrder();
+      await changeOrderStatus(order.id, OrderStatus.CONFIRMED, UserRole.OPERATOR);
+    }
+    if (nextStep === 4) {
+      const order = await ensureConfirmedOrder();
+      await changeOrderStatus(order.id, OrderStatus.COMPLETED, UserRole.OPERATOR);
+    }
+    if (nextStep === 5) {
+      const order = await prisma.paymentOrder.findFirst({ where: { status: OrderStatus.COMPLETED }, orderBy: { updatedAt: "desc" } });
+      await writeScenarioCheckpoint(
+        key,
+        nextStep,
+        "Финальный статус зафиксирован",
+        `Ордер ${order?.externalId ?? "demo"} завершен, баланс и комиссия уже отражены в финансовой истории.`,
+        order?.merchantId,
+        UserRole.OPERATOR
+      );
+    }
   }
 
   if (key === "balance-after-success") {

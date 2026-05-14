@@ -30,6 +30,7 @@ export const navigationSections = [
     items: [
       { href: "/balances", label: "Балансы" },
       { href: "/commissions", label: "Комиссии" },
+      { href: "/exchange-rates", label: "Курсы валют" },
       { href: "/notifications", label: "Уведомления" },
       { href: "/events", label: "Журнал событий" },
       { href: "/integrations", label: "Интеграции" }

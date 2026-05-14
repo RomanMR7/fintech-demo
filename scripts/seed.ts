@@ -21,6 +21,68 @@ const hoursAgo = (hours: number) => new Date(now.getTime() - hours * 60 * 60 * 1
 
 const money = (value: number) => value.toFixed(2);
 const commission = (amount: number, rate: number) => Number((amount * rate).toFixed(2));
+const CBR_DAILY_RATES_URL = "https://www.cbr.ru/scripts/XML_daily.asp";
+
+function parseCbrDate(value: string | undefined) {
+  if (!value) return new Date();
+  const [day, month, year] = value.split(".").map(Number);
+  if (!day || !month || !year) return new Date();
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+}
+
+function extractTag(block: string, tag: string) {
+  return block.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`))?.[1]?.trim() ?? "";
+}
+
+async function seedExchangeRate() {
+  try {
+    const response = await fetch(CBR_DAILY_RATES_URL, { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const xml = await response.text();
+    const sourceDate = parseCbrDate(xml.match(/<ValCurs[^>]*Date="([^"]+)"/)?.[1]);
+    const usdBlock = [...xml.matchAll(/<Valute\b[\s\S]*?<\/Valute>/g)]
+      .map((match) => match[0])
+      .find((block) => extractTag(block, "CharCode") === "USD");
+
+    if (!usdBlock) throw new Error("USD не найден в ответе ЦБ РФ");
+
+    const nominal = Number(extractTag(usdBlock, "Nominal")) || 1;
+    const rate = Number(extractTag(usdBlock, "Value").replace(",", ".")) / nominal;
+    if (!Number.isFinite(rate) || rate <= 0) throw new Error("Некорректный курс USD");
+
+    await prisma.exchangeRate.create({
+      data: {
+        baseCurrency: "RUB",
+        quoteCurrency: "USD",
+        rate: money(rate),
+        nominal,
+        source: "CBR",
+        sourceUrl: CBR_DAILY_RATES_URL,
+        sourceDate,
+        fetchedAt: new Date(),
+        staleAfter: new Date(sourceDate.getTime() + 3 * 24 * 60 * 60 * 1000),
+        note: "Официальный справочный курс Банка России для демо-пересчета."
+      }
+    });
+  } catch {
+    await prisma.exchangeRate.create({
+      data: {
+        baseCurrency: "RUB",
+        quoteCurrency: "USD",
+        rate: "90.00",
+        nominal: 1,
+        source: "DEMO_FALLBACK",
+        sourceUrl: CBR_DAILY_RATES_URL,
+        sourceDate: now,
+        fetchedAt: now,
+        staleAfter: daysAgo(1),
+        isManual: true,
+        note: "Резервный демо-курс. Обновите курс на странице «Курсы валют», чтобы подтянуть актуальный справочный курс ЦБ РФ."
+      }
+    });
+  }
+}
 
 async function main() {
   await prisma.scenarioState.deleteMany();
@@ -33,10 +95,13 @@ async function main() {
   await prisma.paymentOrder.deleteMany();
   await prisma.paymentRequisite.deleteMany();
   await prisma.commissionRule.deleteMany();
+  await prisma.exchangeRate.deleteMany();
   await prisma.balanceAccount.deleteMany();
   await prisma.user.deleteMany();
   await prisma.provider.deleteMany();
   await prisma.merchant.deleteMany();
+
+  await seedExchangeRate();
 
   await prisma.merchant.createMany({
     data: [

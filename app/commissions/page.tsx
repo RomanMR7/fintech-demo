@@ -30,7 +30,7 @@ export default async function CommissionsPage() {
                   <p className="font-semibold">{(toNumber(rule.rate) * 100).toFixed(2)}%</p>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-graphite/65">{rule.description}</p>
-                <p className="mt-2 text-xs text-graphite/45">Диапазон: {formatMoney(toNumber(rule.minAmount))} - {toNumber(rule.maxAmount) ? formatMoney(toNumber(rule.maxAmount)) : "без лимита"}</p>
+                <p className="mt-2 text-xs text-graphite/45">Диапазон в базовой валюте: {formatMoney(toNumber(rule.minAmount), "RUB")} - {toNumber(rule.maxAmount) ? formatMoney(toNumber(rule.maxAmount), "RUB") : "без лимита"}</p>
               </div>
             ))}
           </div>

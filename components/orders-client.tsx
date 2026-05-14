@@ -15,6 +15,11 @@ const nextStatus: Record<string, string> = {
   CONFIRMED: "COMPLETED"
 };
 
+async function ensureOk(response: Response, fallback: string) {
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error ?? payload.message ?? fallback);
+}
+
 export function OrdersClient({ orders }: { orders: UiOrder[] }) {
   const router = useRouter();
   const { role, merchantId } = useRole();
@@ -22,6 +27,7 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
   const [status, setStatus] = useState("ALL");
   const [currency, setCurrency] = useState("RUB");
   const [isPending, startTransition] = useTransition();
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const visibleOrders = useMemo(() => {
     return orders
@@ -35,8 +41,14 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
 
   const mutate = (action: () => Promise<void>) => {
     startTransition(async () => {
-      await action();
-      router.refresh();
+      setMessage(null);
+      try {
+        await action();
+        setMessage({ type: "success", text: "Действие выполнено. Статусы, баланс, уведомления и журнал обновлены." });
+        router.refresh();
+      } catch (error) {
+        setMessage({ type: "error", text: error instanceof Error ? error.message : "Не удалось выполнить действие." });
+      }
     });
   };
 
@@ -77,11 +89,14 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
           disabled={isPending}
           onClick={() =>
             mutate(async () => {
-              await fetch("/api/orders", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ merchantId, currency })
-              });
+              await ensureOk(
+                await fetch("/api/orders", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ merchantId, currency })
+                }),
+                "Не удалось создать ордер."
+              );
             })
           }
           className="focus-ring rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss disabled:opacity-50"
@@ -89,6 +104,16 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
           Создать ордер
         </button>
       </div>
+
+      {message ? (
+        <div
+          className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-medium ${
+            message.type === "success" ? "border-jade/25 bg-jade/10 text-moss" : "border-red-200 bg-red-50 text-red-700"
+          }`}
+        >
+          {message.text}
+        </div>
+      ) : null}
 
       <div className="mt-5 grid gap-3 lg:hidden">
         {visibleOrders.map((order) => (
@@ -126,11 +151,14 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
                   disabled={isPending}
                   onClick={() =>
                     mutate(async () => {
-                      await fetch(`/api/orders/${order.id}/status`, {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ status: nextStatus[order.status], actorRole: role })
-                      });
+                      await ensureOk(
+                        await fetch(`/api/orders/${order.id}/status`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ status: nextStatus[order.status], actorRole: role })
+                        }),
+                        "Не удалось изменить статус."
+                      );
                     })
                   }
                   className="rounded-2xl bg-jade px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-moss disabled:opacity-50"
@@ -138,16 +166,19 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
                   Следующий статус
                 </button>
               ) : null}
-              {order.status !== "DISPUTED" && order.status !== "COMPLETED" ? (
+              {["WAITING_PAYMENT", "PAID", "CONFIRMED"].includes(order.status) ? (
                 <button
                   disabled={isPending}
                   onClick={() =>
                     mutate(async () => {
-                      await fetch(`/api/orders/${order.id}/status`, {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ status: "DISPUTED", actorRole: role })
-                      });
+                      await ensureOk(
+                        await fetch(`/api/orders/${order.id}/status`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ status: "DISPUTED", actorRole: role })
+                        }),
+                        "Не удалось перевести ордер в спор."
+                      );
                     })
                   }
                   className="rounded-2xl bg-rose-100 px-3 py-2.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-200 disabled:opacity-50"
@@ -197,11 +228,14 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
                         disabled={isPending}
                         onClick={() =>
                           mutate(async () => {
-                            await fetch(`/api/orders/${order.id}/status`, {
-                              method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ status: nextStatus[order.status], actorRole: role })
-                            });
+                            await ensureOk(
+                              await fetch(`/api/orders/${order.id}/status`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ status: nextStatus[order.status], actorRole: role })
+                              }),
+                              "Не удалось изменить статус."
+                            );
                           })
                         }
                         className="rounded-full bg-jade px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-moss disabled:opacity-50"
@@ -209,16 +243,19 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
                         Следующий статус
                       </button>
                     ) : null}
-                    {order.status !== "DISPUTED" && order.status !== "COMPLETED" ? (
+                    {["WAITING_PAYMENT", "PAID", "CONFIRMED"].includes(order.status) ? (
                       <button
                         disabled={isPending}
                         onClick={() =>
                           mutate(async () => {
-                            await fetch(`/api/orders/${order.id}/status`, {
-                              method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ status: "DISPUTED", actorRole: role })
-                            });
+                            await ensureOk(
+                              await fetch(`/api/orders/${order.id}/status`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ status: "DISPUTED", actorRole: role })
+                              }),
+                              "Не удалось перевести ордер в спор."
+                            );
                           })
                         }
                         className="rounded-full bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-200 disabled:opacity-50"

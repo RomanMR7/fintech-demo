@@ -11,6 +11,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ message: "В демо выплату можно подтвердить или отменить" }, { status: 400 });
   }
 
-  const payout = await resolvePayout(id, status as typeof PayoutStatus.COMPLETED | typeof PayoutStatus.CANCELED);
-  return NextResponse.json(payout);
+  try {
+    const payout = await resolvePayout(id, status as typeof PayoutStatus.COMPLETED | typeof PayoutStatus.CANCELED);
+    return NextResponse.json(payout);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Не удалось изменить выплату." }, { status: 409 });
+  }
 }

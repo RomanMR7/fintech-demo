@@ -7,11 +7,17 @@ import { StatusBadge } from "@/components/status-badge";
 import { formatDate, formatMoney } from "@/lib/format";
 import { UiPayout } from "@/lib/ui-types";
 
+async function ensureOk(response: Response, fallback: string) {
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error ?? payload.message ?? fallback);
+}
+
 export function PayoutsClient({ payouts }: { payouts: UiPayout[] }) {
   const router = useRouter();
   const { role, merchantId } = useRole();
   const [currency, setCurrency] = useState("RUB");
   const [isPending, startTransition] = useTransition();
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const visiblePayouts = useMemo(
     () => payouts.filter((payout) => (role === "MERCHANT" ? payout.merchantId === merchantId : true)),
@@ -20,8 +26,14 @@ export function PayoutsClient({ payouts }: { payouts: UiPayout[] }) {
 
   const mutate = (action: () => Promise<void>) => {
     startTransition(async () => {
-      await action();
-      router.refresh();
+      setMessage(null);
+      try {
+        await action();
+        setMessage({ type: "success", text: "Выплата обновлена. Баланс, уведомления и журнал пересчитаны." });
+        router.refresh();
+      } catch (error) {
+        setMessage({ type: "error", text: error instanceof Error ? error.message : "Не удалось выполнить действие." });
+      }
     });
   };
 
@@ -46,11 +58,14 @@ export function PayoutsClient({ payouts }: { payouts: UiPayout[] }) {
             disabled={isPending}
             onClick={() =>
               mutate(async () => {
-                await fetch("/api/payouts", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ merchantId, currency })
-                });
+                await ensureOk(
+                  await fetch("/api/payouts", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ merchantId, currency })
+                  }),
+                  "Не удалось создать выплату."
+                );
               })
             }
             className="focus-ring rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss disabled:opacity-50"
@@ -59,6 +74,16 @@ export function PayoutsClient({ payouts }: { payouts: UiPayout[] }) {
           </button>
         </div>
       </div>
+
+      {message ? (
+        <div
+          className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-medium ${
+            message.type === "success" ? "border-jade/25 bg-jade/10 text-moss" : "border-red-200 bg-red-50 text-red-700"
+          }`}
+        >
+          {message.text}
+        </div>
+      ) : null}
 
       <div className="mt-5 grid gap-3 lg:hidden">
         {visiblePayouts.map((payout) => (
@@ -88,17 +113,20 @@ export function PayoutsClient({ payouts }: { payouts: UiPayout[] }) {
                 <p className="mt-1 font-semibold">{formatDate(payout.createdAt)}</p>
               </div>
             </div>
-            {["CREATED", "PENDING_APPROVAL", "HOLD"].includes(payout.status) ? (
+            {["PENDING_APPROVAL", "HOLD", "DISPUTED"].includes(payout.status) ? (
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 <button
                   disabled={isPending}
                   onClick={() =>
                     mutate(async () => {
-                      await fetch(`/api/payouts/${payout.id}/status`, {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ status: "COMPLETED" })
-                      });
+                      await ensureOk(
+                        await fetch(`/api/payouts/${payout.id}/status`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ status: "COMPLETED" })
+                        }),
+                        "Не удалось подтвердить выплату."
+                      );
                     })
                   }
                   className="rounded-2xl bg-jade px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-moss disabled:opacity-50"
@@ -109,11 +137,14 @@ export function PayoutsClient({ payouts }: { payouts: UiPayout[] }) {
                   disabled={isPending}
                   onClick={() =>
                     mutate(async () => {
-                      await fetch(`/api/payouts/${payout.id}/status`, {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ status: "CANCELED" })
-                      });
+                      await ensureOk(
+                        await fetch(`/api/payouts/${payout.id}/status`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ status: "CANCELED" })
+                        }),
+                        "Не удалось отменить выплату."
+                      );
                     })
                   }
                   className="rounded-2xl bg-stone-100 px-3 py-2.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-200 disabled:opacity-50"
@@ -155,17 +186,20 @@ export function PayoutsClient({ payouts }: { payouts: UiPayout[] }) {
                 <td className="px-4 py-3">{formatMoney(payout.commission, payout.currency)}</td>
                 <td className="px-4 py-3">{formatDate(payout.createdAt)}</td>
                 <td className="rounded-r-2xl px-4 py-3">
-                  {["CREATED", "PENDING_APPROVAL", "HOLD"].includes(payout.status) ? (
+                  {["PENDING_APPROVAL", "HOLD", "DISPUTED"].includes(payout.status) ? (
                     <div className="flex gap-2">
                       <button
                         disabled={isPending}
                         onClick={() =>
                           mutate(async () => {
-                            await fetch(`/api/payouts/${payout.id}/status`, {
-                              method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ status: "COMPLETED" })
-                            });
+                            await ensureOk(
+                              await fetch(`/api/payouts/${payout.id}/status`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ status: "COMPLETED" })
+                              }),
+                              "Не удалось подтвердить выплату."
+                            );
                           })
                         }
                         className="rounded-full bg-jade px-3 py-1.5 text-xs font-semibold text-white"
@@ -176,11 +210,14 @@ export function PayoutsClient({ payouts }: { payouts: UiPayout[] }) {
                         disabled={isPending}
                         onClick={() =>
                           mutate(async () => {
-                            await fetch(`/api/payouts/${payout.id}/status`, {
-                              method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ status: "CANCELED" })
-                            });
+                            await ensureOk(
+                              await fetch(`/api/payouts/${payout.id}/status`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ status: "CANCELED" })
+                              }),
+                              "Не удалось отменить выплату."
+                            );
                           })
                         }
                         className="rounded-full bg-stone-100 px-3 py-1.5 text-xs font-semibold text-stone-700"

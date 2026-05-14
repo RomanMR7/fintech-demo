@@ -18,6 +18,14 @@ export function formatNumber(value: number | string) {
   }).format(Number.isFinite(amount) ? amount : 0);
 }
 
+export function formatRate(value: number | string) {
+  const amount = typeof value === "string" ? Number(value) : value;
+  return new Intl.NumberFormat("ru-RU", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4
+  }).format(Number.isFinite(amount) ? amount : 0);
+}
+
 export function formatDate(value: Date | string | null | undefined) {
   if (!value) return "не задано";
   return new Intl.DateTimeFormat("ru-RU", {

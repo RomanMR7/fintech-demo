@@ -3,19 +3,21 @@ import { CommercialCalculatorClient } from "@/components/commercial-calculator-c
 import { EducationBlock } from "@/components/education-block";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
-import { formatMoneyBreakdown, formatNumber, sumMoneyTotals, totalByCurrency } from "@/lib/format";
+import { convertBreakdownToBase, getFxSnapshot } from "@/lib/fx";
+import { formatMoney, formatMoneyBreakdown, formatNumber, sumMoneyTotals, totalByCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export default async function CommercialPage() {
-  const [orders, payouts, balances, appeals, merchants, providers] = await Promise.all([
+  const [orders, payouts, balances, appeals, merchants, providers, fx] = await Promise.all([
     prisma.paymentOrder.findMany({ include: { merchant: true } }),
     prisma.payout.findMany({ include: { merchant: true } }),
     prisma.balanceAccount.findMany(),
     prisma.appeal.findMany(),
     prisma.merchant.findMany({ orderBy: { displayName: "asc" } }),
-    prisma.provider.findMany({ orderBy: { displayName: "asc" } })
+    prisma.provider.findMany({ orderBy: { displayName: "asc" } }),
+    getFxSnapshot()
   ]);
 
   const payinTurnover = totalByCurrency(orders, (order) => order.amount, (order) => order.currency);
@@ -25,6 +27,9 @@ export default async function CommercialPage() {
   const frozen = totalByCurrency(balances.filter((balance) => balance.type === "FROZEN"), (balance) => balance.amount, (balance) => balance.currency);
   const activeAppeals = appeals.filter((appeal) => ["NEW", "OPEN"].includes(appeal.status)).length;
   const grossFees = sumMoneyTotals(payinFees, payoutFees);
+  const payinTurnoverBase = convertBreakdownToBase(payinTurnover, fx);
+  const payoutTurnoverBase = convertBreakdownToBase(payoutTurnover, fx);
+  const grossFeesBase = convertBreakdownToBase(grossFees, fx);
 
   return (
     <div className="grid gap-5">
@@ -35,9 +40,9 @@ export default async function CommercialPage() {
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Оборот приема" value={formatMoneyBreakdown(payinTurnover)} hint="Сумма платежных ордеров в демо-базе." accent="moss" />
-        <MetricCard label="Оборот выплат" value={formatMoneyBreakdown(payoutTurnover)} hint="Сумма созданных выплат." accent="brass" />
-        <MetricCard label="Комиссии в демо" value={formatMoneyBreakdown(grossFees)} hint="Комиссии приема и выплат на мок-данных." />
+        <MetricCard label="Оборот приема" value={formatMoneyBreakdown(payinTurnover)} hint={`Эквивалент: ${payinTurnoverBase === null ? "курс не задан" : formatMoney(payinTurnoverBase, "RUB")}.`} accent="moss" />
+        <MetricCard label="Оборот выплат" value={formatMoneyBreakdown(payoutTurnover)} hint={`Эквивалент: ${payoutTurnoverBase === null ? "курс не задан" : formatMoney(payoutTurnoverBase, "RUB")}.`} accent="brass" />
+        <MetricCard label="Комиссии в демо" value={formatMoneyBreakdown(grossFees)} hint={`Эквивалент: ${grossFeesBase === null ? "курс не задан" : formatMoney(grossFeesBase, "RUB")}.`} />
         <MetricCard label="Активные риски" value={formatNumber(activeAppeals)} hint={`Холды: ${formatMoneyBreakdown(frozen)}`} accent="red" />
       </section>
 
@@ -85,7 +90,7 @@ export default async function CommercialPage() {
         </div>
       </section>
 
-      <CommercialCalculatorClient />
+      <CommercialCalculatorClient usdRubRate={fx.usdRubRate} />
 
       <section className="grid gap-4 xl:grid-cols-3">
         {[

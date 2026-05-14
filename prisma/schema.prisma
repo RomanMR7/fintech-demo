@@ -166,6 +166,25 @@ model CommissionRule {
   description     String
 }
 
+model ExchangeRate {
+  id              String      @id @default(cuid())
+  baseCurrency    String      @default("RUB")
+  quoteCurrency   String
+  rate            Decimal
+  nominal         Int         @default(1)
+  source          String      @default("CBR")
+  sourceUrl       String?
+  sourceDate      DateTime
+  fetchedAt       DateTime    @default(now())
+  staleAfter      DateTime?
+  isManual        Boolean     @default(false)
+  note            String?
+  createdAt       DateTime    @default(now())
+
+  @@unique([baseCurrency, quoteCurrency, sourceDate, source])
+  @@index([baseCurrency, quoteCurrency, sourceDate])
+}
+
 model Appeal {
   id              String          @id @default(cuid())
   orderId         String

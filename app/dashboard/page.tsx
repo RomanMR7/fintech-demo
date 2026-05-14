@@ -3,17 +3,19 @@ import { EducationBlock } from "@/components/education-block";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
-import { formatDate, formatMoney, formatMoneyBreakdown, formatNumber, toNumber, totalByCurrency } from "@/lib/format";
+import { convertBreakdownToBase, getFxSnapshot } from "@/lib/fx";
+import { formatDate, formatMoney, formatMoneyBreakdown, formatNumber, formatRate, toNumber, totalByCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const [orders, balances, appeals, events] = await Promise.all([
+  const [orders, balances, appeals, events, fx] = await Promise.all([
     prisma.paymentOrder.findMany({ include: { merchant: true }, orderBy: { createdAt: "desc" } }),
     prisma.balanceAccount.findMany({ include: { merchant: true } }),
     prisma.appeal.findMany(),
-    prisma.eventLog.findMany({ orderBy: { createdAt: "desc" }, take: 8 })
+    prisma.eventLog.findMany({ orderBy: { createdAt: "desc" }, take: 8 }),
+    getFxSnapshot()
   ]);
 
   const turnover = totalByCurrency(orders, (order) => order.amount, (order) => order.currency);
@@ -27,6 +29,10 @@ export default async function DashboardPage() {
     (item) => item.amount,
     (item) => item.currency
   );
+  const turnoverBase = convertBreakdownToBase(turnover, fx);
+  const availableBase = convertBreakdownToBase(available, fx);
+  const frozenBase = convertBreakdownToBase(frozen, fx);
+  const fxHint = fx.usdRubRate ? `USD пересчитан по ${formatRate(fx.usdRubRate)} RUB за 1 USD.` : "Курс USD/RUB не задан.";
 
   return (
     <div className="grid gap-5">
@@ -41,10 +47,27 @@ export default async function DashboardPage() {
         <MetricCard label="Успешные" value={formatNumber(orders.filter((order) => order.status === "COMPLETED").length)} hint="Операции, которые уже обновили баланс." accent="moss" />
         <MetricCard label="В ожидании" value={formatNumber(orders.filter((order) => ["CREATED", "WAITING_PAYMENT", "PAID", "CONFIRMED"].includes(order.status)).length)} hint="Очередь операционной обработки." accent="brass" />
         <MetricCard label="Споры" value={formatNumber(orders.filter((order) => order.status === "DISPUTED").length + appeals.filter((appeal) => ["NEW", "OPEN"].includes(appeal.status)).length)} hint="Операции и апелляции, где есть риск." accent="red" />
-        <MetricCard label="Оборот" value={formatMoneyBreakdown(turnover)} hint="Сумма всех платежных ордеров по валютам." />
-        <MetricCard label="Доступно" value={formatMoneyBreakdown(available)} hint="Баланс, которым мерчанты могут распоряжаться." accent="moss" />
-        <MetricCard label="Заморожено" value={formatMoneyBreakdown(frozen)} hint="Холды по выплатам и спорным операциям." accent="brass" />
+        <MetricCard label="Оборот" value={formatMoneyBreakdown(turnover)} hint={`Эквивалент: ${turnoverBase === null ? "курс не задан" : formatMoney(turnoverBase, "RUB")}. ${fxHint}`} />
+        <MetricCard label="Доступно" value={formatMoneyBreakdown(available)} hint={`Эквивалент: ${availableBase === null ? "курс не задан" : formatMoney(availableBase, "RUB")}.`} accent="moss" />
+        <MetricCard label="Заморожено" value={formatMoneyBreakdown(frozen)} hint={`Эквивалент: ${frozenBase === null ? "курс не задан" : formatMoney(frozenBase, "RUB")}.`} accent="brass" />
         <MetricCard label="Апелляции" value={formatNumber(appeals.length)} hint="Все обращения support-команды." accent="red" />
+      </section>
+
+      <section className={`card rounded-[1.75rem] p-5 ${fx.isStale ? "border border-brass/35 bg-brass/10" : "border border-jade/20 bg-jade/8"}`}>
+        <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Курсы валют</p>
+            <h2 className="mt-2 font-display text-2xl font-semibold">Базовая валюта отчетности: RUB</h2>
+            <p className="mt-2 text-sm leading-6 text-graphite/68">
+              В карточках выше суммы не смешиваются напрямую: RUB и USD показываются отдельно, а для общей картины считается рублевый эквивалент.
+              {fx.usdRate ? ` Источник: ${fx.usdRate.source}, дата курса: ${formatDate(fx.usdRate.sourceDate)}.` : " Курс USD/RUB пока не найден."}
+            </p>
+            {fx.warning ? <p className="mt-2 text-sm font-semibold text-brass">{fx.warning}</p> : null}
+          </div>
+          <a href="/exchange-rates" className="rounded-2xl bg-ink px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-moss">
+            Открыть курсы
+          </a>
+        </div>
       </section>
 
       <section className="card rounded-[1.75rem] bg-ink p-5 text-white">
