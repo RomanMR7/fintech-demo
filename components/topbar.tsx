@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { GlobalSearch } from "@/components/global-search";
 import { useRole } from "@/components/role-provider";
-import { VisualModeSwitcher } from "@/components/visual-mode-switcher";
 import { defaultMerchantId, roleOptions, type DemoRole } from "@/lib/roles";
 
 type MerchantOption = {
@@ -65,10 +64,7 @@ export function Topbar() {
         <GlobalSearch />
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2 xl:flex xl:items-center">
-        <div className="sm:col-span-2 xl:col-span-1">
-          <VisualModeSwitcher />
-        </div>
+      <div className="grid gap-2 sm:grid-cols-3 xl:flex xl:items-center xl:justify-end">
         <select value={role} onChange={(event) => setRole(event.target.value as DemoRole)} className="field focus-ring min-w-0 xl:w-[220px]" aria-label="Переключатель роли">
           {roleOptions.map((item) => (
             <option key={item.value} value={item.value}>

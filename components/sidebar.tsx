@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useRole } from "@/components/role-provider";
+import { VisualModeSwitcher } from "@/components/visual-mode-switcher";
 import type { DemoRole } from "@/lib/roles";
 
 type NavItem = {
@@ -112,7 +113,7 @@ export function Sidebar() {
   const sections = useMemo(() => getVisibleNavigationSections(role), [role]);
 
   return (
-    <aside className="card sticky top-6 hidden h-[calc(100vh-3rem)] overflow-y-auto rounded-[var(--radius-xl)] p-3 lg:block">
+    <aside className="card sticky top-6 hidden h-[calc(100vh-3rem)] flex-col overflow-hidden rounded-[var(--radius-xl)] p-3 lg:flex">
       <div className="rounded-[1.2rem] bg-ink px-4 py-4 text-white shadow-soft">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -127,7 +128,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      <nav className="mt-4 space-y-3" aria-label="Основная навигация">
+      <nav className="no-scrollbar mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1" aria-label="Основная навигация">
         {sections.map((section) => (
           <div key={section.title}>
             <p className="px-2.5 text-[0.66rem] font-bold uppercase tracking-[0.12em] text-graphite/42">{section.title}</p>
@@ -139,6 +140,13 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
+
+      <div className="mt-3 border-t border-ink/10 pt-3">
+        <p className="px-1 text-[0.66rem] font-bold uppercase tracking-[0.12em] text-graphite/42">Визуальный режим</p>
+        <div className="mt-2">
+          <VisualModeSwitcher />
+        </div>
+      </div>
     </aside>
   );
 }
@@ -177,7 +185,7 @@ export function MobileNavigation() {
                 Закрыть
               </button>
             </div>
-            <nav className="overflow-y-auto px-3 pb-4" aria-label="Мобильная навигация">
+            <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-4" aria-label="Мобильная навигация">
               {sections.map((section) => (
                 <div key={section.title} className="pt-4">
                   <p className="px-2 text-[0.66rem] font-bold uppercase tracking-[0.12em] text-graphite/45">{section.title}</p>
@@ -189,6 +197,12 @@ export function MobileNavigation() {
                 </div>
               ))}
             </nav>
+            <div className="border-t border-ink/10 p-4">
+              <p className="px-1 text-[0.66rem] font-bold uppercase tracking-[0.12em] text-graphite/45">Визуальный режим</p>
+              <div className="mt-2">
+                <VisualModeSwitcher />
+              </div>
+            </div>
           </div>
         </div>
       ) : null}
