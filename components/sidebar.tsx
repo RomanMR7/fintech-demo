@@ -99,7 +99,7 @@ function getNavigationHref(item: NavItem, merchantId: string) {
   return item.href;
 }
 
-function MiniNavLink({ item, active, href, onClick }: { item: NavItem; active: boolean; href?: string; onClick?: () => void }) {
+function MiniNavLink({ item, active, href, label, onClick }: { item: NavItem; active: boolean; href?: string; label?: string; onClick?: () => void }) {
   return (
     <Link
       href={href ?? item.href}
@@ -110,15 +110,16 @@ function MiniNavLink({ item, active, href, onClick }: { item: NavItem; active: b
       }`}
     >
       <span className={`mx-auto h-1.5 w-1.5 rounded-full ${active ? "bg-jade" : "bg-graphite/22 group-hover:bg-jade"}`} />
-      <span className="truncate font-semibold">{item.label}</span>
+      <span className="truncate font-semibold">{label ?? item.label}</span>
     </Link>
   );
 }
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { role, currentRoleLabel, merchantId } = useRole();
+  const { role, currentRoleLabel, merchantId, merchantName } = useRole();
   const sections = useMemo(() => getVisibleNavigationSections(role), [role]);
+  const merchantMenuLabel = merchantName ? `Кабинет ${merchantName}` : "Кабинет мерчанта";
 
   return (
     <aside className="card sticky top-6 hidden h-[calc(100vh-3rem)] flex-col overflow-hidden rounded-[var(--radius-xl)] p-3 lg:flex">
@@ -142,7 +143,7 @@ export function Sidebar() {
             <p className="px-2.5 text-[0.66rem] font-bold uppercase tracking-[0.12em] text-graphite/42">{section.title}</p>
             <div className="mt-1.5 space-y-1">
               {section.items.map((item) => (
-                <MiniNavLink item={item} href={getNavigationHref(item, merchantId)} active={isActivePath(pathname, item.href)} key={item.href} />
+                <MiniNavLink item={item} label={item.href === "/merchant" ? merchantMenuLabel : undefined} href={getNavigationHref(item, merchantId)} active={isActivePath(pathname, item.href)} key={item.href} />
               ))}
             </div>
           </div>
@@ -161,10 +162,11 @@ export function Sidebar() {
 
 export function MobileNavigation() {
   const pathname = usePathname();
-  const { role, currentRoleLabel, merchantId } = useRole();
+  const { role, currentRoleLabel, merchantId, merchantName } = useRole();
   const [isOpen, setIsOpen] = useState(false);
   const sections = useMemo(() => getVisibleNavigationSections(role), [role]);
   const quickItems = useMemo(() => sections.flatMap((section) => section.items).slice(0, 6), [sections]);
+  const merchantMenuLabel = merchantName ? `Кабинет ${merchantName}` : "Кабинет мерчанта";
 
   return (
     <div className="mb-3 grid gap-3 lg:hidden">
@@ -199,7 +201,7 @@ export function MobileNavigation() {
                   <p className="px-2 text-[0.66rem] font-bold uppercase tracking-[0.12em] text-graphite/45">{section.title}</p>
                   <div className="mt-2 grid gap-1.5">
                     {section.items.map((item) => (
-                      <MiniNavLink item={item} href={getNavigationHref(item, merchantId)} active={isActivePath(pathname, item.href)} key={item.href} onClick={() => setIsOpen(false)} />
+                      <MiniNavLink item={item} label={item.href === "/merchant" ? merchantMenuLabel : undefined} href={getNavigationHref(item, merchantId)} active={isActivePath(pathname, item.href)} key={item.href} onClick={() => setIsOpen(false)} />
                     ))}
                   </div>
                 </div>
@@ -220,7 +222,7 @@ export function MobileNavigation() {
           const active = isActivePath(pathname, item.href);
           return (
             <Link href={getNavigationHref(item, merchantId)} key={item.href} className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold shadow-insetSoft transition ${active ? "bg-ink text-white" : "border border-ink/10 bg-white/70 text-graphite hover:bg-white"}`}>
-              {item.label}
+              {item.href === "/merchant" ? merchantMenuLabel : item.label}
             </Link>
           );
         })}

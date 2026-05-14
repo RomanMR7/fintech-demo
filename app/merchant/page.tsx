@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { EducationBlock } from "@/components/education-block";
+import { EmptyState } from "@/components/empty-state";
 import { MerchantIntegrationPanel } from "@/components/merchant-integration-panel";
 import { MetricCard } from "@/components/metric-card";
 import { MoneyBreakdown } from "@/components/money-breakdown";
@@ -89,7 +90,7 @@ export default async function MerchantCabinetPage({ searchParams }: MerchantCabi
             </Link>
           </div>
           <div className="mt-4 grid gap-3">
-            {merchant.orders.map((order) => (
+            {merchant.orders.length ? merchant.orders.map((order) => (
               <div key={order.id} className="grid gap-3 rounded-2xl border border-ink/10 bg-white/60 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
                 <div>
                   <p className="font-mono text-sm font-semibold text-ink">{order.externalId}</p>
@@ -99,7 +100,7 @@ export default async function MerchantCabinetPage({ searchParams }: MerchantCabi
                 </div>
                 <StatusBadge status={order.status} />
               </div>
-            ))}
+            )) : <EmptyState title="Ордеров пока нет" description="У нового sandbox-мерчанта еще нет платежных ордеров. Создайте ордер в разделе «Ордера» или запустите демо-сценарий." />}
           </div>
         </div>
 
@@ -114,7 +115,7 @@ export default async function MerchantCabinetPage({ searchParams }: MerchantCabi
             </Link>
           </div>
           <div className="mt-4 grid gap-3">
-            {merchant.payouts.map((payout) => (
+            {merchant.payouts.length ? merchant.payouts.map((payout) => (
               <div key={payout.id} className="grid gap-3 rounded-2xl border border-ink/10 bg-white/60 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
                 <div>
                   <p className="font-semibold text-ink">{payout.recipient}</p>
@@ -124,7 +125,7 @@ export default async function MerchantCabinetPage({ searchParams }: MerchantCabi
                 </div>
                 <StatusBadge status={payout.status} type="payout" />
               </div>
-            ))}
+            )) : <EmptyState title="Выплат пока нет" description="Когда мерчант создаст вывод средств, заявка появится здесь вместе со статусом, комиссией и получателем." />}
           </div>
         </div>
       </section>
@@ -132,16 +133,16 @@ export default async function MerchantCabinetPage({ searchParams }: MerchantCabi
       <MerchantIntegrationPanel merchantId={merchant.id} maskedApiKey={maskSecret(merchant.apiKey)} callbackUrl={merchant.callbackUrl} activeRequisites={activeRequisites} totalRequisites={merchant.requisites.length} />
 
       <section className="section-card">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Notifications</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Уведомления</p>
         <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Что важно мерчанту</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          {merchant.notifications.map((notification) => (
+          {merchant.notifications.length ? merchant.notifications.map((notification) => (
             <div key={notification.id} className="rounded-2xl border border-ink/10 bg-white/55 p-4">
               <p className="font-semibold text-ink">{notification.title}</p>
               <p className="mt-2 text-sm leading-6 text-graphite/68">{notification.message}</p>
               <p className="mt-2 text-xs text-graphite/45">{formatDate(notification.createdAt)}</p>
             </div>
-          ))}
+          )) : <EmptyState title="Уведомлений пока нет" description="Системные события появятся после создания ордера, выплаты, апелляции или изменения API-настроек." />}
         </div>
       </section>
 

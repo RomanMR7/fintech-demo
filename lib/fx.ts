@@ -270,6 +270,21 @@ export function convertMoneyToBase(amount: unknown, currencyInput: unknown, fx: 
   return amountNumber * fx.usdRubRate;
 }
 
+export function convertCurrency(amount: unknown, fromCurrencyInput: unknown, toCurrencyInput: unknown, fx: Pick<FxSnapshot, "usdRubRate"> = { usdRubRate: FALLBACK_USD_RUB_RATE }) {
+  const amountNumber = toNumber(amount);
+  if (!Number.isFinite(amountNumber)) return 0;
+
+  const fromCurrency = normalizeCurrency(fromCurrencyInput);
+  const toCurrency = normalizeCurrency(toCurrencyInput);
+  const usdRubRate = fx.usdRubRate ?? FALLBACK_USD_RUB_RATE;
+
+  if (fromCurrency === toCurrency) return amountNumber;
+  if (fromCurrency === "USD" && toCurrency === "RUB") return amountNumber * usdRubRate;
+  if (fromCurrency === "RUB" && toCurrency === "USD") return amountNumber / usdRubRate;
+
+  return amountNumber;
+}
+
 export function convertBreakdownToBase(totals: MoneyBreakdown, fx: Pick<FxSnapshot, "usdRubRate">) {
   const rub = toNumber(totals.RUB ?? 0);
   const usd = toNumber(totals.USD ?? 0);

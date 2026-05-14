@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { calculateCommercialModel, clampNumber, COMMERCIAL_LIMITS, parseNumericInput } from "@/lib/commercial-model";
 import { formatMoney, formatRate } from "@/lib/format";
 
 export function CommercialCalculatorClient({ usdRubRate }: { usdRubRate: number | null }) {
@@ -14,35 +15,22 @@ export function CommercialCalculatorClient({ usdRubRate }: { usdRubRate: number 
   const [operatingCostRate, setOperatingCostRate] = useState(0.35);
   const [disputeLossRate, setDisputeLossRate] = useState(0.15);
 
-  const model = useMemo(() => {
-    const payoutTurnover = payinTurnover * (payoutShare / 100);
-    const payinRevenue = payinTurnover * (payinFee / 100);
-    const payoutRevenue = payoutTurnover * (payoutFee / 100);
-    const riskSaving = payinTurnover * (riskSavingRate / 100);
-    const monthlyGross = payinRevenue + payoutRevenue + riskSaving;
-    const providerCost = payinTurnover * (providerFeeRate / 100);
-    const operatingCost = payinTurnover * (operatingCostRate / 100);
-    const disputeLoss = payinTurnover * (disputeLossRate / 100);
-    const netMargin = monthlyGross - providerCost - operatingCost - disputeLoss;
-    const takeRate = payinTurnover > 0 ? (netMargin / payinTurnover) * 100 : 0;
-
-    return {
-      payoutTurnover,
-      payinRevenue,
-      payoutRevenue,
-      riskSaving,
-      monthlyGross,
-      providerCost,
-      operatingCost,
-      disputeLoss,
-      netMargin,
-      takeRate,
-      annualGross: monthlyGross * 12,
-      annualNet: netMargin * 12,
-      monthlyBaseRub: currency === "USD" && usdRubRate ? monthlyGross * usdRubRate : monthlyGross,
-      annualBaseRub: currency === "USD" && usdRubRate ? monthlyGross * usdRubRate * 12 : monthlyGross * 12
-    };
-  }, [payinTurnover, payinFee, payoutShare, payoutFee, riskSavingRate, providerFeeRate, operatingCostRate, disputeLossRate, currency, usdRubRate]);
+  const model = useMemo(
+    () =>
+      calculateCommercialModel({
+        acquiringVolume: payinTurnover,
+        acquiringFeePercent: payinFee,
+        payoutSharePercent: payoutShare,
+        payoutFeePercent: payoutFee,
+        lossReductionPercent: riskSavingRate,
+        providerFeePercent: providerFeeRate,
+        operationalCostPercent: operatingCostRate,
+        riskLossPercent: disputeLossRate
+      }),
+    [payinTurnover, payinFee, payoutShare, payoutFee, riskSavingRate, providerFeeRate, operatingCostRate, disputeLossRate]
+  );
+  const monthlyBaseRub = currency === "USD" && usdRubRate ? model.grossRevenue * usdRubRate : model.grossRevenue;
+  const annualBaseRub = currency === "USD" && usdRubRate ? model.grossRevenueYearly * usdRubRate : model.grossRevenueYearly;
 
   const presets = [
     { label: "Малый мерчант", turnover: 2500000, payin: 2.8, payoutShare: 35, payout: 1.6, risk: 0.25, provider: 1.05, ops: 0.45, loss: 0.2 },
@@ -75,11 +63,11 @@ export function CommercialCalculatorClient({ usdRubRate }: { usdRubRate: number 
         </div>
         <div className="dark-panel rounded-2xl px-5 py-4">
           <p className="text-xs uppercase tracking-[0.18em] text-white/55">Потенциал / месяц</p>
-          <p className="mt-1 font-display text-3xl font-semibold">{formatMoney(model.monthlyGross, currency)}</p>
+          <p className="mt-1 font-display text-3xl font-semibold">{formatMoney(model.grossRevenue, currency)}</p>
           <p className="mt-2 text-xs leading-5 text-white/60">
             {currency === "USD"
               ? usdRubRate
-                ? `Эквивалент: ${formatMoney(model.monthlyBaseRub, "RUB")} по ${formatRate(usdRubRate)} RUB за 1 USD.`
+                ? `Эквивалент: ${formatMoney(monthlyBaseRub, "RUB")} по ${formatRate(usdRubRate)} RUB за 1 USD.`
                 : "Рублевый эквивалент недоступен: курс USD/RUB не задан."
               : "Модель уже в базовой валюте RUB."}
           </p>
@@ -106,30 +94,36 @@ export function CommercialCalculatorClient({ usdRubRate }: { usdRubRate: number 
               <option value="USD">USD — долларовая модель</option>
             </select>
           </label>
-          <NumberField label="Оборот приема в месяц" suffix={currency} value={payinTurnover} min={1000} max={100000000000} step={currency === "USD" ? 1000 : 500000} helper="Можно вводить крупные обороты. Значение фиксируется сразу при корректном вводе и проверяется при выходе из поля." onChange={setPayinTurnover} />
-          <NumberField label="Комиссия приема" suffix="%" value={payinFee} min={0} max={100} step={0.1} helper="Формула: оборот приема × комиссия приема." onChange={setPayinFee} />
+          <NumberField label="Оборот приема в месяц" suffix={currency} value={payinTurnover} min={COMMERCIAL_LIMITS.acquiringVolume.min} max={COMMERCIAL_LIMITS.acquiringVolume.max} step={currency === "USD" ? 1000 : 500000} helper="Можно стереть поле, вставить крупную сумму или ввести 0. Расчет использует последнее корректное значение, а финальная проверка происходит при выходе из поля." onChange={setPayinTurnover} />
+          <NumberField label="Комиссия приема" suffix="%" value={payinFee} min={0} max={100} step={0.1} helper="Формула: оборот приема × комиссия приема." warning={payinFee > COMMERCIAL_LIMITS.feeWarningPercent ? "Выше 10%: проверьте реалистичность тарифа." : undefined} onChange={setPayinFee} />
           <NumberField label="Доля выплат от оборота" suffix="%" value={payoutShare} min={0} max={100} step={5} helper="Определяет объем payout-операций." onChange={setPayoutShare} />
-          <NumberField label="Комиссия выплат" suffix="%" value={payoutFee} min={0} max={100} step={0.1} helper="Формула: объем выплат × комиссия выплат." onChange={setPayoutFee} />
+          <NumberField label="Комиссия выплат" suffix="%" value={payoutFee} min={0} max={100} step={0.1} helper="Формула: объем выплат × комиссия выплат." warning={payoutFee > COMMERCIAL_LIMITS.feeWarningPercent ? "Выше 10%: проверьте реалистичность тарифа." : undefined} onChange={setPayoutFee} />
           <NumberField label="Эффект снижения спорных потерь" suffix="%" value={riskSavingRate} min={0} max={100} step={0.1} helper="Управленческая оценка эффекта от risk/dispute tooling." onChange={setRiskSavingRate} />
           <NumberField label="Комиссия provider" suffix="%" value={providerFeeRate} min={0} max={100} step={0.1} helper="Оценочная себестоимость платежных провайдеров." onChange={setProviderFeeRate} />
           <NumberField label="Операционные расходы" suffix="%" value={operatingCostRate} min={0} max={100} step={0.05} helper="Support, ops, инфраструктура и ручная обработка." onChange={setOperatingCostRate} />
           <NumberField label="Risk / dispute loss" suffix="%" value={disputeLossRate} min={0} max={100} step={0.05} helper="Оценка потерь от споров, fraud и ошибок." onChange={setDisputeLossRate} />
+          {model.warnings.length ? (
+            <div className="rounded-2xl border border-brass/25 bg-brass/10 px-4 py-3 text-sm font-semibold leading-6 text-brass">
+              {model.warnings.join(" ")}
+            </div>
+          ) : null}
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
-          <ResultCard label="Комиссия приема" value={formatMoney(model.payinRevenue, currency)} hint={`${formatMoney(payinTurnover, currency)} × ${payinFee}%`} />
-          <ResultCard label="Комиссия выплат" value={formatMoney(model.payoutRevenue, currency)} hint={`${formatMoney(model.payoutTurnover, currency)} × ${payoutFee}%`} />
-          <ResultCard label="Снижение потерь" value={formatMoney(model.riskSaving, currency)} hint={`Оценочный эффект ${riskSavingRate}% от оборота`} />
-          <ResultCard label="Потенциал / год" value={formatMoney(model.annualGross, currency)} hint="Месячная модель × 12" accent />
+          <ResultCard label="Комиссия приема" value={formatMoney(model.acquiringFeeRevenue, currency)} hint={`${formatMoney(model.acquiringVolume, currency)} × ${model.acquiringFeePercent}%`} />
+          <ResultCard label="Комиссия выплат" value={formatMoney(model.payoutFeeRevenue, currency)} hint={`${formatMoney(model.payoutVolume, currency)} × ${model.payoutFeePercent}%`} />
+          <ResultCard label="Снижение потерь" value={formatMoney(model.lossReductionEffect, currency)} hint={`Оценочный эффект ${model.lossReductionPercent}% от оборота`} />
+          <ResultCard label="Потенциал / год" value={formatMoney(model.grossRevenueYearly, currency)} hint={`Валовая выручка / месяц × 12. Gross take rate: ${formatRate(model.grossTakeRate)}%`} accent />
           <ResultCard label="Комиссия provider" value={formatMoney(model.providerCost, currency)} hint={`${formatMoney(payinTurnover, currency)} × ${providerFeeRate}%`} />
-          <ResultCard label="Операционные расходы" value={formatMoney(model.operatingCost, currency)} hint={`${formatMoney(payinTurnover, currency)} × ${operatingCostRate}%`} />
-          <ResultCard label="Risk / dispute loss" value={formatMoney(model.disputeLoss, currency)} hint={`${formatMoney(payinTurnover, currency)} × ${disputeLossRate}%`} />
-          <ResultCard label="Чистая маржа / месяц" value={formatMoney(model.netMargin, currency)} hint={`Take rate после расходов: ${formatRate(model.takeRate)}%`} accent={model.netMargin > 0} />
-          <ResultCard label="Чистая маржа / год" value={formatMoney(model.annualNet, currency)} hint="Чистая маржа × 12. Не является обещанием доходности." accent={model.netMargin > 0} />
+          <ResultCard label="Операционные расходы" value={formatMoney(model.operationalCost, currency)} hint={`${formatMoney(model.acquiringVolume, currency)} × ${model.operationalCostPercent}%`} />
+          <ResultCard label="Risk / dispute loss" value={formatMoney(model.riskLoss, currency)} hint={`${formatMoney(model.acquiringVolume, currency)} × ${model.riskLossPercent}%`} />
+          <ResultCard label="Чистая маржа / месяц" value={formatMoney(model.netMarginMonthly, currency)} hint={`Take rate после расходов: ${formatRate(model.takeRateAfterCosts)}%`} accent={model.netMarginMonthly > 0} />
+          <ResultCard label="Чистая маржа / год" value={formatMoney(model.netMarginYearly, currency)} hint="Чистая маржа × 12. Не является обещанием доходности." accent={model.netMarginMonthly > 0} />
+          <ResultCard label="Break-even" value={model.breakEvenStatus ? "Положительная маржа" : "Маржа ниже нуля"} hint={`Считается честно: net margin / месяц ${model.breakEvenStatus ? ">" : "≤"} 0.`} accent={model.breakEvenStatus} />
           {currency === "USD" ? (
             <ResultCard
               label="Эквивалент / год"
-              value={usdRubRate ? formatMoney(model.annualBaseRub, "RUB") : "курс не задан"}
+              value={usdRubRate ? formatMoney(annualBaseRub, "RUB") : "курс не задан"}
               hint={usdRubRate ? `Пересчет по ${formatRate(usdRubRate)} RUB за 1 USD` : "Обновите курс на странице «Курсы валют»"}
               accent
             />
@@ -152,6 +146,7 @@ function NumberField({
   max,
   step,
   helper,
+  warning,
   onChange
 }: {
   label: string;
@@ -161,6 +156,7 @@ function NumberField({
   max: number;
   step: number;
   helper: string;
+  warning?: string;
   onChange: (value: number) => void;
 }) {
   const [draftValue, setDraftValue] = useState(String(value));
@@ -169,10 +165,9 @@ function NumberField({
     setDraftValue(String(value));
   }, [value]);
 
-  const clamp = (nextValue: number) => Math.min(Math.max(Number.isFinite(nextValue) ? nextValue : min, min), max);
   const commitValue = (rawValue: string) => {
-    const parsedValue = Number(rawValue.replace(",", "."));
-    const nextValue = clamp(parsedValue);
+    const parsedValue = parseNumericInput(rawValue);
+    const nextValue = clampNumber(parsedValue ?? min, min, max);
     setDraftValue(String(nextValue));
     onChange(nextValue);
   };
@@ -195,8 +190,8 @@ function NumberField({
 
             if (nextValue === "") return;
 
-            const parsedValue = Number(nextValue.replace(",", "."));
-            if (Number.isFinite(parsedValue) && parsedValue >= min && parsedValue <= max) {
+            const parsedValue = parseNumericInput(nextValue);
+            if (parsedValue !== null && parsedValue >= min && parsedValue <= max) {
               onChange(parsedValue);
             }
           }}
@@ -211,6 +206,7 @@ function NumberField({
         <span className="economy-input-suffix border-l px-4 py-3">{suffix}</span>
       </div>
       <span className="text-xs font-medium leading-5 text-graphite/65">{helper}</span>
+      {warning ? <span className="text-xs font-semibold leading-5 text-brass">{warning}</span> : null}
     </label>
   );
 }

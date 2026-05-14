@@ -21,7 +21,7 @@ const fallbackMerchants: MerchantOption[] = [
 export function Topbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { role, setRole, merchantId, setMerchantId } = useRole();
+  const { role, setRole, merchantId, setMerchantContext } = useRole();
   const [merchants, setMerchants] = useState<MerchantOption[]>(fallbackMerchants);
   const [merchantCatalogVersion, setMerchantCatalogVersion] = useState(0);
   const merchantIdRef = useRef(merchantId);
@@ -44,8 +44,12 @@ export function Topbar() {
         const nextMerchants = payload.map((merchant) => ({ id: merchant.id, label: merchant.displayName }));
         setMerchants(nextMerchants);
 
-        if (!nextMerchants.some((merchant) => merchant.id === merchantId)) {
-          setMerchantId(nextMerchants[0]?.id ?? defaultMerchantId);
+        const currentMerchant = nextMerchants.find((merchant) => merchant.id === merchantId);
+        if (currentMerchant) {
+          setMerchantContext({ id: currentMerchant.id, name: currentMerchant.label });
+        } else {
+          const fallbackMerchant = nextMerchants[0] ?? fallbackMerchants[0];
+          setMerchantContext({ id: fallbackMerchant?.id ?? defaultMerchantId, name: fallbackMerchant?.label ?? "Орбита" });
         }
       } catch {
         setMerchants(fallbackMerchants);
@@ -57,7 +61,7 @@ export function Topbar() {
     return () => {
       active = false;
     };
-  }, [merchantId, merchantCatalogVersion, setMerchantId]);
+  }, [merchantId, merchantCatalogVersion, setMerchantContext]);
 
   useEffect(() => {
     const refreshMerchants = (event: Event) => {
@@ -87,19 +91,27 @@ export function Topbar() {
     if (pathname !== "/merchant") return;
 
     const urlMerchantId = new URLSearchParams(window.location.search).get("merchantId");
+    const selectedMerchant = merchants.find((merchant) => merchant.id === merchantId) ?? merchants[0] ?? fallbackMerchants[0];
     if (urlMerchantId) {
-      if (urlMerchantId !== merchantIdRef.current) {
-        setMerchantId(urlMerchantId);
+      const urlMerchant = merchants.find((merchant) => merchant.id === urlMerchantId);
+      if (urlMerchant) {
+        if (urlMerchant.id !== merchantIdRef.current) {
+          setMerchantContext({ id: urlMerchant.id, name: urlMerchant.label });
+        }
+        return;
       }
+
+      router.replace(`/merchant?merchantId=${encodeURIComponent(selectedMerchant?.id ?? defaultMerchantId)}`);
       return;
     }
 
-    router.replace(`/merchant?merchantId=${encodeURIComponent(merchantIdRef.current)}`);
-  }, [pathname, router, setMerchantId]);
+    router.replace(`/merchant?merchantId=${encodeURIComponent(selectedMerchant?.id ?? defaultMerchantId)}`);
+  }, [merchantId, merchants, pathname, router, setMerchantContext]);
 
   const selectedMerchantId = merchants.some((merchant) => merchant.id === merchantId) ? merchantId : merchants[0]?.id ?? defaultMerchantId;
   const handleMerchantChange = (nextMerchantId: string) => {
-    setMerchantId(nextMerchantId);
+    const nextMerchant = merchants.find((merchant) => merchant.id === nextMerchantId);
+    setMerchantContext({ id: nextMerchantId, name: nextMerchant?.label ?? nextMerchantId });
 
     if (pathname === "/merchant") {
       router.push(`/merchant?merchantId=${encodeURIComponent(nextMerchantId)}`);

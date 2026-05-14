@@ -13,7 +13,7 @@ type MerchantOption = {
 
 export function MerchantAdminClient({ merchants }: { merchants: MerchantOption[] }) {
   const router = useRouter();
-  const { role, setMerchantId } = useRole();
+  const { role, setMerchantContext } = useRole();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const createDisabledReason = disabledActionReason(role, "merchant:create");
@@ -59,7 +59,7 @@ export function MerchantAdminClient({ merchants }: { merchants: MerchantOption[]
       form.reset();
       setMessage({ type: "success", text: `Мерчант “${payload.displayName}” создан. Балансы, demo-user, событие и уведомление добавлены.` });
       if (typeof payload.id === "string") {
-        setMerchantId(payload.id);
+        setMerchantContext({ id: payload.id, name: typeof payload.displayName === "string" ? payload.displayName : displayName });
       }
       window.dispatchEvent(
         new CustomEvent("demo-merchants-updated", {

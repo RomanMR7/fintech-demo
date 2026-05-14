@@ -6,13 +6,21 @@ export function formatMoney(value: number | string, currency: string = "RUB") {
   const amount = typeof value === "string" ? Number(value) : value;
   const safeAmount = Number.isFinite(amount) ? amount : 0;
   const normalizedCurrency = normalizeCurrency(currency);
-  const fractionDigits = normalizedCurrency === "USD" ? 2 : 0;
-  const formatted = new Intl.NumberFormat("ru-RU", {
-    minimumFractionDigits: fractionDigits,
-    maximumFractionDigits: fractionDigits
-  }).format(safeAmount);
+  if (normalizedCurrency === "USD") {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(safeAmount);
+  }
 
-  return `${formatted} ${normalizedCurrency}`;
+  return new Intl.NumberFormat("ru-RU", {
+    style: "currency",
+    currency: "RUB",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(safeAmount);
 }
 
 export function formatNumber(value: number | string) {
@@ -32,12 +40,15 @@ export function formatRate(value: number | string) {
 
 export function formatDate(value: Date | string | null | undefined) {
   if (!value) return "не задано";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "не задано";
+
   return new Intl.DateTimeFormat("ru-RU", {
     day: "2-digit",
     month: "short",
     hour: "2-digit",
     minute: "2-digit"
-  }).format(new Date(value));
+  }).format(date);
 }
 
 export function toNumber(value: unknown) {
