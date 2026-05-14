@@ -4,11 +4,15 @@ export type MoneyTotals = Record<SupportedCurrency, number>;
 
 export function formatMoney(value: number | string, currency: string = "RUB") {
   const amount = typeof value === "string" ? Number(value) : value;
-  return new Intl.NumberFormat("ru-RU", {
-    style: "currency",
-    currency: normalizeCurrency(currency),
-    maximumFractionDigits: 0
-  }).format(Number.isFinite(amount) ? amount : 0);
+  const safeAmount = Number.isFinite(amount) ? amount : 0;
+  const normalizedCurrency = normalizeCurrency(currency);
+  const fractionDigits = normalizedCurrency === "USD" ? 2 : 0;
+  const formatted = new Intl.NumberFormat("ru-RU", {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits
+  }).format(safeAmount);
+
+  return normalizedCurrency === "USD" ? `${formatted} USD` : `${formatted} ₽`;
 }
 
 export function formatNumber(value: number | string) {
