@@ -19,14 +19,14 @@ type NavSection = {
   items: NavItem[];
 };
 
-const allRoles: DemoRole[] = ["PLATFORM_ADMIN", "MERCHANT", "OPERATOR", "FINANCE_MANAGER", "SUPPORT"];
+const allRoles: DemoRole[] = ["PLATFORM_ADMIN", "MERCHANT", "OPERATOR", "FINANCE_MANAGER", "SUPPORT", "VIEWER"];
 const opsRoles: DemoRole[] = ["PLATFORM_ADMIN", "OPERATOR", "SUPPORT"];
 const financeRoles: DemoRole[] = ["PLATFORM_ADMIN", "FINANCE_MANAGER"];
 const merchantRoles: DemoRole[] = ["PLATFORM_ADMIN", "MERCHANT"];
 
 export const navigationSections: NavSection[] = [
   {
-    title: "Overview",
+    title: "Обзор",
     items: [
       { href: "/dashboard", label: "Главный dashboard", description: "Деньги, риски, API и последние события.", roles: allRoles },
       { href: "/commercial", label: "Экономика продукта", description: "Юнит-экономика, комиссии и потенциал выручки.", roles: financeRoles },
@@ -36,7 +36,7 @@ export const navigationSections: NavSection[] = [
     ]
   },
   {
-    title: "Money movement",
+    title: "Движение денег",
     items: [
       { href: "/orders", label: "Ордера", description: "Платежные ордера, статусы, провайдеры и risk score.", roles: allRoles },
       { href: "/payouts", label: "Выплаты", description: "Заявки на вывод, подтверждения и источники баланса.", roles: ["PLATFORM_ADMIN", "MERCHANT", "FINANCE_MANAGER", "OPERATOR"] },
@@ -45,7 +45,7 @@ export const navigationSections: NavSection[] = [
     ]
   },
   {
-    title: "Risk & compliance",
+    title: "Риск и контроль",
     items: [
       { href: "/appeals", label: "Апелляции / disputes", description: "Споры, комментарии, решения и SLA.", roles: opsRoles },
       { href: "/commissions", label: "Комиссии", description: "Модель дохода платформы и удержания.", roles: financeRoles },
@@ -55,7 +55,7 @@ export const navigationSections: NavSection[] = [
     ]
   },
   {
-    title: "API & webhooks",
+    title: "API и webhooks",
     items: [
       { href: "/api-demo", label: "API demo", description: "Примеры создания ордера, webhook и ответа API.", roles: allRoles },
       { href: "/integrations", label: "Интеграции", description: "Провайдеры, доступность, комиссии и тестовый режим.", roles: ["PLATFORM_ADMIN", "OPERATOR", "MERCHANT"] },
@@ -64,7 +64,7 @@ export const navigationSections: NavSection[] = [
     ]
   },
   {
-    title: "Reports & learning",
+    title: "Отчеты и обучение",
     items: [
       { href: "/education/how-it-works", label: "Как работает система", description: "Простое объяснение логики продукта.", roles: allRoles },
       { href: "/education/roles", label: "Роли и ответственность", description: "Кто что видит и за что отвечает.", roles: allRoles },
@@ -91,10 +91,18 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function MiniNavLink({ item, active, onClick }: { item: NavItem; active: boolean; onClick?: () => void }) {
+function getNavigationHref(item: NavItem, merchantId: string) {
+  if (item.href === "/merchant") {
+    return `/merchant?merchantId=${encodeURIComponent(merchantId)}`;
+  }
+
+  return item.href;
+}
+
+function MiniNavLink({ item, active, href, onClick }: { item: NavItem; active: boolean; href?: string; onClick?: () => void }) {
   return (
     <Link
-      href={item.href}
+      href={href ?? item.href}
       onClick={onClick}
       title={item.description}
       className={`group grid min-h-10 grid-cols-[1rem_minmax(0,1fr)] items-center gap-2.5 rounded-[0.95rem] px-2.5 text-sm transition ${
@@ -109,7 +117,7 @@ function MiniNavLink({ item, active, onClick }: { item: NavItem; active: boolean
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { role, currentRoleLabel } = useRole();
+  const { role, currentRoleLabel, merchantId } = useRole();
   const sections = useMemo(() => getVisibleNavigationSections(role), [role]);
 
   return (
@@ -134,7 +142,7 @@ export function Sidebar() {
             <p className="px-2.5 text-[0.66rem] font-bold uppercase tracking-[0.12em] text-graphite/42">{section.title}</p>
             <div className="mt-1.5 space-y-1">
               {section.items.map((item) => (
-                <MiniNavLink item={item} active={isActivePath(pathname, item.href)} key={item.href} />
+                <MiniNavLink item={item} href={getNavigationHref(item, merchantId)} active={isActivePath(pathname, item.href)} key={item.href} />
               ))}
             </div>
           </div>
@@ -153,7 +161,7 @@ export function Sidebar() {
 
 export function MobileNavigation() {
   const pathname = usePathname();
-  const { role, currentRoleLabel } = useRole();
+  const { role, currentRoleLabel, merchantId } = useRole();
   const [isOpen, setIsOpen] = useState(false);
   const sections = useMemo(() => getVisibleNavigationSections(role), [role]);
   const quickItems = useMemo(() => sections.flatMap((section) => section.items).slice(0, 6), [sections]);
@@ -191,7 +199,7 @@ export function MobileNavigation() {
                   <p className="px-2 text-[0.66rem] font-bold uppercase tracking-[0.12em] text-graphite/45">{section.title}</p>
                   <div className="mt-2 grid gap-1.5">
                     {section.items.map((item) => (
-                      <MiniNavLink item={item} active={isActivePath(pathname, item.href)} key={item.href} onClick={() => setIsOpen(false)} />
+                      <MiniNavLink item={item} href={getNavigationHref(item, merchantId)} active={isActivePath(pathname, item.href)} key={item.href} onClick={() => setIsOpen(false)} />
                     ))}
                   </div>
                 </div>
@@ -211,7 +219,7 @@ export function MobileNavigation() {
         {quickItems.map((item) => {
           const active = isActivePath(pathname, item.href);
           return (
-            <Link href={item.href} key={item.href} className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold shadow-insetSoft transition ${active ? "bg-ink text-white" : "border border-ink/10 bg-white/70 text-graphite hover:bg-white"}`}>
+            <Link href={getNavigationHref(item, merchantId)} key={item.href} className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold shadow-insetSoft transition ${active ? "bg-ink text-white" : "border border-ink/10 bg-white/70 text-graphite hover:bg-white"}`}>
               {item.label}
             </Link>
           );

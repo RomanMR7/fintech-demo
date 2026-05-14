@@ -6,6 +6,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRole } from "@/components/role-provider";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDate, formatMoney } from "@/lib/format";
+import { disabledActionReason } from "@/lib/rbac";
 import { type UiOrder } from "@/lib/ui-types";
 
 const nextStatus: Record<string, string> = {
@@ -38,10 +39,10 @@ function riskScore(order: UiOrder) {
 function RiskBadge({ score }: { score: number }) {
   const meta =
     score >= 80
-      ? { label: "High", className: "border-red-500/20 bg-red-500/10 text-red-700" }
+      ? { label: "Высокий", className: "border-red-500/20 bg-red-500/10 text-red-700" }
       : score >= 50
-        ? { label: "Review", className: "border-brass/25 bg-brass/10 text-brass" }
-        : { label: "Low", className: "border-jade/20 bg-jade/10 text-jade" };
+        ? { label: "Проверка", className: "border-brass/25 bg-brass/10 text-brass" }
+        : { label: "Низкий", className: "border-jade/20 bg-jade/10 text-jade" };
 
   return (
     <span className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-semibold ${meta.className}`} title={`Risk score: ${score}`}>
@@ -67,6 +68,9 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
   const [page, setPage] = useState(1);
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const createDisabledReason = disabledActionReason(role, "order:create");
+  const updateDisabledReason = disabledActionReason(role, "order:update");
+  const disputeDisabledReason = disabledActionReason(role, "order:dispute");
 
   const visibleOrders = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -114,27 +118,28 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
       <div className="grid gap-4">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
           <div>
-            <p className="eyebrow">Payments table</p>
+            <p className="eyebrow">Таблица платежей</p>
             <h2 className="section-title mt-2 text-ink">Ордера и маршрутизация</h2>
             <p className="copy mt-2 max-w-3xl">
               Суммы показываются в валюте самой операции. Фильтр валюты не пересчитывает деньги, а просто показывает RUB или USD ордера отдельно.
             </p>
           </div>
           <button
-            disabled={isPending}
+            disabled={isPending || Boolean(createDisabledReason)}
+            title={createDisabledReason ?? undefined}
             onClick={() =>
               mutate(async () => {
                 await ensureOk(
                   await fetch("/api/orders", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ merchantId, currency: newOrderCurrency })
+                    body: JSON.stringify({ merchantId, currency: newOrderCurrency, actorRole: role })
                   }),
                   "Не удалось создать ордер."
                 );
               })
             }
-            className="btn btn-primary focus-ring disabled:opacity-50"
+            className="btn btn-primary focus-ring disabled:cursor-not-allowed disabled:opacity-50"
           >
             Создать ордер
           </button>
@@ -227,7 +232,8 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
                 </Link>
                 {nextStatus[order.status] ? (
                   <button
-                    disabled={isPending}
+                    disabled={isPending || Boolean(updateDisabledReason)}
+                    title={updateDisabledReason ?? undefined}
                     onClick={() =>
                       mutate(async () => {
                         await ensureOk(
@@ -247,7 +253,8 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
                 ) : null}
                 {["WAITING_PAYMENT", "PAID", "CONFIRMED"].includes(order.status) ? (
                   <button
-                    disabled={isPending}
+                    disabled={isPending || Boolean(disputeDisabledReason)}
+                    title={disputeDisabledReason ?? undefined}
                     onClick={() =>
                       mutate(async () => {
                         await ensureOk(
@@ -275,15 +282,15 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
         <table className="enterprise-table min-w-[1120px] text-left text-sm">
           <thead>
             <tr>
-              <th className="px-4 py-2">Order ID</th>
-              <th className="px-4 py-2">Merchant</th>
-              <th className="px-4 py-2 text-right">Amount</th>
-              <th className="px-4 py-2 text-right">Currency</th>
-              <th className="px-4 py-2">Method</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Risk</th>
-              <th className="px-4 py-2">Created</th>
-              <th className="px-4 py-2">Action</th>
+              <th className="px-4 py-2">ID ордера</th>
+              <th className="px-4 py-2">Мерчант</th>
+              <th className="px-4 py-2 text-right">Сумма</th>
+              <th className="px-4 py-2 text-right">Валюта</th>
+              <th className="px-4 py-2">Метод</th>
+              <th className="px-4 py-2">Статус</th>
+              <th className="px-4 py-2">Риск</th>
+              <th className="px-4 py-2">Создан</th>
+              <th className="px-4 py-2">Действия</th>
             </tr>
           </thead>
           <tbody>
@@ -312,7 +319,8 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
                     </Link>
                     {nextStatus[order.status] ? (
                       <button
-                        disabled={isPending}
+                        disabled={isPending || Boolean(updateDisabledReason)}
+                        title={updateDisabledReason ?? undefined}
                         onClick={() =>
                           mutate(async () => {
                             await ensureOk(
@@ -327,12 +335,13 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
                         }
                         className="rounded-full bg-jade px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-moss disabled:opacity-50"
                       >
-                        Next
+                        Следующий
                       </button>
                     ) : null}
                     {["WAITING_PAYMENT", "PAID", "CONFIRMED"].includes(order.status) ? (
                       <button
-                        disabled={isPending}
+                        disabled={isPending || Boolean(disputeDisabledReason)}
+                        title={disputeDisabledReason ?? undefined}
                         onClick={() =>
                           mutate(async () => {
                             await ensureOk(
@@ -347,7 +356,7 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
                         }
                         className="rounded-full bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-200 disabled:opacity-50"
                       >
-                        Dispute
+                        В спор
                       </button>
                     ) : null}
                   </div>

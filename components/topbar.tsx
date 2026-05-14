@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { GlobalSearch } from "@/components/global-search";
 import { useRole } from "@/components/role-provider";
@@ -18,8 +19,11 @@ const fallbackMerchants: MerchantOption[] = [
 ];
 
 export function Topbar() {
+  const pathname = usePathname();
+  const router = useRouter();
   const { role, setRole, merchantId, setMerchantId } = useRole();
   const [merchants, setMerchants] = useState<MerchantOption[]>(fallbackMerchants);
+  const [merchantCatalogVersion, setMerchantCatalogVersion] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -48,7 +52,39 @@ export function Topbar() {
     return () => {
       active = false;
     };
-  }, [merchantId, setMerchantId]);
+  }, [merchantId, merchantCatalogVersion, setMerchantId]);
+
+  useEffect(() => {
+    const refreshMerchants = () => setMerchantCatalogVersion((version) => version + 1);
+    window.addEventListener("demo-merchants-updated", refreshMerchants);
+
+    return () => {
+      window.removeEventListener("demo-merchants-updated", refreshMerchants);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (pathname !== "/merchant") return;
+
+    const urlMerchantId = new URLSearchParams(window.location.search).get("merchantId");
+    if (urlMerchantId) {
+      if (urlMerchantId !== merchantId) {
+        setMerchantId(urlMerchantId);
+      }
+      return;
+    }
+
+    router.replace(`/merchant?merchantId=${encodeURIComponent(merchantId)}`);
+  }, [merchantId, pathname, router, setMerchantId]);
+
+  const selectedMerchantId = merchants.some((merchant) => merchant.id === merchantId) ? merchantId : merchants[0]?.id ?? defaultMerchantId;
+  const handleMerchantChange = (nextMerchantId: string) => {
+    setMerchantId(nextMerchantId);
+
+    if (pathname === "/merchant") {
+      router.push(`/merchant?merchantId=${encodeURIComponent(nextMerchantId)}`);
+    }
+  };
 
   return (
     <header className="card grid min-h-[4.75rem] gap-3 rounded-[var(--radius-xl)] p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
@@ -73,8 +109,8 @@ export function Topbar() {
           ))}
         </select>
         <select
-          value={role === "MERCHANT" ? merchantId : merchants[0]?.id ?? defaultMerchantId}
-          onChange={(event) => setMerchantId(event.target.value)}
+          value={selectedMerchantId}
+          onChange={(event) => handleMerchantChange(event.target.value)}
           className="field focus-ring min-w-0 xl:w-[170px]"
           aria-label="Текущий мерчант"
         >

@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDate, formatMoney, formatNumber, formatRate, toNumber, totalByCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { getPermissionMatrix, permissionLabels, type PermissionAction } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,8 @@ export default async function AdminPage() {
     (item) => item.currency
   );
   const openDisputes = appeals.filter((appeal) => ["NEW", "OPEN"].includes(appeal.status)).length + orders.filter((order) => order.status === "DISPUTED").length;
+  const permissionMatrix = getPermissionMatrix();
+  const permissionActions = Object.keys(permissionLabels) as PermissionAction[];
 
   return (
     <div className="page-stack">
@@ -63,6 +66,48 @@ export default async function AdminPage() {
       </section>
 
       <MerchantAdminClient merchants={merchants.map((merchant) => ({ id: merchant.id, displayName: merchant.displayName, name: merchant.name }))} />
+
+      <section className="section-card">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="eyebrow">RBAC</p>
+            <h2 className="section-title mt-2 text-ink">Матрица прав</h2>
+            <p className="copy mt-2 max-w-3xl">Показывает, какие роли могут выполнять критичные действия. В demo UI недоступные действия блокируются и объясняют причину.</p>
+          </div>
+          <span className="pill">Sandbox access control</span>
+        </div>
+        <div className="mt-5 overflow-x-auto">
+          <table className="enterprise-table min-w-[1180px] text-left">
+            <thead>
+              <tr>
+                <th className="px-4 py-2">Роль</th>
+                {permissionActions.map((action) => (
+                  <th key={action} className="px-4 py-2 text-center" title={permissionLabels[action]}>
+                    {permissionLabels[action]}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {permissionMatrix.map((row) => (
+                <tr key={row.role}>
+                  <td className="px-4 py-3 font-mono font-semibold text-ink">{row.role}</td>
+                  {permissionActions.map((action) => {
+                    const allowed = row.actions.includes(action);
+                    return (
+                      <td key={action} className="px-4 py-3 text-center">
+                        <span className={`inline-flex h-7 min-w-7 items-center justify-center rounded-full border px-2 text-xs font-bold ${allowed ? "border-jade/20 bg-jade/10 text-jade" : "border-ink/10 bg-ink/[0.03] text-graphite/35"}`}>
+                          {allowed ? "Да" : "Нет"}
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <section className="section-card">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -124,7 +169,7 @@ export default async function AdminPage() {
                     </td>
                     <td className="px-4 py-3">{formatDate(lastActivity)}</td>
                     <td className="px-4 py-3">
-                      <Link href="/merchant" className="rounded-full border border-ink/10 bg-white/60 px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-white">
+                      <Link href={`/merchant?merchantId=${encodeURIComponent(merchant.id)}`} className="rounded-full border border-ink/10 bg-white/60 px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-white">
                         Открыть
                       </Link>
                     </td>

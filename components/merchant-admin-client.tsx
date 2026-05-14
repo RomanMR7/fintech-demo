@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { useRole } from "@/components/role-provider";
+import { can, disabledActionReason } from "@/lib/rbac";
 
 type MerchantOption = {
   id: string;
@@ -11,8 +13,10 @@ type MerchantOption = {
 
 export function MerchantAdminClient({ merchants }: { merchants: MerchantOption[] }) {
   const router = useRouter();
+  const { role, setMerchantId } = useRole();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const createDisabledReason = disabledActionReason(role, "merchant:create");
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -21,19 +25,31 @@ export function MerchantAdminClient({ merchants }: { merchants: MerchantOption[]
 
     const form = event.currentTarget;
     const formData = new FormData(form);
+    const displayName = String(formData.get("displayName") ?? "").trim();
+    const legalName = String(formData.get("legalName") ?? "").trim();
+    const confirmed = window.confirm(
+      `Подтвердите создание sandbox-мерчанта:\n\nПубличное название: ${displayName}\nЮридическое название: ${legalName || `ООО ${displayName}`}\nСтартовый баланс: ${formData.get("initialBalance")} ${formData.get("initialCurrency")}\nTrust limit: ${formData.get("trustLimit")} RUB\n\nДействие будет записано в audit log.`
+    );
+
+    if (!confirmed) {
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const response = await fetch("/api/merchants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          actorRole: role,
           displayName: formData.get("displayName"),
           legalName: formData.get("legalName"),
+          reason: formData.get("reason"),
           trustLimit: formData.get("trustLimit"),
           initialBalance: formData.get("initialBalance"),
           initialCurrency: formData.get("initialCurrency"),
-          payinFeeRate: Number(formData.get("payinFeeRate") || 2.5) / 100,
-          payoutFeeRate: Number(formData.get("payoutFeeRate") || 1.5) / 100
+          payinFeeRatePercent: formData.get("payinFeeRate"),
+          payoutFeeRatePercent: formData.get("payoutFeeRate")
         })
       });
 
@@ -42,6 +58,10 @@ export function MerchantAdminClient({ merchants }: { merchants: MerchantOption[]
 
       form.reset();
       setMessage({ type: "success", text: `Мерчант “${payload.displayName}” создан. Балансы, demo-user, событие и уведомление добавлены.` });
+      if (typeof payload.id === "string") {
+        setMerchantId(payload.id);
+      }
+      window.dispatchEvent(new CustomEvent("demo-merchants-updated"));
       router.refresh();
     } catch (error) {
       setMessage({ type: "error", text: error instanceof Error ? error.message : "Не удалось создать мерчанта." });
@@ -78,6 +98,10 @@ export function MerchantAdminClient({ merchants }: { merchants: MerchantOption[]
           Юридическое название
           <input name="legalName" placeholder="ООО Орбита Маркет" className="field focus-ring font-normal" />
         </label>
+        <label className="grid gap-1 text-sm font-semibold text-ink md:col-span-2">
+          Причина создания
+          <input name="reason" required placeholder="Подключение нового sandbox-мерчанта для демо-показа" className="field focus-ring font-normal" />
+        </label>
         <label className="grid gap-1 text-sm font-semibold text-ink">
           Стартовый доступный баланс
           <input name="initialBalance" type="number" min="0" step="1000" defaultValue="250000" className="field focus-ring font-normal" />
@@ -101,7 +125,12 @@ export function MerchantAdminClient({ merchants }: { merchants: MerchantOption[]
           Комиссия выплат, %
           <input name="payoutFeeRate" type="number" min="0" step="0.1" defaultValue="1.5" className="field focus-ring font-normal" />
         </label>
-        <button disabled={isSubmitting} className="btn btn-primary focus-ring disabled:opacity-50 md:col-span-2">
+        {!can(role, "merchant:create") ? (
+          <div className="rounded-2xl border border-brass/25 bg-brass/10 px-4 py-3 text-sm font-semibold text-brass md:col-span-2">
+            {createDisabledReason}
+          </div>
+        ) : null}
+        <button disabled={isSubmitting || Boolean(createDisabledReason)} title={createDisabledReason ?? undefined} className="btn btn-primary focus-ring disabled:cursor-not-allowed disabled:opacity-50 md:col-span-2">
           {isSubmitting ? "Создаю мерчанта..." : "Создать мерчанта"}
         </button>
       </form>

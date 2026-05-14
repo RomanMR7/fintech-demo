@@ -18,6 +18,7 @@ import {
   type OrderStatusValue
 } from "@/lib/constants";
 import { demoAmountForCurrency, normalizeCurrency, parseCurrency, SUPPORTED_CURRENCIES } from "@/lib/currency";
+import { assertDecimalRate, assertNonNegativeMoney, assertPositiveMoney, calculateCommission } from "@/lib/finance-guards";
 import { prisma } from "@/lib/prisma";
 import { assertOrderTransition, assertPayoutTransition } from "@/lib/state-machines";
 
@@ -151,8 +152,8 @@ export async function createDemoOrder(actorRole: string = UserRole.MERCHANT, opt
   const provider = await prisma.provider.findFirst({ where: { payinAvailable: true, status: { not: ProviderStatus.DISABLED } } });
   if (!merchant) throw new Error("Нет мерчанта для создания ордера.");
 
-  const amount = new Prisma.Decimal(demoAmountForCurrency(currency));
-  const commission = amount.mul(merchant.payinFeeRate);
+  const amount = assertPositiveMoney(demoAmountForCurrency(currency), "orderAmount");
+  const commission = calculateCommission(amount, merchant.payinFeeRate);
   const idSuffix = `${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
 
   return prisma.$transaction(async (db) => {
@@ -384,8 +385,8 @@ export async function createPayoutForMerchant(merchantId = "merchant-orbita", cu
     const merchant = await db.merchant.findUnique({ where: { id: merchantId } });
     if (!merchant) throw new Error("Мерчант не найден.");
 
-    const amount = new Prisma.Decimal(currency === "USD" ? 1000 + Math.floor(Math.random() * 1800) : 85000 + Math.floor(Math.random() * 60000));
-    const payoutCommission = amount.mul(merchant.payoutFeeRate);
+    const amount = assertPositiveMoney(currency === "USD" ? 1000 + Math.floor(Math.random() * 1800) : 85000 + Math.floor(Math.random() * 60000), "payoutAmount");
+    const payoutCommission = calculateCommission(amount, merchant.payoutFeeRate);
     const total = amount.plus(payoutCommission);
 
     await moveBalance(db, {
@@ -435,11 +436,20 @@ export async function createPayoutForMerchant(merchantId = "merchant-orbita", cu
   });
 }
 
-export async function resolvePayout(payoutId: string, status: typeof PayoutStatus.COMPLETED | typeof PayoutStatus.CANCELED) {
+export async function resolvePayout(
+  payoutId: string,
+  status: typeof PayoutStatus.COMPLETED | typeof PayoutStatus.CANCELED,
+  context: { actorRole?: string; actorName?: string; reason?: string } = {}
+) {
   return prisma.$transaction(async (db) => {
     const payout = await db.payout.findUnique({ where: { id: payoutId } });
     if (!payout) throw new Error("Выплата не найдена.");
-    if (payout.status === status) return payout;
+    if (payout.status === status) {
+      throw new Error(`Выплата уже находится в статусе ${status}. Повторное подтверждение или отмена запрещены.`);
+    }
+    if (payout.status === PayoutStatus.COMPLETED || payout.status === PayoutStatus.CANCELED) {
+      throw new Error("Выплата уже закрыта. Повторное финансовое действие запрещено.");
+    }
     assertPayoutTransition(payout.status, status);
 
     const total = new Prisma.Decimal(payout.amount).plus(payout.commission);
@@ -475,13 +485,13 @@ export async function resolvePayout(payoutId: string, status: typeof PayoutStatu
     });
 
     await writeEventAndNotification(db, {
-      actorRole: UserRole.FINANCE_MANAGER,
-      actorName: "Глеб Фомин",
-      type: EventType.STATUS_CHANGED,
+      actorRole: context.actorRole ?? UserRole.FINANCE_MANAGER,
+      actorName: context.actorName ?? "Глеб Фомин",
+      type: status === PayoutStatus.COMPLETED ? EventType.PAYOUT_CONFIRMED : EventType.PAYOUT_CANCELLED,
       entityType: "Payout",
       entityId: payout.id,
       title: status === PayoutStatus.COMPLETED ? "Выплата подтверждена" : "Выплата отменена",
-      description: `Выплата ${payout.id} переведена в статус ${status}.`,
+      description: `Выплата ${payout.id} переведена в статус ${status}. Основание: ${context.reason ?? "sandbox approval"}.`,
       notifyRole: UserRole.MERCHANT,
       merchantId: payout.merchantId,
       notificationType: status === PayoutStatus.COMPLETED ? NotificationType.SUCCESS : NotificationType.WARNING
@@ -709,13 +719,16 @@ export async function createMerchantProfile(params: {
   const slug = toSlug(displayName);
   const merchantId = `merchant-${slug}-${idSuffix}`;
   const legalName = params.legalName?.trim() || `ООО ${displayName}`;
-  const trustLimit = new Prisma.Decimal(params.trustLimit ?? 0);
-  const initialBalance = new Prisma.Decimal(params.initialBalance ?? 0);
-  const initialCurrency = normalizeCurrency(params.initialCurrency);
-  const payinFeeRate = new Prisma.Decimal(params.payinFeeRate ?? 0.025);
-  const payoutFeeRate = new Prisma.Decimal(params.payoutFeeRate ?? 0.015);
+  const trustLimit = assertNonNegativeMoney(params.trustLimit ?? 0, "trustLimit");
+  const initialBalance = assertNonNegativeMoney(params.initialBalance ?? 0, "initialBalance");
+  const initialCurrency = parseCurrency(params.initialCurrency ?? "RUB");
+  const payinFeeRate = assertDecimalRate(params.payinFeeRate ?? 0.025, "payinFeeRate");
+  const payoutFeeRate = assertDecimalRate(params.payoutFeeRate ?? 0.015, "payoutFeeRate");
 
-  if (initialBalance.lessThan(0)) throw new Error("Стартовый баланс не может быть отрицательным.");
+  const duplicate = await prisma.merchant.findFirst({
+    where: { displayName }
+  });
+  if (duplicate) throw new Error("Мерчант с таким публичным названием уже существует.");
 
   return prisma.$transaction(async (db) => {
     const merchant = await db.merchant.create({
@@ -776,7 +789,7 @@ export async function createMerchantProfile(params: {
     await writeEventAndNotification(db, {
       actorRole: UserRole.PLATFORM_ADMIN,
       actorName: "Администратор демо",
-      type: EventType.BALANCE_CHANGED,
+      type: EventType.MERCHANT_CREATED,
       entityType: "Merchant",
       entityId: merchant.id,
       title: "Добавлен новый мерчант",
@@ -797,9 +810,8 @@ export async function adjustMerchantBalance(params: {
   currency?: string;
   description?: string;
 }) {
-  const amount = new Prisma.Decimal(params.amount);
+  const amount = assertPositiveMoney(params.amount, "amount");
   const currency = parseCurrency(params.currency ?? "RUB");
-  if (amount.lessThanOrEqualTo(0)) throw new Error("Сумма должна быть больше нуля.");
 
   const description = params.description?.trim() || "Ручная корректировка баланса";
 
@@ -903,7 +915,7 @@ export async function adjustMerchantBalance(params: {
     await writeEventAndNotification(db, {
       actorRole: UserRole.FINANCE_MANAGER,
       actorName: "Финансовый менеджер демо",
-      type: EventType.BALANCE_CHANGED,
+      type: EventType.BALANCE_ADJUSTED,
       entityType: "Merchant",
       entityId: params.merchantId,
       title: "Ручная корректировка баланса",

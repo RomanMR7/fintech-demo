@@ -3,7 +3,8 @@ export type DemoRole =
   | "MERCHANT"
   | "OPERATOR"
   | "FINANCE_MANAGER"
-  | "SUPPORT";
+  | "SUPPORT"
+  | "VIEWER";
 
 export const roleOptions: Array<{
   value: DemoRole;
@@ -40,6 +41,12 @@ export const roleOptions: Array<{
     label: "Support / апелляции",
     short: "Support",
     description: "Разбирает обращения, комментарии, решения, историю споров и клиентские статусы."
+  },
+  {
+    value: "VIEWER",
+    label: "Наблюдатель",
+    short: "Viewer",
+    description: "Может смотреть demo-данные без критичных действий и финансовых изменений."
   }
 ];
 

@@ -7,20 +7,50 @@ import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDate, formatMoney, toNumber, totalByCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { defaultMerchantId } from "@/lib/roles";
+import { maskSecret } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
-export default async function MerchantCabinetPage() {
-  const merchant = await prisma.merchant.findUnique({
-    where: { id: "merchant-orbita" },
-    include: {
-      orders: { orderBy: { createdAt: "desc" }, take: 6 },
-      payouts: { orderBy: { createdAt: "desc" }, take: 5 },
-      balances: true,
-      requisites: true,
-      notifications: { orderBy: { createdAt: "desc" }, take: 5 }
-    }
+type MerchantCabinetPageProps = {
+  searchParams?: Promise<{ merchantId?: string | string[] }>;
+};
+
+const merchantInclude = {
+  orders: { orderBy: { createdAt: "desc" as const }, take: 6 },
+  payouts: { orderBy: { createdAt: "desc" as const }, take: 5 },
+  balances: true,
+  requisites: true,
+  notifications: { orderBy: { createdAt: "desc" as const }, take: 5 }
+};
+
+function normalizeMerchantId(value: string | string[] | undefined) {
+  if (Array.isArray(value)) return value[0] ?? defaultMerchantId;
+  return value || defaultMerchantId;
+}
+
+export default async function MerchantCabinetPage({ searchParams }: MerchantCabinetPageProps) {
+  const params = searchParams ? await searchParams : {};
+  const requestedMerchantId = normalizeMerchantId(params.merchantId);
+
+  let merchant = await prisma.merchant.findUnique({
+    where: { id: requestedMerchantId },
+    include: merchantInclude
   });
+
+  if (!merchant && requestedMerchantId !== defaultMerchantId) {
+    merchant = await prisma.merchant.findUnique({
+      where: { id: defaultMerchantId },
+      include: merchantInclude
+    });
+  }
+
+  if (!merchant) {
+    merchant = await prisma.merchant.findFirst({
+      orderBy: { displayName: "asc" },
+      include: merchantInclude
+    });
+  }
 
   if (!merchant) return null;
 
@@ -99,7 +129,7 @@ export default async function MerchantCabinetPage() {
         </div>
       </section>
 
-      <MerchantIntegrationPanel apiKey={merchant.apiKey} callbackUrl={merchant.callbackUrl} activeRequisites={activeRequisites} totalRequisites={merchant.requisites.length} />
+      <MerchantIntegrationPanel merchantId={merchant.id} maskedApiKey={maskSecret(merchant.apiKey)} callbackUrl={merchant.callbackUrl} activeRequisites={activeRequisites} totalRequisites={merchant.requisites.length} />
 
       <section className="section-card">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Notifications</p>

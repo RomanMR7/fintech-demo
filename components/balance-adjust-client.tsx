@@ -2,6 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { useRole } from "@/components/role-provider";
+import { can, disabledActionReason } from "@/lib/rbac";
+import { SANDBOX_2FA_CODE } from "@/lib/security";
 
 type MerchantOption = {
   id: string;
@@ -19,8 +22,10 @@ const operations = [
 
 export function BalanceAdjustClient({ merchants }: { merchants: MerchantOption[] }) {
   const router = useRouter();
+  const { role } = useRole();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const disabledReason = disabledActionReason(role, "balance:adjust");
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -29,17 +34,35 @@ export function BalanceAdjustClient({ merchants }: { merchants: MerchantOption[]
 
     const form = event.currentTarget;
     const formData = new FormData(form);
+    const amount = Number(formData.get("amount") ?? 0);
+    const currency = String(formData.get("currency") ?? "RUB");
+
+    if (!can(role, "balance:adjust")) {
+      setMessage({ type: "error", text: disabledReason ?? "Недостаточно прав для корректировки баланса." });
+      setIsSubmitting(false);
+      return;
+    }
+
+    const confirmed = window.confirm("Подтвердите sandbox-корректировку баланса. Действие создаст ledger entry и запись в audit log.");
+    if (!confirmed) {
+      setIsSubmitting(false);
+      return;
+    }
+
+    const code = (currency === "USD" ? amount >= 1000 : amount >= 100000) ? window.prompt(`Крупная корректировка требует sandbox 2FA. Введите ${SANDBOX_2FA_CODE}.`) : "";
 
     try {
       const response = await fetch("/api/balances/adjust", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          actorRole: role,
           merchantId: formData.get("merchantId"),
           operation: formData.get("operation"),
-          amount: formData.get("amount"),
-          currency: formData.get("currency"),
-          description: formData.get("description")
+          amount,
+          currency,
+          description: formData.get("description"),
+          code
         })
       });
 
@@ -103,7 +126,8 @@ export function BalanceAdjustClient({ merchants }: { merchants: MerchantOption[]
           Причина
           <input name="description" required placeholder="Корректировка для демо-показа" className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 font-normal outline-none transition focus:border-jade" />
         </label>
-        <button disabled={isSubmitting || merchants.length === 0} className="focus-ring rounded-2xl bg-jade px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss disabled:opacity-50 md:col-span-2">
+        {!can(role, "balance:adjust") ? <div className="rounded-2xl border border-brass/25 bg-brass/10 px-4 py-3 text-sm font-semibold text-brass md:col-span-2">{disabledReason}</div> : null}
+        <button disabled={isSubmitting || merchants.length === 0 || Boolean(disabledReason)} title={disabledReason ?? undefined} className="focus-ring rounded-2xl bg-jade px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss disabled:cursor-not-allowed disabled:opacity-50 md:col-span-2">
           {isSubmitting ? "Обновляю баланс..." : "Применить корректировку"}
         </button>
       </form>

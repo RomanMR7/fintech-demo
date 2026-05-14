@@ -169,47 +169,55 @@ export default async function DashboardPage() {
     <div className="page-stack">
       <PageHeader
         eyebrow="Общий обзор"
-        title="Главный dashboard"
+        title="Главная панель"
         description="Финансовый control room платежной платформы: где деньги, что в холде, какие операции требуют внимания и как чувствует себя API-контур."
-      />
+      >
+        <div className="flex flex-wrap gap-2">
+          {["24 часа", "7 дней", "30 дней", "Месяц", "Квартал"].map((period, index) => (
+            <span key={period} className={`pill ${index === 1 ? "bg-ink text-white" : "bg-white/60 text-graphite/70"}`}>
+              {period}
+            </span>
+          ))}
+        </div>
+      </PageHeader>
 
       <section className="kpi-grid">
         <FinanceKpiCard
-          label="Available balance"
+          label="Доступный баланс"
           value={<MoneyBreakdown totals={available} />}
           description={`Деньги, которые мерчанты могут использовать для выплат. Управленческий эквивалент: ${availableBase === null ? "курс USD/RUB не задан" : formatMoney(availableBase, "RUB")}.`}
           delta="+12.4%"
           tone="moss"
         />
         <FinanceKpiCard
-          label="On hold"
+          label="Средства в hold"
           value={<MoneyBreakdown totals={frozen} />}
           description={`Средства в заморозке из-за выплат, risk hold или апелляций. Эквивалент: ${frozenBase === null ? "курс USD/RUB не задан" : formatMoney(frozenBase, "RUB")}.`}
           delta={`${formatNumber(openAppeals.length)} disputes`}
           tone="brass"
         />
         <FinanceKpiCard
-          label="Pending payouts"
+          label="Выплаты на подтверждении"
           value={formatNumber(pendingPayouts.length)}
           description="Заявки на вывод, которые ждут подтверждения, проверки или снятия холда."
           delta="SLA 15 мин"
           tone="blue"
         />
         <FinanceKpiCard
-          label="Platform revenue"
+          label="Доход платформы"
           value={<MoneyBreakdown totals={fees} />}
           description={`Комиссионный доход платформы по pay-in и payout операциям. Эквивалент: ${feesBase === null ? "курс USD/RUB не задан" : formatMoney(feesBase, "RUB")}.`}
           delta="+8.1%"
         />
         <FinanceKpiCard
-          label="Success rate"
+          label="Успешность операций"
           value={`${successRate.toFixed(1)}%`}
           description={`${formatNumber(completedOrders.length)} завершенных ордеров из ${formatNumber(orders.length)}. Это главный показатель качества маршрутизации.`}
           delta="conversion"
           tone="moss"
         />
         <FinanceKpiCard
-          label="Risk queue"
+          label="Очередь риска"
           value={formatNumber(riskOrders.length + openAppeals.length)}
           description="Ордера и апелляции, которые требуют внимания operator/support и могут влиять на баланс."
           delta="manual review"
@@ -221,7 +229,7 @@ export default async function DashboardPage() {
         <div className="section-card">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
-              <p className="eyebrow">Payment volume</p>
+              <p className="eyebrow">Оборот платежей</p>
               <h2 className="section-title mt-2 text-ink">Оборот за 7 дней</h2>
               <p className="copy mt-2">
                 График показывает управленческий RUB-эквивалент оборота. Исходные суммы RUB и USD в таблицах не смешиваются и показываются отдельно.
@@ -238,7 +246,7 @@ export default async function DashboardPage() {
         <div className="grid gap-5">
           <div className="section-card">
             <p className="eyebrow">Quality</p>
-            <h2 className="section-title mt-2 text-ink">Success rate</h2>
+            <h2 className="section-title mt-2 text-ink">Успешность операций</h2>
             <SuccessRateChart value={successRate} />
           </div>
           <div className="section-card">
@@ -276,7 +284,7 @@ export default async function DashboardPage() {
 
       <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="section-card">
-          <p className="eyebrow">Risk queue</p>
+          <p className="eyebrow">Очередь риска</p>
           <h2 className="section-title mt-2 text-ink">Что требует внимания</h2>
           <div className="mt-4 grid gap-3">
             {openAppeals.slice(0, 3).map((appeal) => (
@@ -302,12 +310,12 @@ export default async function DashboardPage() {
         </div>
 
         <div className="section-card">
-          <p className="eyebrow">API health</p>
+          <p className="eyebrow">Состояние интеграций</p>
           <h2 className="section-title mt-2 text-ink">Интеграции и webhooks</h2>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <InsightRow label="Provider uptime" value={`${providerHealth.toFixed(1)}%`} hint="Средняя доступность подключенных демо-провайдеров." />
-            <InsightRow label="Webhook events" value={formatNumber(events.filter((event) => event.type.includes("STATUS") || event.type.includes("SCENARIO")).length)} hint="События, которые можно показывать как callback/webhook поток." />
-            <InsightRow label="Pending orders" value={formatNumber(pendingOrders.length)} hint="Операции, которые еще не дошли до финального статуса." />
+            <InsightRow label="Доступность provider" value={`${providerHealth.toFixed(1)}%`} hint="Средняя доступность подключенных демо-провайдеров." />
+            <InsightRow label="Webhook-события" value={formatNumber(events.filter((event) => event.type.includes("STATUS") || event.type.includes("SCENARIO")).length)} hint="События, которые можно показывать как callback/webhook поток." />
+            <InsightRow label="Ордера в процессе" value={formatNumber(pendingOrders.length)} hint="Операции, которые еще не дошли до финального статуса." />
           </div>
           <div className="mt-4 grid gap-3">
             {providers.slice(0, 4).map((provider) => (
@@ -380,8 +388,8 @@ export default async function DashboardPage() {
         items={[
           "Dashboard отвечает на главный вопрос: где деньги, что уже доступно, что заморожено и где платформа зарабатывает комиссию.",
           "RUB и USD показаны как отдельные валюты, чтобы не создавать ложное ощущение, что одна сумма является эквивалентом другой.",
-          "Risk queue показывает операции, которые могут задержать деньги или потребовать ручного решения.",
-          "Live-сценарии нужны для демонстрации инвестору или клиенту: они показывают не макет, а изменение данных, статусов, балансов и событий."
+          "Очередь риска показывает операции, которые могут задержать деньги или потребовать ручного решения.",
+          "Демо-сценарии нужны для демонстрации инвестору или клиенту: они показывают не макет, а изменение данных, статусов, балансов и событий."
         ]}
       />
     </div>

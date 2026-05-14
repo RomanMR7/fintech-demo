@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { createDemoOrder } from "@/lib/domain";
 import { EventType, OrderStatus, UserRole } from "@/lib/constants";
 import { parseCurrency } from "@/lib/currency";
+import { assertPositiveMoney, calculateCommission } from "@/lib/finance-guards";
 import { prisma } from "@/lib/prisma";
+import { can } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,11 @@ export async function GET() {
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   let currency: "RUB" | "USD";
+  const actorRole = String(body.actorRole ?? UserRole.MERCHANT);
+
+  if (!can(actorRole, "order:create")) {
+    return NextResponse.json({ error: "Недостаточно прав для создания ордера." }, { status: 403 });
+  }
 
   try {
     currency = parseCurrency(body.currency ?? "RUB");
@@ -26,7 +33,7 @@ export async function POST(request: Request) {
 
   if (!body.amount || !body.merchantId) {
     try {
-      const order = await createDemoOrder(UserRole.MERCHANT, {
+      const order = await createDemoOrder(actorRole, {
         merchantId: body.merchantId ? String(body.merchantId) : undefined,
         currency
       });
@@ -39,12 +46,14 @@ export async function POST(request: Request) {
   const merchant = await prisma.merchant.findUnique({ where: { id: String(body.merchantId) } });
   if (!merchant) return NextResponse.json({ message: "Мерчант не найден" }, { status: 404 });
 
-  const amount = Number(body.amount);
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return NextResponse.json({ error: "Сумма ордера должна быть положительным числом." }, { status: 422 });
+  let amount;
+  try {
+    amount = assertPositiveMoney(body.amount, "amount");
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Сумма ордера должна быть положительным числом." }, { status: 422 });
   }
 
-  const commission = amount * Number(merchant.payinFeeRate);
+  const commission = calculateCommission(amount, merchant.payinFeeRate);
   const order = await prisma.paymentOrder.create({
     data: {
       externalId: body.externalId ?? `API-${Date.now().toString().slice(-7)}`,
@@ -53,8 +62,8 @@ export async function POST(request: Request) {
       currency,
       status: OrderStatus.CREATED,
       commission,
-      platformFee: amount * 0.006,
-      merchantNet: amount - commission,
+      platformFee: amount.mul("0.006").toDecimalPlaces(2),
+      merchantNet: amount.minus(commission),
       providerName: "Провайдер будет назначен",
       paymentUrl: `https://pay.local/api/${Date.now()}`,
       metadata: JSON.stringify({ source: "api-demo" })
@@ -69,7 +78,7 @@ export async function POST(request: Request) {
       entityType: "PaymentOrder",
       entityId: order.id,
       title: "Ордер создан через API",
-      description: `Создан API-ордер ${order.externalId} на ${amount} ${currency}.`
+      description: `Создан API-ордер ${order.externalId} на ${amount.toString()} ${currency}.`
     }
   });
 
