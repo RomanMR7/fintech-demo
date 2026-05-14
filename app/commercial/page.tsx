@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CommercialCalculatorClient } from "@/components/commercial-calculator-client";
 import { EducationBlock } from "@/components/education-block";
 import { MetricCard } from "@/components/metric-card";
+import { MoneyBreakdown } from "@/components/money-breakdown";
 import { PageHeader } from "@/components/page-header";
 import { convertBreakdownToBase, getFxSnapshot } from "@/lib/fx";
 import { formatMoney, formatMoneyBreakdown, formatNumber, sumMoneyTotals, totalByCurrency } from "@/lib/format";
@@ -40,10 +41,24 @@ export default async function CommercialPage() {
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Оборот приема" value={formatMoneyBreakdown(payinTurnover)} hint={`Эквивалент: ${payinTurnoverBase === null ? "курс не задан" : formatMoney(payinTurnoverBase, "RUB")}.`} accent="moss" />
-        <MetricCard label="Оборот выплат" value={formatMoneyBreakdown(payoutTurnover)} hint={`Эквивалент: ${payoutTurnoverBase === null ? "курс не задан" : formatMoney(payoutTurnoverBase, "RUB")}.`} accent="brass" />
-        <MetricCard label="Комиссии в демо" value={formatMoneyBreakdown(grossFees)} hint={`Эквивалент: ${grossFeesBase === null ? "курс не задан" : formatMoney(grossFeesBase, "RUB")}.`} />
-        <MetricCard label="Активные риски" value={formatNumber(activeAppeals)} hint={`Холды: ${formatMoneyBreakdown(frozen)}`} accent="red" />
+        <MetricCard
+          label="Оборот приема"
+          value={<MoneyBreakdown totals={payinTurnover} />}
+          hint={`Исходные валюты операций. Управленческий эквивалент в RUB: ${payinTurnoverBase === null ? "курс не задан" : formatMoney(payinTurnoverBase, "RUB")}.`}
+          accent="moss"
+        />
+        <MetricCard
+          label="Оборот выплат"
+          value={<MoneyBreakdown totals={payoutTurnover} />}
+          hint={`Исходные валюты выплат. Управленческий эквивалент в RUB: ${payoutTurnoverBase === null ? "курс не задан" : formatMoney(payoutTurnoverBase, "RUB")}.`}
+          accent="brass"
+        />
+        <MetricCard
+          label="Комиссии в демо"
+          value={<MoneyBreakdown totals={grossFees} />}
+          hint={`Комиссии по валютам операций. Управленческий эквивалент в RUB: ${grossFeesBase === null ? "курс не задан" : formatMoney(grossFeesBase, "RUB")}.`}
+        />
+        <MetricCard label="Активные риски" value={formatNumber(activeAppeals)} hint={`Холды по исходным валютам: ${formatMoneyBreakdown(frozen)}`} accent="red" />
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[1fr_0.95fr]">

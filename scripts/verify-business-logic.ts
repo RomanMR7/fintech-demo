@@ -26,7 +26,7 @@ assert.equal(convertBreakdownToBase({ RUB: 1000, USD: 0 }, { usdRubRate: null })
 assert.equal(convertBreakdownToBase({ RUB: 1000, USD: 10 }, { usdRubRate: null }), null);
 assert.equal(formatMoney(1221.6, "USD"), "1 221,60 USD");
 assert.equal(formatMoney(1221.6, "RUB"), "1 222 ₽");
-assert.equal(formatMoneyBreakdown({ RUB: 1000, USD: 12.5 }), "1 000 ₽ / 12,50 USD");
+assert.equal(formatMoneyBreakdown({ RUB: 1000, USD: 12.5 }), "RUB: 1 000 ₽ · USD: 12,50 USD");
 
 assert.equal(canChangeOrderStatus(OrderStatus.CREATED, OrderStatus.WAITING_PAYMENT), true);
 assert.equal(canChangeOrderStatus(OrderStatus.CREATED, OrderStatus.COMPLETED), false);

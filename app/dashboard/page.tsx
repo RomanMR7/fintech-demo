@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { EducationBlock } from "@/components/education-block";
 import { MetricCard } from "@/components/metric-card";
+import { MoneyBreakdown } from "@/components/money-breakdown";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { convertBreakdownToBase, getFxSnapshot } from "@/lib/fx";
@@ -47,9 +48,23 @@ export default async function DashboardPage() {
         <MetricCard label="Успешные" value={formatNumber(orders.filter((order) => order.status === "COMPLETED").length)} hint="Операции, которые уже обновили баланс." accent="moss" />
         <MetricCard label="В ожидании" value={formatNumber(orders.filter((order) => ["CREATED", "WAITING_PAYMENT", "PAID", "CONFIRMED"].includes(order.status)).length)} hint="Очередь операционной обработки." accent="brass" />
         <MetricCard label="Споры" value={formatNumber(orders.filter((order) => order.status === "DISPUTED").length + appeals.filter((appeal) => ["NEW", "OPEN"].includes(appeal.status)).length)} hint="Операции и апелляции, где есть риск." accent="red" />
-        <MetricCard label="Оборот" value={formatMoneyBreakdown(turnover)} hint={`Эквивалент: ${turnoverBase === null ? "курс не задан" : formatMoney(turnoverBase, "RUB")}. ${fxHint}`} />
-        <MetricCard label="Доступно" value={formatMoneyBreakdown(available)} hint={`Эквивалент: ${availableBase === null ? "курс не задан" : formatMoney(availableBase, "RUB")}.`} accent="moss" />
-        <MetricCard label="Заморожено" value={formatMoneyBreakdown(frozen)} hint={`Эквивалент: ${frozenBase === null ? "курс не задан" : formatMoney(frozenBase, "RUB")}.`} accent="brass" />
+        <MetricCard
+          label="Оборот по валютам"
+          value={<MoneyBreakdown totals={turnover} />}
+          hint={`Выше исходные суммы, не конвертация. Управленческий эквивалент в RUB: ${turnoverBase === null ? "курс не задан" : formatMoney(turnoverBase, "RUB")}. ${fxHint}`}
+        />
+        <MetricCard
+          label="Доступно по валютам"
+          value={<MoneyBreakdown totals={available} />}
+          hint={`Выше отдельные балансы RUB и USD. Управленческий эквивалент в RUB: ${availableBase === null ? "курс не задан" : formatMoney(availableBase, "RUB")}.`}
+          accent="moss"
+        />
+        <MetricCard
+          label="Заморожено по валютам"
+          value={<MoneyBreakdown totals={frozen} />}
+          hint={`Выше отдельные холды RUB и USD. Управленческий эквивалент в RUB: ${frozenBase === null ? "курс не задан" : formatMoney(frozenBase, "RUB")}.`}
+          accent="brass"
+        />
         <MetricCard label="Апелляции" value={formatNumber(appeals.length)} hint="Все обращения support-команды." accent="red" />
       </section>
 

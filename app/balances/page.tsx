@@ -1,6 +1,7 @@
 import { EducationBlock } from "@/components/education-block";
 import { BalanceAdjustClient } from "@/components/balance-adjust-client";
 import { MetricCard } from "@/components/metric-card";
+import { MoneyBreakdown } from "@/components/money-breakdown";
 import { PageHeader } from "@/components/page-header";
 import { convertBreakdownToBase, getFxSnapshot } from "@/lib/fx";
 import { formatDate, formatMoney, formatMoneyBreakdown, formatRate, toNumber, totalByCurrency } from "@/lib/format";
@@ -31,9 +32,23 @@ export default async function BalancesPage() {
         description="Баланс показывает, какие средства доступны мерчанту, какие заморожены по выплатам/спорам и сколько удержано комиссий."
       />
       <section className="grid gap-4 md:grid-cols-3">
-        <MetricCard label="Доступный баланс" value={formatMoneyBreakdown(available)} hint={`Эквивалент: ${availableBase === null ? "курс не задан" : formatMoney(availableBase, "RUB")}.`} accent="moss" />
-        <MetricCard label="Замороженный баланс" value={formatMoneyBreakdown(frozen)} hint={`Эквивалент: ${frozenBase === null ? "курс не задан" : formatMoney(frozenBase, "RUB")}.`} accent="brass" />
-        <MetricCard label="Комиссии" value={formatMoneyBreakdown(fees)} hint={`Эквивалент: ${feesBase === null ? "курс не задан" : formatMoney(feesBase, "RUB")}.`} />
+        <MetricCard
+          label="Доступно по валютам"
+          value={<MoneyBreakdown totals={available} />}
+          hint={`Это отдельные кошельки, не пересчет. Управленческий эквивалент в RUB: ${availableBase === null ? "курс не задан" : formatMoney(availableBase, "RUB")}.`}
+          accent="moss"
+        />
+        <MetricCard
+          label="Холды по валютам"
+          value={<MoneyBreakdown totals={frozen} />}
+          hint={`Это отдельные замороженные суммы. Управленческий эквивалент в RUB: ${frozenBase === null ? "курс не задан" : formatMoney(frozenBase, "RUB")}.`}
+          accent="brass"
+        />
+        <MetricCard
+          label="Комиссии по валютам"
+          value={<MoneyBreakdown totals={fees} />}
+          hint={`Комиссии хранятся в валюте операции. Управленческий эквивалент в RUB: ${feesBase === null ? "курс не задан" : formatMoney(feesBase, "RUB")}.`}
+        />
       </section>
 
       <section className="card rounded-[1.75rem] p-5">

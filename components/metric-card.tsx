@@ -5,7 +5,7 @@ export function MetricCard({
   accent = "jade"
 }: {
   label: string;
-  value: string;
+  value: React.ReactNode;
   hint: string;
   accent?: "jade" | "brass" | "moss" | "red";
 }) {
@@ -19,7 +19,7 @@ export function MetricCard({
   return (
     <div className="card rounded-[1.5rem] p-4 sm:rounded-[1.75rem] sm:p-5">
       <div className={`inline-flex rounded-full bg-gradient-to-r px-3 py-1 text-xs font-semibold ${accentClass}`}>{label}</div>
-      <p className="mt-4 break-words font-display text-2xl font-semibold tracking-tight sm:mt-5 sm:text-3xl">{value}</p>
+      <div className="mt-4 break-words font-display text-2xl font-semibold tracking-tight sm:mt-5 sm:text-3xl">{value}</div>
       <p className="mt-2 text-sm leading-6 text-graphite/68">{hint}</p>
     </div>
   );

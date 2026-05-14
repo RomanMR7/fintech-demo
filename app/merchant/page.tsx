@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { EducationBlock } from "@/components/education-block";
 import { MetricCard } from "@/components/metric-card";
+import { MoneyBreakdown } from "@/components/money-breakdown";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDate, formatMoney, formatMoneyBreakdown, toNumber, totalByCurrency } from "@/lib/format";
@@ -39,9 +40,9 @@ export default async function MerchantCabinetPage() {
       </PageHeader>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <MetricCard label="Доступно" value={formatMoneyBreakdown(available)} hint="Можно использовать для выплат." accent="moss" />
-        <MetricCard label="В холде" value={formatMoneyBreakdown(frozen)} hint="Споры и выплаты на проверке." accent="brass" />
-        <MetricCard label="Комиссии" value={formatMoneyBreakdown(fees)} hint="Удержанные комиссии по операциям." />
+        <MetricCard label="Доступно по валютам" value={<MoneyBreakdown totals={available} />} hint="Это отдельные кошельки мерчанта в RUB и USD, не пересчет." accent="moss" />
+        <MetricCard label="В холде по валютам" value={<MoneyBreakdown totals={frozen} />} hint="Споры и выплаты на проверке, раздельно по валютам." accent="brass" />
+        <MetricCard label="Комиссии по валютам" value={<MoneyBreakdown totals={fees} />} hint="Удержанные комиссии в валюте исходной операции." />
       </section>
 
       <section className="grid gap-5 xl:grid-cols-2">

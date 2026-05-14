@@ -77,7 +77,7 @@ export function sumMoneyTotals(...items: MoneyTotals[]): MoneyTotals {
 export function formatMoneyBreakdown(totals: Partial<Record<SupportedCurrency, number>>) {
   const parts = SUPPORTED_CURRENCIES
     .filter((currency) => toNumber(totals[currency] ?? 0) !== 0)
-    .map((currency) => formatMoney(totals[currency] ?? 0, currency));
+    .map((currency) => `${currency}: ${formatMoney(totals[currency] ?? 0, currency)}`);
 
-  return parts.length ? parts.join(" / ") : formatMoney(0, "RUB");
+  return parts.length ? parts.join(" · ") : `RUB: ${formatMoney(0, "RUB")}`;
 }
