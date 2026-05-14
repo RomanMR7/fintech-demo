@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GlobalSearch } from "@/components/global-search";
 import { useRole } from "@/components/role-provider";
 import { defaultMerchantId, roleOptions, type DemoRole } from "@/lib/roles";
@@ -24,6 +24,11 @@ export function Topbar() {
   const { role, setRole, merchantId, setMerchantId } = useRole();
   const [merchants, setMerchants] = useState<MerchantOption[]>(fallbackMerchants);
   const [merchantCatalogVersion, setMerchantCatalogVersion] = useState(0);
+  const merchantIdRef = useRef(merchantId);
+
+  useEffect(() => {
+    merchantIdRef.current = merchantId;
+  }, [merchantId]);
 
   useEffect(() => {
     let active = true;
@@ -55,7 +60,22 @@ export function Topbar() {
   }, [merchantId, merchantCatalogVersion, setMerchantId]);
 
   useEffect(() => {
-    const refreshMerchants = () => setMerchantCatalogVersion((version) => version + 1);
+    const refreshMerchants = (event: Event) => {
+      const detail = (event as CustomEvent<{ merchant?: { id?: string; displayName?: string } }>).detail;
+      if (detail?.merchant?.id && detail.merchant.displayName) {
+        setMerchants((current) => {
+          const nextMerchant = { id: detail.merchant!.id!, label: detail.merchant!.displayName! };
+          const next = current.some((merchant) => merchant.id === nextMerchant.id)
+            ? current.map((merchant) => (merchant.id === nextMerchant.id ? nextMerchant : merchant))
+            : [...current, nextMerchant];
+
+          return next.sort((a, b) => a.label.localeCompare(b.label, "ru"));
+        });
+      }
+
+      setMerchantCatalogVersion((version) => version + 1);
+    };
+
     window.addEventListener("demo-merchants-updated", refreshMerchants);
 
     return () => {
@@ -68,14 +88,14 @@ export function Topbar() {
 
     const urlMerchantId = new URLSearchParams(window.location.search).get("merchantId");
     if (urlMerchantId) {
-      if (urlMerchantId !== merchantId) {
+      if (urlMerchantId !== merchantIdRef.current) {
         setMerchantId(urlMerchantId);
       }
       return;
     }
 
-    router.replace(`/merchant?merchantId=${encodeURIComponent(merchantId)}`);
-  }, [merchantId, pathname, router, setMerchantId]);
+    router.replace(`/merchant?merchantId=${encodeURIComponent(merchantIdRef.current)}`);
+  }, [pathname, router, setMerchantId]);
 
   const selectedMerchantId = merchants.some((merchant) => merchant.id === merchantId) ? merchantId : merchants[0]?.id ?? defaultMerchantId;
   const handleMerchantChange = (nextMerchantId: string) => {

@@ -87,7 +87,7 @@ export default async function CommercialPage() {
           </div>
         </div>
 
-        <div className="card rounded-[1.75rem] bg-ink p-5 text-white">
+        <div className="dark-panel rounded-[1.75rem] p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/50">Простая формула</p>
           <h2 className="mt-2 font-display text-2xl font-semibold">Доход = оборот × комиссия + снижение потерь</h2>
           <div className="mt-5 grid gap-3 text-sm leading-6 text-white/76">

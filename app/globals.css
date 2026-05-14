@@ -110,6 +110,15 @@ textarea {
   padding: 1.25rem;
 }
 
+.dark-panel {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    radial-gradient(circle at 18% 12%, rgba(13, 118, 108, 0.26), transparent 18rem),
+    linear-gradient(135deg, #15231f 0%, #0c1815 100%);
+  color: #ffffff;
+  box-shadow: 0 18px 54px rgba(21, 35, 31, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
 .eyebrow {
   color: var(--jade);
   font-size: 0.72rem;

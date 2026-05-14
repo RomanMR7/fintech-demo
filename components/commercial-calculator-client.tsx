@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatMoney, formatRate } from "@/lib/format";
 
 export function CommercialCalculatorClient({ usdRubRate }: { usdRubRate: number | null }) {
@@ -75,7 +75,7 @@ export function CommercialCalculatorClient({ usdRubRate }: { usdRubRate: number 
             как выручка зависит от объема платежей, выплат и снижения спорных потерь.
           </p>
         </div>
-        <div className="rounded-2xl bg-ink px-5 py-4 text-white">
+        <div className="dark-panel rounded-2xl px-5 py-4">
           <p className="text-xs uppercase tracking-[0.18em] text-white/55">Потенциал / месяц</p>
           <p className="mt-1 font-display text-3xl font-semibold">{formatMoney(model.monthlyGross, currency)}</p>
           <p className="mt-2 text-xs leading-5 text-white/60">
@@ -108,7 +108,7 @@ export function CommercialCalculatorClient({ usdRubRate }: { usdRubRate: number 
               <option value="USD">USD — долларовая модель</option>
             </select>
           </label>
-          <NumberField label="Оборот приема в месяц" suffix={currency} value={payinTurnover} min={1000} max={500000000} step={currency === "USD" ? 1000 : 500000} helper="Отрицательные и нулевые значения запрещены." onChange={setPayinTurnover} />
+          <NumberField label="Оборот приема в месяц" suffix={currency} value={payinTurnover} min={1000} max={100000000000} step={currency === "USD" ? 1000 : 500000} helper="Можно вводить крупные обороты. Значение фиксируется сразу при корректном вводе и проверяется при выходе из поля." onChange={setPayinTurnover} />
           <NumberField label="Комиссия приема" suffix="%" value={payinFee} min={0} max={100} step={0.1} helper="Формула: оборот приема × комиссия приема." onChange={setPayinFee} />
           <NumberField label="Доля выплат от оборота" suffix="%" value={payoutShare} min={0} max={100} step={5} helper="Определяет объем payout-операций." onChange={setPayoutShare} />
           <NumberField label="Комиссия выплат" suffix="%" value={payoutFee} min={0} max={100} step={0.1} helper="Формула: объем выплат × комиссия выплат." onChange={setPayoutFee} />
@@ -166,25 +166,54 @@ function NumberField({
   helper: string;
   onChange: (value: number) => void;
 }) {
-  const clampedValue = Math.min(Math.max(Number.isFinite(value) ? value : min, min), max);
+  const [draftValue, setDraftValue] = useState(String(value));
+
+  useEffect(() => {
+    setDraftValue(String(value));
+  }, [value]);
+
+  const clamp = (nextValue: number) => Math.min(Math.max(Number.isFinite(nextValue) ? nextValue : min, min), max);
+  const commitValue = (rawValue: string) => {
+    const parsedValue = Number(rawValue.replace(",", "."));
+    const nextValue = clamp(parsedValue);
+    setDraftValue(String(nextValue));
+    onChange(nextValue);
+  };
 
   return (
-    <label className="grid gap-1 text-sm font-semibold">
+    <label className="grid gap-1 text-sm font-semibold text-ink">
       {label}
-      <div className="flex items-center overflow-hidden rounded-2xl border border-ink/10 bg-white/80 shadow-insetSoft">
+      <div className="flex items-center overflow-hidden rounded-2xl border border-ink/10 bg-white/90 shadow-insetSoft">
         <input
           type="number"
-          value={value}
+          value={draftValue}
           min={min}
           max={max}
           step={step}
-          onBlur={() => onChange(clampedValue)}
-          onChange={(event) => onChange(Math.min(Math.max(Number(event.target.value), min), max))}
-          className="min-w-0 flex-1 bg-transparent px-4 py-3 font-normal outline-none"
+          inputMode="decimal"
+          onBlur={(event) => commitValue(event.target.value)}
+          onChange={(event) => {
+            const nextValue = event.target.value;
+            setDraftValue(nextValue);
+
+            if (nextValue === "") return;
+
+            const parsedValue = Number(nextValue.replace(",", "."));
+            if (Number.isFinite(parsedValue) && parsedValue >= min && parsedValue <= max) {
+              onChange(parsedValue);
+            }
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              commitValue(event.currentTarget.value);
+              event.currentTarget.blur();
+            }
+          }}
+          className="min-w-0 flex-1 bg-transparent px-4 py-3 font-normal text-ink outline-none"
         />
-        <span className="border-l border-ink/10 px-4 py-3 text-graphite/55">{suffix}</span>
+        <span className="border-l border-ink/10 px-4 py-3 text-graphite/70">{suffix}</span>
       </div>
-      <span className="text-xs font-medium leading-5 text-graphite/52">{helper}</span>
+      <span className="text-xs font-medium leading-5 text-graphite/65">{helper}</span>
     </label>
   );
 }

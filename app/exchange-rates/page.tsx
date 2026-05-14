@@ -75,7 +75,7 @@ export default async function ExchangeRatesPage() {
         </div>
       </section>
 
-      <section className="card rounded-[1.75rem] bg-ink p-5 text-white">
+      <section className="dark-panel rounded-[1.75rem] p-5">
         <h2 className="font-display text-2xl font-semibold">Почему это важно для инвестора и клиента</h2>
         <p className="mt-3 max-w-4xl text-sm leading-6 text-white/75">
           Если платформа работает с RUB и USD, нельзя просто сложить 100 000 RUB и 2 000 USD как одну сумму. Нужно показать исходные валюты,

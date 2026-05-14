@@ -66,15 +66,18 @@ export default async function AdminPage() {
 
       <MerchantAdminClient merchants={merchants.map((merchant) => ({ id: merchant.id, displayName: merchant.displayName, name: merchant.name }))} />
 
-      <section className="section-card">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+      <details className="section-card group">
+        <summary className="focus-ring flex cursor-pointer list-none flex-col gap-3 rounded-[var(--radius-lg)] outline-none md:flex-row md:items-start md:justify-between [&::-webkit-details-marker]:hidden">
           <div>
             <p className="eyebrow">RBAC</p>
             <h2 className="section-title mt-2 text-ink">Матрица прав</h2>
             <p className="copy mt-2 max-w-3xl">Показывает, какие роли могут выполнять критичные действия. В demo UI недоступные действия блокируются и объясняют причину.</p>
           </div>
-          <span className="pill">Sandbox access control</span>
-        </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="pill">Sandbox access control</span>
+            <span className="pill bg-white/60 text-ink">Показать / скрыть</span>
+          </div>
+        </summary>
         <div className="mt-5 grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
           {permissionMatrix.map((row) => (
             <article
@@ -101,7 +104,7 @@ export default async function AdminPage() {
             </article>
           ))}
         </div>
-      </section>
+      </details>
 
       <section className="section-card">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">

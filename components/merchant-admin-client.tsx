@@ -61,7 +61,16 @@ export function MerchantAdminClient({ merchants }: { merchants: MerchantOption[]
       if (typeof payload.id === "string") {
         setMerchantId(payload.id);
       }
-      window.dispatchEvent(new CustomEvent("demo-merchants-updated"));
+      window.dispatchEvent(
+        new CustomEvent("demo-merchants-updated", {
+          detail: {
+            merchant: {
+              id: typeof payload.id === "string" ? payload.id : undefined,
+              displayName: typeof payload.displayName === "string" ? payload.displayName : displayName
+            }
+          }
+        })
+      );
       router.refresh();
     } catch (error) {
       setMessage({ type: "error", text: error instanceof Error ? error.message : "Не удалось создать мерчанта." });
