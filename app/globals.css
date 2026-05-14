@@ -5,12 +5,22 @@
 :root {
   --bg: #f5efe3;
   --panel: rgba(255, 253, 248, 0.9);
+  --panel-solid: #fffdf8;
+  --panel-muted: rgba(247, 242, 232, 0.74);
   --ink: #15231f;
   --muted: #66736f;
   --line: rgba(38, 53, 49, 0.1);
   --jade: #0d766c;
   --moss: #17483f;
   --brass: #b5863b;
+  --success: #16845f;
+  --warning: #b5863b;
+  --danger: #bf3d4a;
+  --info: #276f9f;
+  --radius-lg: 1.5rem;
+  --radius-xl: 1.85rem;
+  --shadow-card: 0 16px 48px rgba(21, 35, 31, 0.075), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --shadow-control: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 * {
@@ -56,8 +66,67 @@ textarea {
 .card {
   border: 1px solid var(--line);
   background: var(--panel);
-  box-shadow: 0 16px 48px rgba(21, 35, 31, 0.075), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow-card);
   backdrop-filter: blur(18px);
+}
+
+.surface {
+  border: 1px solid var(--line);
+  background: var(--panel-solid);
+  box-shadow: var(--shadow-control);
+}
+
+.surface-muted {
+  border: 1px solid var(--line);
+  background: var(--panel-muted);
+}
+
+.control {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: var(--shadow-control);
+}
+
+.enterprise-table {
+  border-collapse: separate;
+  border-spacing: 0 0.55rem;
+  width: 100%;
+}
+
+.enterprise-table thead {
+  color: color-mix(in srgb, var(--muted) 78%, transparent);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.enterprise-table tbody tr {
+  background: color-mix(in srgb, var(--panel-solid) 78%, transparent);
+  box-shadow: var(--shadow-control);
+}
+
+.enterprise-table tbody td {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.enterprise-table tbody td:first-child {
+  border-left: 1px solid var(--line);
+  border-radius: 1rem 0 0 1rem;
+}
+
+.enterprise-table tbody td:last-child {
+  border-right: 1px solid var(--line);
+  border-radius: 0 1rem 1rem 0;
+}
+
+.status-dot {
+  display: inline-flex;
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: 999px;
+  background: var(--jade);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--jade) 16%, transparent);
 }
 
 .focus-ring {
@@ -75,12 +144,20 @@ textarea {
 html.theme-dark {
   --bg: #07110f;
   --panel: rgba(12, 23, 21, 0.86);
+  --panel-solid: #0b1715;
+  --panel-muted: rgba(18, 33, 30, 0.82);
   --ink: #eef7f3;
   --muted: #aab8b3;
   --line: rgba(218, 236, 228, 0.12);
   --jade: #47d5c5;
   --moss: #2ba394;
   --brass: #ddb66d;
+  --success: #5ee0ac;
+  --warning: #ddb66d;
+  --danger: #ff7a8a;
+  --info: #7dd3fc;
+  --shadow-card: 0 18px 54px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --shadow-control: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   background:
     radial-gradient(circle at 15% 8%, rgba(71, 213, 197, 0.16), transparent 26rem),
     radial-gradient(circle at 88% 4%, rgba(221, 182, 109, 0.12), transparent 28rem),
@@ -90,12 +167,20 @@ html.theme-dark {
 html.theme-cosmic {
   --bg: #050816;
   --panel: rgba(9, 13, 35, 0.78);
+  --panel-solid: #0b1029;
+  --panel-muted: rgba(17, 24, 56, 0.76);
   --ink: #f3f7ff;
   --muted: #b8c1df;
   --line: rgba(189, 207, 255, 0.16);
   --jade: #7dd3fc;
   --moss: #38bdf8;
   --brass: #f0abfc;
+  --success: #67e8c9;
+  --warning: #f8c471;
+  --danger: #fb7185;
+  --info: #93c5fd;
+  --shadow-card: 0 18px 64px rgba(20, 32, 92, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --shadow-control: inset 0 1px 0 rgba(255, 255, 255, 0.1);
   background:
     radial-gradient(circle at 18% 16%, rgba(125, 211, 252, 0.24), transparent 22rem),
     radial-gradient(circle at 78% 10%, rgba(240, 171, 252, 0.2), transparent 24rem),
@@ -141,7 +226,7 @@ html.theme-dark .card,
 html.theme-cosmic .card {
   border-color: var(--line);
   background: var(--panel);
-  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-card);
 }
 
 html.theme-cosmic .card {
@@ -175,6 +260,16 @@ html.theme-dark :is(input, select, textarea),
 html.theme-cosmic :is(input, select, textarea) {
   color: var(--ink);
   background-color: rgba(255, 255, 255, 0.08);
+}
+
+html.theme-dark :is(.surface, .control, .enterprise-table tbody tr),
+html.theme-cosmic :is(.surface, .control, .enterprise-table tbody tr) {
+  background: color-mix(in srgb, var(--panel-solid) 82%, transparent);
+}
+
+html.theme-dark .surface-muted,
+html.theme-cosmic .surface-muted {
+  background: var(--panel-muted);
 }
 
 html.theme-dark option,

@@ -1,21 +1,122 @@
 import Link from "next/link";
 import { EducationBlock } from "@/components/education-block";
-import { MetricCard } from "@/components/metric-card";
 import { MoneyBreakdown } from "@/components/money-breakdown";
 import { PageHeader } from "@/components/page-header";
+import { QuickScenarioLauncher } from "@/components/quick-scenario-launcher";
 import { StatusBadge } from "@/components/status-badge";
-import { convertBreakdownToBase, getFxSnapshot } from "@/lib/fx";
-import { formatDate, formatMoney, formatMoneyBreakdown, formatNumber, formatRate, toNumber, totalByCurrency } from "@/lib/format";
+import { convertBreakdownToBase, convertMoneyToBase, getFxSnapshot } from "@/lib/fx";
+import { formatDate, formatMoney, formatNumber, formatRate, toNumber, totalByCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+type ChartPoint = {
+  label: string;
+  value: number;
+};
+
+function FinanceKpiCard({
+  label,
+  value,
+  description,
+  delta,
+  tone = "jade"
+}: {
+  label: string;
+  value: React.ReactNode;
+  description: string;
+  delta: string;
+  tone?: "jade" | "brass" | "moss" | "red" | "blue";
+}) {
+  const toneClass = {
+    jade: "bg-jade/10 text-jade border-jade/20",
+    brass: "bg-brass/10 text-brass border-brass/25",
+    moss: "bg-moss/10 text-moss border-moss/20",
+    red: "bg-red-500/10 text-red-700 border-red-500/20",
+    blue: "bg-sky-500/10 text-sky-700 border-sky-500/20"
+  }[tone];
+
+  return (
+    <article className="card rounded-[1.6rem] p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-graphite/48">{label}</p>
+          <div className="mt-3 break-words font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{value}</div>
+        </div>
+        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${toneClass}`}>{delta}</span>
+      </div>
+      <p className="mt-3 text-sm leading-6 text-graphite/68">{description}</p>
+    </article>
+  );
+}
+
+function MiniBarChart({ points }: { points: ChartPoint[] }) {
+  const max = Math.max(...points.map((point) => point.value), 1);
+
+  return (
+    <div className="mt-5 flex h-44 items-end gap-2 rounded-[1.35rem] border border-ink/10 bg-white/45 p-4">
+      {points.map((point) => {
+        const height = Math.max((point.value / max) * 100, point.value > 0 ? 12 : 4);
+        return (
+          <div key={point.label} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+            <div className="flex h-32 w-full items-end">
+              <div
+                className="w-full rounded-t-xl bg-gradient-to-t from-jade to-emerald-300 shadow-insetSoft"
+                style={{ height: `${height}%` }}
+                title={`${point.label}: ${formatMoney(point.value, "RUB")}`}
+              />
+            </div>
+            <span className="truncate text-[10px] font-semibold uppercase tracking-[0.1em] text-graphite/50">{point.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SuccessRateChart({ value }: { value: number }) {
+  const safeValue = Math.min(Math.max(value, 0), 100);
+
+  return (
+    <div className="mt-5 grid gap-4 rounded-[1.35rem] border border-ink/10 bg-white/45 p-4">
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="text-sm font-semibold text-ink">Конверсия в успешные операции</p>
+          <p className="mt-1 text-xs text-graphite/60">Completed / все платежные ордера</p>
+        </div>
+        <p className="font-display text-3xl font-semibold text-ink">{safeValue.toFixed(1)}%</p>
+      </div>
+      <div className="h-3 overflow-hidden rounded-full bg-ink/10">
+        <div className="h-full rounded-full bg-gradient-to-r from-jade to-emerald-300" style={{ width: `${safeValue}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function InsightRow({ label, value, hint }: { label: string; value: React.ReactNode; hint: string }) {
+  return (
+    <div className="rounded-2xl border border-ink/10 bg-white/55 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-semibold text-ink">{label}</p>
+        <div className="text-right font-semibold text-ink">{value}</div>
+      </div>
+      <p className="mt-2 text-xs leading-5 text-graphite/60">{hint}</p>
+    </div>
+  );
+}
+
+function daysAgoLabel(date: Date) {
+  return new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short" }).format(date);
+}
+
 export default async function DashboardPage() {
-  const [orders, balances, appeals, events, fx] = await Promise.all([
-    prisma.paymentOrder.findMany({ include: { merchant: true }, orderBy: { createdAt: "desc" } }),
+  const [orders, payouts, balances, appeals, events, providers, fx] = await Promise.all([
+    prisma.paymentOrder.findMany({ include: { merchant: true, provider: true, requisite: true }, orderBy: { createdAt: "desc" } }),
+    prisma.payout.findMany({ include: { merchant: true }, orderBy: { createdAt: "desc" } }),
     prisma.balanceAccount.findMany({ include: { merchant: true } }),
-    prisma.appeal.findMany(),
+    prisma.appeal.findMany({ include: { order: true, merchant: true }, orderBy: { updatedAt: "desc" } }),
     prisma.eventLog.findMany({ orderBy: { createdAt: "desc" }, take: 8 }),
+    prisma.provider.findMany({ orderBy: { availability: "desc" } }),
     getFxSnapshot()
   ]);
 
@@ -30,88 +131,220 @@ export default async function DashboardPage() {
     (item) => item.amount,
     (item) => item.currency
   );
+  const fees = totalByCurrency(
+    [
+      ...orders.map((order) => ({ amount: order.commission, currency: order.currency })),
+      ...payouts.map((payout) => ({ amount: payout.commission, currency: payout.currency }))
+    ],
+    (item) => item.amount,
+    (item) => item.currency
+  );
+
+  const completedOrders = orders.filter((order) => order.status === "COMPLETED");
+  const pendingOrders = orders.filter((order) => ["CREATED", "WAITING_PAYMENT", "PAID", "CONFIRMED"].includes(order.status));
+  const pendingPayouts = payouts.filter((payout) => ["CREATED", "PENDING_APPROVAL", "HOLD"].includes(payout.status));
+  const openAppeals = appeals.filter((appeal) => ["NEW", "OPEN"].includes(appeal.status));
+  const riskOrders = orders.filter((order) => ["DISPUTED", "FAILED"].includes(order.status));
+  const successRate = orders.length ? (completedOrders.length / orders.length) * 100 : 0;
+  const providerHealth = providers.length ? providers.reduce((sum, provider) => sum + provider.availability, 0) / providers.length : 100;
+
   const turnoverBase = convertBreakdownToBase(turnover, fx);
   const availableBase = convertBreakdownToBase(available, fx);
   const frozenBase = convertBreakdownToBase(frozen, fx);
-  const fxHint = fx.usdRubRate ? `USD пересчитан по ${formatRate(fx.usdRubRate)} RUB за 1 USD.` : "Курс USD/RUB не задан.";
+  const feesBase = convertBreakdownToBase(fees, fx);
+
+  const now = new Date();
+  const paymentVolume7d = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(now);
+    date.setDate(now.getDate() - (6 - index));
+    const dateKey = date.toISOString().slice(0, 10);
+    const value = orders
+      .filter((order) => order.createdAt.toISOString().slice(0, 10) === dateKey)
+      .reduce((sum, order) => sum + (convertMoneyToBase(order.amount, order.currency, fx) ?? 0), 0);
+
+    return { label: daysAgoLabel(date), value };
+  });
 
   return (
     <div className="grid gap-5">
       <PageHeader
         eyebrow="Общий обзор"
-        title="Главный дашборд"
-        description="Сводная картина платежной платформы: операции, успешность, спорные кейсы, оборот и состояние балансов."
+        title="Главный dashboard"
+        description="Финансовый control room платежной платформы: где деньги, что в холде, какие операции требуют внимания и как чувствует себя API-контур."
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Ордера" value={formatNumber(orders.length)} hint="Всего платежных ордеров в демо-базе." />
-        <MetricCard label="Успешные" value={formatNumber(orders.filter((order) => order.status === "COMPLETED").length)} hint="Операции, которые уже обновили баланс." accent="moss" />
-        <MetricCard label="В ожидании" value={formatNumber(orders.filter((order) => ["CREATED", "WAITING_PAYMENT", "PAID", "CONFIRMED"].includes(order.status)).length)} hint="Очередь операционной обработки." accent="brass" />
-        <MetricCard label="Споры" value={formatNumber(orders.filter((order) => order.status === "DISPUTED").length + appeals.filter((appeal) => ["NEW", "OPEN"].includes(appeal.status)).length)} hint="Операции и апелляции, где есть риск." accent="red" />
-        <MetricCard
-          label="Оборот по валютам"
-          value={<MoneyBreakdown totals={turnover} />}
-          hint={`Выше исходные суммы, не конвертация. Управленческий эквивалент в RUB: ${turnoverBase === null ? "курс не задан" : formatMoney(turnoverBase, "RUB")}. ${fxHint}`}
-        />
-        <MetricCard
-          label="Доступно по валютам"
+      <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+        <FinanceKpiCard
+          label="Available balance"
           value={<MoneyBreakdown totals={available} />}
-          hint={`Выше отдельные балансы RUB и USD. Управленческий эквивалент в RUB: ${availableBase === null ? "курс не задан" : formatMoney(availableBase, "RUB")}.`}
-          accent="moss"
+          description={`Деньги, которые мерчанты могут использовать для выплат. Управленческий эквивалент: ${availableBase === null ? "курс USD/RUB не задан" : formatMoney(availableBase, "RUB")}.`}
+          delta="+12.4%"
+          tone="moss"
         />
-        <MetricCard
-          label="Заморожено по валютам"
+        <FinanceKpiCard
+          label="On hold"
           value={<MoneyBreakdown totals={frozen} />}
-          hint={`Выше отдельные холды RUB и USD. Управленческий эквивалент в RUB: ${frozenBase === null ? "курс не задан" : formatMoney(frozenBase, "RUB")}.`}
-          accent="brass"
+          description={`Средства в заморозке из-за выплат, risk hold или апелляций. Эквивалент: ${frozenBase === null ? "курс USD/RUB не задан" : formatMoney(frozenBase, "RUB")}.`}
+          delta={`${formatNumber(openAppeals.length)} disputes`}
+          tone="brass"
         />
-        <MetricCard label="Апелляции" value={formatNumber(appeals.length)} hint="Все обращения support-команды." accent="red" />
+        <FinanceKpiCard
+          label="Pending payouts"
+          value={formatNumber(pendingPayouts.length)}
+          description="Заявки на вывод, которые ждут подтверждения, проверки или снятия холда."
+          delta="SLA 15 мин"
+          tone="blue"
+        />
+        <FinanceKpiCard
+          label="Platform revenue"
+          value={<MoneyBreakdown totals={fees} />}
+          description={`Комиссионный доход платформы по pay-in и payout операциям. Эквивалент: ${feesBase === null ? "курс USD/RUB не задан" : formatMoney(feesBase, "RUB")}.`}
+          delta="+8.1%"
+        />
+        <FinanceKpiCard
+          label="Success rate"
+          value={`${successRate.toFixed(1)}%`}
+          description={`${formatNumber(completedOrders.length)} завершенных ордеров из ${formatNumber(orders.length)}. Это главный показатель качества маршрутизации.`}
+          delta="conversion"
+          tone="moss"
+        />
+        <FinanceKpiCard
+          label="Risk queue"
+          value={formatNumber(riskOrders.length + openAppeals.length)}
+          description="Ордера и апелляции, которые требуют внимания operator/support и могут влиять на баланс."
+          delta="manual review"
+          tone="red"
+        />
       </section>
 
-      <section className={`card rounded-[1.75rem] p-5 ${fx.isStale ? "border border-brass/35 bg-brass/10" : "border border-jade/20 bg-jade/8"}`}>
-        <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Курсы валют</p>
-            <h2 className="mt-2 font-display text-2xl font-semibold">Базовая валюта отчетности: RUB</h2>
-            <p className="mt-2 text-sm leading-6 text-graphite/68">
-              В карточках выше суммы не смешиваются напрямую: RUB и USD показываются отдельно, а для общей картины считается рублевый эквивалент.
-              {fx.usdRate ? ` Источник: ${fx.usdRate.source}, дата курса: ${formatDate(fx.usdRate.sourceDate)}.` : " Курс USD/RUB пока не найден."}
-            </p>
-            {fx.warning ? <p className="mt-2 text-sm font-semibold text-brass">{fx.warning}</p> : null}
+      <section className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
+        <div className="card rounded-[1.75rem] p-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Payment volume</p>
+              <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Оборот за 7 дней</h2>
+              <p className="mt-2 text-sm leading-6 text-graphite/68">
+                График показывает управленческий RUB-эквивалент оборота. Исходные суммы RUB и USD в таблицах не смешиваются и показываются отдельно.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-ink/10 bg-white/55 px-4 py-3 text-sm">
+              <p className="font-semibold text-ink">{turnoverBase === null ? "Курс не задан" : formatMoney(turnoverBase, "RUB")}</p>
+              <p className="mt-1 text-xs text-graphite/55">Эквивалент общего оборота</p>
+            </div>
           </div>
-          <a href="/exchange-rates" className="rounded-2xl bg-ink px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-moss">
-            Открыть курсы
-          </a>
+          <MiniBarChart points={paymentVolume7d} />
+        </div>
+
+        <div className="grid gap-5">
+          <div className="card rounded-[1.75rem] p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Quality</p>
+            <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Success rate</h2>
+            <SuccessRateChart value={successRate} />
+          </div>
+          <div className="card rounded-[1.75rem] p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Currency split</p>
+            <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Раздельно RUB и USD</h2>
+            <div className="mt-4">
+              <MoneyBreakdown totals={turnover} showZero />
+            </div>
+            <p className="mt-3 text-sm leading-6 text-graphite/68">
+              Это не “рубли и их долларовый эквивалент”, а реальные суммы в разных валютах. Для сводной аналитики отдельно считается RUB-эквивалент по курсу.
+            </p>
+          </div>
         </div>
       </section>
 
-      <section className="card rounded-[1.75rem] bg-ink p-5 text-white">
+      <section className="card rounded-[1.75rem] p-5">
         <div className="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-center">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">Маршрут для презентации</p>
-            <h2 className="mt-2 font-display text-2xl font-semibold">Начните с экономики, затем покажите сценарии и баланс</h2>
-            <p className="mt-2 max-w-4xl text-sm leading-6 text-white/70">
-              Такой порядок лучше работает для инвестора или клиента: сначала объясняем, где деньги и ценность, затем показываем, как система проводит операции,
-              меняет статусы, фиксирует события и защищает баланс.
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Курсы валют</p>
+            <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Базовая валюта отчетности: RUB</h2>
+            <p className="mt-2 text-sm leading-6 text-graphite/68">
+              RUB и USD хранятся как разные валюты. Для общей картины dashboard использует управленческий пересчет USD в RUB.
+              {fx.usdRubRate ? ` Текущий курс: ${formatRate(fx.usdRubRate)} RUB за 1 USD.` : " Курс USD/RUB пока не задан."}
+              {fx.usdRate ? ` Источник: ${fx.usdRate.source}, дата курса: ${formatDate(fx.usdRate.sourceDate)}.` : null}
             </p>
+            {fx.warning ? <p className="mt-2 text-sm font-semibold text-brass">{fx.warning}</p> : null}
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/commercial" className="rounded-2xl bg-jade px-4 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-ink">Экономика</Link>
-            <Link href="/scenarios" className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-ink">Сценарии</Link>
-            <Link href="/balances" className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-ink">Балансы</Link>
+          <Link href="/exchange-rates" className="focus-ring rounded-2xl bg-ink px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-moss">
+            Открыть курсы
+          </Link>
+        </div>
+      </section>
+
+      <QuickScenarioLauncher />
+
+      <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+        <div className="card rounded-[1.75rem] p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Risk queue</p>
+          <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Что требует внимания</h2>
+          <div className="mt-4 grid gap-3">
+            {openAppeals.slice(0, 3).map((appeal) => (
+              <InsightRow
+                key={appeal.id}
+                label={`${appeal.merchant.displayName} · ${appeal.order.externalId}`}
+                value={<StatusBadge status={appeal.status} />}
+                hint={`${appeal.reason}. Заморозка: ${formatMoney(toNumber(appeal.frozenAmount), appeal.order.currency)}.`}
+              />
+            ))}
+            {riskOrders.slice(0, 3).map((order) => (
+              <InsightRow
+                key={order.id}
+                label={`${order.externalId} · ${order.merchant.displayName}`}
+                value={<StatusBadge status={order.status} />}
+                hint={`Сумма: ${formatMoney(toNumber(order.amount), order.currency)}. Проверьте провайдера, реквизит и историю статусов.`}
+              />
+            ))}
+            {!openAppeals.length && !riskOrders.length ? (
+              <div className="rounded-2xl border border-ink/10 bg-white/55 p-4 text-sm text-graphite/65">Критичных задач нет. Это хорошее состояние для презентации стабильной операционной модели.</div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="card rounded-[1.75rem] p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">API health</p>
+          <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Интеграции и webhooks</h2>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <InsightRow label="Provider uptime" value={`${providerHealth.toFixed(1)}%`} hint="Средняя доступность подключенных демо-провайдеров." />
+            <InsightRow label="Webhook events" value={formatNumber(events.filter((event) => event.type.includes("STATUS") || event.type.includes("SCENARIO")).length)} hint="События, которые можно показывать как callback/webhook поток." />
+            <InsightRow label="Pending orders" value={formatNumber(pendingOrders.length)} hint="Операции, которые еще не дошли до финального статуса." />
+          </div>
+          <div className="mt-4 grid gap-3">
+            {providers.slice(0, 4).map((provider) => (
+              <div key={provider.id} className="grid gap-3 rounded-2xl border border-ink/10 bg-white/55 p-4 md:grid-cols-[1fr_auto] md:items-center">
+                <div>
+                  <p className="font-semibold text-ink">{provider.displayName}</p>
+                  <p className="mt-1 text-xs text-graphite/55">{provider.type} · комиссия {formatRate(toNumber(provider.commissionRate) * 100)}%</p>
+                </div>
+                <div className="flex items-center gap-2 text-sm font-semibold text-ink">
+                  <span className="status-dot" />
+                  {provider.availability}%
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="card rounded-[1.75rem] p-5">
-          <h2 className="font-display text-2xl font-semibold">Последние операции</h2>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Payments</p>
+              <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Последние операции</h2>
+            </div>
+            <Link href="/orders" className="rounded-full border border-ink/10 bg-white/55 px-3 py-2 text-xs font-semibold text-ink transition hover:bg-white">
+              Все ордера
+            </Link>
+          </div>
           <div className="mt-4 grid gap-3">
             {orders.slice(0, 6).map((order) => (
-              <div key={order.id} className="flex flex-col gap-3 rounded-2xl bg-white/60 p-4 md:flex-row md:items-center md:justify-between">
+              <div key={order.id} className="grid gap-3 rounded-2xl border border-ink/10 bg-white/60 p-4 md:grid-cols-[1fr_auto] md:items-center">
                 <div>
-                  <p className="font-semibold">{order.externalId} · {order.merchant.displayName}</p>
-                  <p className="mt-1 text-sm text-graphite/60">{formatMoney(toNumber(order.amount), order.currency)} · {formatDate(order.createdAt)}</p>
+                  <p className="font-mono text-sm font-semibold text-ink">{order.externalId}</p>
+                  <p className="mt-1 text-sm text-graphite/60">
+                    {order.merchant.displayName} · {formatMoney(toNumber(order.amount), order.currency)} · {formatDate(order.createdAt)}
+                  </p>
                 </div>
                 <StatusBadge status={order.status} />
               </div>
@@ -120,12 +353,22 @@ export default async function DashboardPage() {
         </div>
 
         <div className="card rounded-[1.75rem] p-5">
-          <h2 className="font-display text-2xl font-semibold">Последние события</h2>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Audit log</p>
+              <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Последние события</h2>
+            </div>
+            <Link href="/events" className="rounded-full border border-ink/10 bg-white/55 px-3 py-2 text-xs font-semibold text-ink transition hover:bg-white">
+              Журнал
+            </Link>
+          </div>
           <div className="mt-4 grid gap-3">
             {events.map((event) => (
               <div key={event.id} className="rounded-2xl border border-ink/10 bg-white/55 p-4">
-                <p className="text-sm font-semibold">{event.title}</p>
-                <p className="mt-1 text-xs text-graphite/50">{event.actorName} · {formatDate(event.createdAt)}</p>
+                <p className="text-sm font-semibold text-ink">{event.title}</p>
+                <p className="mt-1 text-xs text-graphite/50">
+                  {event.actorName} · {formatDate(event.createdAt)}
+                </p>
                 <p className="mt-2 text-sm leading-6 text-graphite/70">{event.description}</p>
               </div>
             ))}
@@ -135,10 +378,10 @@ export default async function DashboardPage() {
 
       <EducationBlock
         items={[
-          "Дашборд собирает показатели из ордеров, выплат, балансов, апелляций и журнала событий.",
-          "Для инвестора это быстрый способ увидеть масштаб, риски и управляемость процессов.",
-          "Для операционной команды важны ожидания, споры и последние события.",
-          "Для финансовой команды важны доступный баланс, холды и комиссии."
+          "Dashboard отвечает на главный вопрос: где деньги, что уже доступно, что заморожено и где платформа зарабатывает комиссию.",
+          "RUB и USD показаны как отдельные валюты, чтобы не создавать ложное ощущение, что одна сумма является эквивалентом другой.",
+          "Risk queue показывает операции, которые могут задержать деньги или потребовать ручного решения.",
+          "Live-сценарии нужны для демонстрации инвестору или клиенту: они показывают не макет, а изменение данных, статусов, балансов и событий."
         ]}
       />
     </div>

@@ -16,8 +16,8 @@ export default async function OrdersPage() {
     <div className="grid gap-5">
       <PageHeader
         eyebrow="Операции"
-        title="Заказы / платежные ордера"
-        description="Здесь создаются платежные ордера, назначаются провайдеры и реквизиты, меняются статусы и запускается финансовая логика."
+        title="Ордера / платежные ордера"
+        description="Здесь создаются платежные ордера, назначаются провайдеры и реквизиты, меняются статусы, считается комиссия и запускается финансовая логика балансов."
       />
       <OrdersClient
         orders={orders.map((order) => ({
@@ -26,6 +26,7 @@ export default async function OrdersPage() {
           merchantId: order.merchantId,
           merchantName: order.merchant.displayName,
           providerName: order.providerName ?? order.provider?.displayName ?? "Не назначен",
+          method: order.requisite?.type ?? order.provider?.type ?? "API",
           requisite: order.requisite?.maskedNumber,
           amount: toNumber(order.amount),
           currency: order.currency,
@@ -37,10 +38,10 @@ export default async function OrdersPage() {
       />
       <EducationBlock
         items={[
-          "Ордер начинается в статусе “Создан” и проходит цепочку до “Завершен”.",
+          "Ордер начинается в статусе “Создан” и проходит цепочку до “Завершен”. Каждый шаг фиксируется в audit log.",
           "При завершении ордера доступный баланс мерчанта увеличивается на сумму за вычетом комиссии.",
           "Если операция спорная, часть баланса замораживается и создается контекст для апелляции.",
-          "Оператор и администратор видят все ордера, мерчант в демо-фильтре видит только свои."
+          "Оператор и администратор видят все ордера, а мерчант в demo-фильтре видит только свои."
         ]}
       />
     </div>

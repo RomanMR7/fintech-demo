@@ -2,76 +2,181 @@ import Link from "next/link";
 import { EducationBlock } from "@/components/education-block";
 import { MerchantAdminClient } from "@/components/merchant-admin-client";
 import { MetricCard } from "@/components/metric-card";
+import { MoneyBreakdown } from "@/components/money-breakdown";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
-import { formatMoney, formatNumber, toNumber } from "@/lib/format";
+import { formatDate, formatMoney, formatNumber, formatRate, toNumber, totalByCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+function riskLevel(disputes: number, volume: number) {
+  if (disputes >= 2 || volume > 250000) return { label: "High", className: "border-red-500/20 bg-red-500/10 text-red-700" };
+  if (disputes === 1 || volume > 120000) return { label: "Review", className: "border-brass/25 bg-brass/10 text-brass" };
+  return { label: "Low", className: "border-jade/20 bg-jade/10 text-jade" };
+}
+
 export default async function AdminPage() {
-  const [merchants, providers, users, orders, appeals] = await Promise.all([
-    prisma.merchant.findMany({ orderBy: { displayName: "asc" } }),
+  const [merchants, providers, users, orders, payouts, appeals, balances] = await Promise.all([
+    prisma.merchant.findMany({
+      include: {
+        balances: true,
+        orders: { orderBy: { createdAt: "desc" }, take: 10 },
+        appeals: true
+      },
+      orderBy: { displayName: "asc" }
+    }),
     prisma.provider.findMany({ orderBy: { displayName: "asc" } }),
     prisma.user.findMany({ orderBy: { name: "asc" } }),
     prisma.paymentOrder.findMany(),
-    prisma.appeal.findMany()
+    prisma.payout.findMany(),
+    prisma.appeal.findMany(),
+    prisma.balanceAccount.findMany()
   ]);
+
+  const totalVolume = totalByCurrency(orders, (order) => order.amount, (order) => order.currency);
+  const frozenFunds = totalByCurrency(balances.filter((balance) => balance.type === "FROZEN"), (balance) => balance.amount, (balance) => balance.currency);
+  const platformFees = totalByCurrency(
+    [
+      ...orders.map((order) => ({ amount: order.commission, currency: order.currency })),
+      ...payouts.map((payout) => ({ amount: payout.commission, currency: payout.currency }))
+    ],
+    (item) => item.amount,
+    (item) => item.currency
+  );
+  const openDisputes = appeals.filter((appeal) => ["NEW", "OPEN"].includes(appeal.status)).length + orders.filter((order) => order.status === "DISPUTED").length;
 
   return (
     <div className="grid gap-5">
       <PageHeader
         eyebrow="Платформенный контроль"
         title="Админ-панель"
-        description="Администратор видит всю систему целиком: участников, провайдеров, статусы операций, спорные зоны и настройки."
+        description="Администратор видит всю систему: мерчантов, лимиты, комиссии, провайдеров, риск-очередь, frozen funds и состояние интеграций."
       />
-      <section className="grid gap-4 md:grid-cols-4">
-        <MetricCard label="Мерчанты" value={formatNumber(merchants.length)} hint="Подключенные клиенты платформы." />
-        <MetricCard label="Провайдеры" value={formatNumber(providers.length)} hint="Интеграции и каскады." accent="moss" />
-        <MetricCard label="Пользователи" value={formatNumber(users.length)} hint="Роли демо-контура." accent="brass" />
-        <MetricCard label="Риски" value={formatNumber(orders.filter((order) => order.status === "DISPUTED").length + appeals.filter((appeal) => ["NEW", "OPEN"].includes(appeal.status)).length)} hint="Споры и активные апелляции." accent="red" />
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <MetricCard label="Total volume" value={<MoneyBreakdown totals={totalVolume} />} hint="Оборот по исходным валютам операций." />
+        <MetricCard label="Active merchants" value={formatNumber(merchants.filter((merchant) => merchant.status === "active").length)} hint={`Всего подключено: ${formatNumber(merchants.length)}.`} accent="moss" />
+        <MetricCard label="Frozen funds" value={<MoneyBreakdown totals={frozenFunds} />} hint="Деньги в hold из-за выплат, risk и апелляций." accent="brass" />
+        <MetricCard label="Platform fees" value={<MoneyBreakdown totals={platformFees} />} hint="Комиссионный доход платформы." />
+        <MetricCard label="Open disputes" value={formatNumber(openDisputes)} hint="Операции и апелляции, требующие решения." accent="red" />
       </section>
 
       <MerchantAdminClient merchants={merchants.map((merchant) => ({ id: merchant.id, displayName: merchant.displayName, name: merchant.name }))} />
 
-      <section className="grid gap-5 xl:grid-cols-2">
-        <div className="card rounded-[1.75rem] p-5">
-          <h2 className="font-display text-2xl font-semibold">Мерчанты</h2>
-          <div className="mt-4 grid gap-3">
-            {merchants.map((merchant) => (
-              <div key={merchant.id} className="rounded-2xl bg-white/60 p-4">
-                <p className="font-semibold">{merchant.displayName}</p>
-                <p className="mt-1 text-sm text-graphite/55">{merchant.name} · trust limit {formatMoney(toNumber(merchant.trustLimit), "RUB")}</p>
-              </div>
-            ))}
+      <section className="card rounded-[1.75rem] p-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Merchant portfolio</p>
+            <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Мерчанты, лимиты и риск</h2>
+            <p className="mt-2 text-sm leading-6 text-graphite/68">Админ видит, кто приносит оборот, где высокий риск и какие комиссии применяются.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/events" className="rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss">
+              Audit log
+            </Link>
+            <Link href="/integrations" className="rounded-2xl border border-ink/10 bg-white/70 px-4 py-3 text-sm font-semibold text-ink transition hover:bg-white">
+              Интеграции
+            </Link>
           </div>
         </div>
 
+        <div className="mt-5 overflow-x-auto">
+          <table className="enterprise-table min-w-[1120px] text-left text-sm">
+            <thead>
+              <tr>
+                <th className="px-4 py-2">Merchant</th>
+                <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2">Balance</th>
+                <th className="px-4 py-2">Trust limit</th>
+                <th className="px-4 py-2">Fees</th>
+                <th className="px-4 py-2">Risk</th>
+                <th className="px-4 py-2">Last activity</th>
+                <th className="px-4 py-2">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {merchants.map((merchant) => {
+                const available = totalByCurrency(merchant.balances.filter((balance) => balance.type === "AVAILABLE"), (balance) => balance.amount, (balance) => balance.currency);
+                const merchantVolume = merchant.orders.reduce((sum, order) => sum + toNumber(order.amount), 0);
+                const risk = riskLevel(merchant.appeals.filter((appeal) => ["NEW", "OPEN"].includes(appeal.status)).length, merchantVolume);
+                const lastActivity = merchant.orders[0]?.createdAt ?? merchant.createdAt;
+
+                return (
+                  <tr key={merchant.id}>
+                    <td className="px-4 py-3">
+                      <p className="font-semibold text-ink">{merchant.displayName}</p>
+                      <p className="mt-1 text-xs text-graphite/55">{merchant.name}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex rounded-full border border-jade/20 bg-jade/10 px-2.5 py-1 text-xs font-semibold text-jade">{merchant.status}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <MoneyBreakdown totals={available} />
+                    </td>
+                    <td className="px-4 py-3 font-mono">{formatMoney(toNumber(merchant.trustLimit), "RUB")}</td>
+                    <td className="px-4 py-3">
+                      <p>Pay-in {formatRate(toNumber(merchant.payinFeeRate) * 100)}%</p>
+                      <p className="mt-1 text-xs text-graphite/55">Payout {formatRate(toNumber(merchant.payoutFeeRate) * 100)}%</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${risk.className}`}>{risk.label}</span>
+                    </td>
+                    <td className="px-4 py-3">{formatDate(lastActivity)}</td>
+                    <td className="px-4 py-3">
+                      <Link href="/merchant" className="rounded-full border border-ink/10 bg-white/60 px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-white">
+                        Открыть
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-2">
         <div className="card rounded-[1.75rem] p-5">
-          <h2 className="font-display text-2xl font-semibold">Провайдеры</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Providers</p>
+          <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Провайдеры</h2>
           <div className="mt-4 grid gap-3">
             {providers.map((provider) => (
-              <div key={provider.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white/60 p-4">
+              <div key={provider.id} className="grid gap-3 rounded-2xl border border-ink/10 bg-white/60 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
                 <div>
-                  <p className="font-semibold">{provider.displayName}</p>
-                  <p className="text-sm text-graphite/55">{provider.type}</p>
+                  <p className="font-semibold text-ink">{provider.displayName}</p>
+                  <p className="mt-1 text-sm text-graphite/55">
+                    {provider.type} · availability {provider.availability}% · комиссия {formatRate(toNumber(provider.commissionRate) * 100)}%
+                  </p>
                 </div>
                 <StatusBadge status={provider.status} type="provider" />
               </div>
             ))}
           </div>
         </div>
+
+        <div className="card rounded-[1.75rem] p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Users</p>
+          <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Роли demo-контура</h2>
+          <div className="mt-4 grid gap-3">
+            {users.slice(0, 6).map((user) => (
+              <div key={user.id} className="rounded-2xl border border-ink/10 bg-white/55 p-4">
+                <p className="font-semibold text-ink">{user.name}</p>
+                <p className="mt-1 text-sm text-graphite/60">
+                  {user.role} · {user.email}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
-      <div className="flex flex-wrap gap-3">
-        <Link href="/events" className="rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white">Открыть журнал</Link>
-        <Link href="/integrations" className="rounded-2xl bg-white/70 px-4 py-3 text-sm font-semibold text-ink">Интеграции</Link>
-      </div>
+
       <EducationBlock
         items={[
-          "Администраторская роль нужна для полного обзора и настройки платформы.",
-          "В демо нет опасных действий вроде удаления данных, чтобы прототип оставался безопасным.",
-          "Главный фокус админки: контроль состояния, рисков и интеграций.",
-          "Для реального продукта здесь добавились бы права, аудит, настройки маршрутизации и лимиты."
+          "Админ-панель нужна для полного контроля платформы: кто подключен, где деньги, какие комиссии и где риск.",
+          "Frozen funds важны для доверия: платформа показывает, какие средства нельзя вывести до решения проверки или апелляции.",
+          "Risk level здесь демонстрационный, но показывает принцип: крупные обороты и открытые споры требуют внимания.",
+          "В реальном продукте на этом уровне добавляются права доступа, audit policies, лимиты маршрутизации и комплаенс-правила."
         ]}
       />
     </div>

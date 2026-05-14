@@ -4,6 +4,7 @@ export type UiOrder = {
   merchantId: string;
   merchantName: string;
   providerName: string;
+  method?: string | null;
   requisite?: string | null;
   amount: number;
   currency: string;

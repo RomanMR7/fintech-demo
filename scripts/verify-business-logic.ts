@@ -16,6 +16,8 @@ const sampleCbrXml = `<?xml version="1.0" encoding="windows-1251"?>
   </Valute>
 </ValCurs>`;
 
+const readable = (value: string) => value.replace(/\u00a0/g, " ");
+
 const parsedRate = parseCbrUsdRubRate(sampleCbrXml);
 assert.equal(parsedRate.quoteCurrency, "USD");
 assert.equal(parsedRate.baseCurrency, "RUB");
@@ -24,9 +26,9 @@ assert.equal(parsedRate.rate, 91.25);
 assert.equal(convertBreakdownToBase({ RUB: 1000, USD: 10 }, { usdRubRate: 91.25 }), 1912.5);
 assert.equal(convertBreakdownToBase({ RUB: 1000, USD: 0 }, { usdRubRate: null }), 1000);
 assert.equal(convertBreakdownToBase({ RUB: 1000, USD: 10 }, { usdRubRate: null }), null);
-assert.equal(formatMoney(1221.6, "USD"), "1 221,60 USD");
-assert.equal(formatMoney(1221.6, "RUB"), "1 222 ₽");
-assert.equal(formatMoneyBreakdown({ RUB: 1000, USD: 12.5 }), "RUB: 1 000 ₽ · USD: 12,50 USD");
+assert.equal(readable(formatMoney(1221.6, "USD")), "1 221,60 USD");
+assert.equal(readable(formatMoney(1221.6, "RUB")), "1 222 RUB");
+assert.equal(readable(formatMoneyBreakdown({ RUB: 1000, USD: 12.5 })), "RUB: 1 000 RUB · USD: 12,50 USD");
 
 assert.equal(canChangeOrderStatus(OrderStatus.CREATED, OrderStatus.WAITING_PAYMENT), true);
 assert.equal(canChangeOrderStatus(OrderStatus.CREATED, OrderStatus.COMPLETED), false);

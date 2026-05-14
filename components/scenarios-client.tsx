@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type Scenario = {
@@ -206,6 +207,7 @@ function getScenarioStatus(scenario: Scenario) {
 }
 
 export function ScenariosClient({ scenarios }: { scenarios: Scenario[] }) {
+  const router = useRouter();
   const [items, setItems] = useState(() => mergeWithSavedProgress(scenarios));
   const [runningKey, setRunningKey] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -250,13 +252,15 @@ export function ScenariosClient({ scenarios }: { scenarios: Scenario[] }) {
         throw new Error(payload.error ?? "Сценарий не выполнился. Попробуйте еще раз.");
       }
 
-      const updatedScenario = { ...scenario, ...payload, step: targetStep } as Scenario;
+      const serverStep = Number.isFinite(Number(payload.step)) ? Number(payload.step) : targetStep;
+      const updatedScenario = { ...scenario, ...payload, step: serverStep } as Scenario;
 
       updateItems((current) => current.map((item) => (item.key === scenario.key ? updatedScenario : item)));
+      router.refresh();
       setMessage({
         type: "success",
         text:
-          targetStep >= scenario.totalSteps
+          serverStep >= scenario.totalSteps
             ? `Сценарий «${scenario.title}» завершен. Результат: ${completed.result}`
             : `Выполнено: ${completed.title}. Дальше: ${next?.title ?? "можно перейти к следующему сценарию"}.`
       });

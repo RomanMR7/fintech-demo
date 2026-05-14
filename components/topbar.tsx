@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { GlobalSearch } from "@/components/global-search";
 import { useRole } from "@/components/role-provider";
 import { VisualModeSwitcher } from "@/components/visual-mode-switcher";
-import { defaultMerchantId, roleOptions, DemoRole } from "@/lib/roles";
+import { defaultMerchantId, roleOptions, type DemoRole } from "@/lib/roles";
 
 type MerchantOption = {
   id: string;
@@ -51,11 +52,23 @@ export function Topbar() {
   }, [merchantId, setMerchantId]);
 
   return (
-    <header className="card flex flex-col gap-3 rounded-[1.5rem] p-4 sm:gap-4 sm:rounded-[2rem] md:flex-row md:items-center md:justify-between">
-      <div className="min-w-0">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-jade sm:text-xs sm:tracking-[0.28em]">Демо-режим без реальных операций</p>
-        <p className="mt-1 text-sm leading-6 text-graphite/70">Данные моковые, роли переключаются без авторизации.</p>
+    <header className="card grid gap-3 rounded-[1.35rem] p-3 sm:p-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+      <div className="grid min-w-0 gap-3 md:grid-cols-[auto_minmax(16rem,1fr)] md:items-center">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/60 px-3 py-1.5 text-xs font-semibold text-ink">
+            <span className="status-dot" />
+            Sandbox
+          </span>
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+            API health 99.4%
+          </span>
+          <span className="hidden rounded-full border border-ink/10 bg-white/45 px-3 py-1.5 text-xs font-semibold text-graphite/70 sm:inline-flex">
+            Demo без реальных финансовых операций
+          </span>
+        </div>
+        <GlobalSearch />
       </div>
+
       <div className="grid gap-2 sm:grid-cols-2 xl:flex xl:items-center xl:gap-3">
         <div className="sm:col-span-2 xl:col-span-1">
           <VisualModeSwitcher />
@@ -63,7 +76,7 @@ export function Topbar() {
         <select
           value={role}
           onChange={(event) => setRole(event.target.value as DemoRole)}
-          className="focus-ring min-w-0 rounded-2xl border border-ink/10 bg-white/75 px-4 py-2.5 text-sm font-semibold text-ink shadow-insetSoft sm:py-3"
+          className="control focus-ring min-w-0 rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink sm:py-3"
           aria-label="Переключатель роли"
         >
           {roleOptions.map((item) => (
@@ -75,7 +88,7 @@ export function Topbar() {
         <select
           value={role === "MERCHANT" ? merchantId : merchants[0]?.id ?? defaultMerchantId}
           onChange={(event) => setMerchantId(event.target.value)}
-          className="focus-ring min-w-0 rounded-2xl border border-ink/10 bg-white/75 px-4 py-2.5 text-sm font-semibold text-ink shadow-insetSoft sm:py-3"
+          className="control focus-ring min-w-0 rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink sm:py-3"
           aria-label="Текущий мерчант"
         >
           {merchants.map((merchant) => (
@@ -84,17 +97,8 @@ export function Topbar() {
             </option>
           ))}
         </select>
-        <Link
-          href="/scenarios"
-          className="focus-ring rounded-2xl bg-ink px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-moss sm:py-3"
-        >
-          Запустить сценарии
-        </Link>
-        <Link
-          href="/commercial"
-          className="focus-ring rounded-2xl bg-jade px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-moss sm:py-3"
-        >
-          Экономика
+        <Link href="/scenarios" className="focus-ring rounded-2xl bg-ink px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-moss sm:py-3">
+          Запустить сценарий
         </Link>
       </div>
     </header>

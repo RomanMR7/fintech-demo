@@ -12,7 +12,7 @@ export function VisualModeSwitcher() {
   const { mode, setMode } = useVisualMode();
 
   return (
-    <div className="rounded-2xl border border-ink/10 bg-white/75 p-1 shadow-insetSoft" aria-label="Переключатель визуального режима">
+    <div className="control rounded-2xl p-1" aria-label="Переключатель визуального режима">
       <div className="grid grid-cols-3 gap-1">
         {options.map((option) => {
           const active = option.value === mode;

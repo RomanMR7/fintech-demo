@@ -12,7 +12,7 @@ export function formatMoney(value: number | string, currency: string = "RUB") {
     maximumFractionDigits: fractionDigits
   }).format(safeAmount);
 
-  return normalizedCurrency === "USD" ? `${formatted} USD` : `${formatted} ₽`;
+  return `${formatted} ${normalizedCurrency}`;
 }
 
 export function formatNumber(value: number | string) {
@@ -53,11 +53,7 @@ export function emptyMoneyTotals(): MoneyTotals {
   return { RUB: 0, USD: 0 };
 }
 
-export function totalByCurrency<T>(
-  items: T[],
-  amountGetter: (item: T) => unknown,
-  currencyGetter: (item: T) => unknown
-): MoneyTotals {
+export function totalByCurrency<T>(items: T[], amountGetter: (item: T) => unknown, currencyGetter: (item: T) => unknown): MoneyTotals {
   return items.reduce<MoneyTotals>((totals, item) => {
     const currency = normalizeCurrency(currencyGetter(item));
     totals[currency] += toNumber(amountGetter(item));
