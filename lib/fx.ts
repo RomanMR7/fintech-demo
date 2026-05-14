@@ -276,7 +276,7 @@ export function convertCurrency(amount: unknown, fromCurrencyInput: unknown, toC
 
   const fromCurrency = normalizeCurrency(fromCurrencyInput);
   const toCurrency = normalizeCurrency(toCurrencyInput);
-  const usdRubRate = fx.usdRubRate ?? FALLBACK_USD_RUB_RATE;
+  const usdRubRate = fx.usdRubRate && fx.usdRubRate > 0 ? fx.usdRubRate : FALLBACK_USD_RUB_RATE;
 
   if (fromCurrency === toCurrency) return amountNumber;
   if (fromCurrency === "USD" && toCurrency === "RUB") return amountNumber * usdRubRate;

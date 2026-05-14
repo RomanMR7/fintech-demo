@@ -34,8 +34,14 @@ export function BalanceAdjustClient({ merchants }: { merchants: MerchantOption[]
 
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const amount = Number(formData.get("amount") ?? 0);
+    const amount = Number(String(formData.get("amount") ?? "").replace(",", "."));
     const currency = String(formData.get("currency") ?? "RUB");
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setMessage({ type: "error", text: "Введите положительную сумму корректировки." });
+      setIsSubmitting(false);
+      return;
+    }
 
     if (!can(role, "balance:adjust")) {
       setMessage({ type: "error", text: disabledReason ?? "Недостаточно прав для корректировки баланса." });
@@ -93,7 +99,7 @@ export function BalanceAdjustClient({ merchants }: { merchants: MerchantOption[]
       <form onSubmit={submit} className="mt-5 grid gap-3 md:grid-cols-2">
         <label className="grid gap-1 text-sm font-semibold">
           Мерчант
-          <select name="merchantId" required className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 font-normal outline-none transition focus:border-jade">
+          <select name="merchantId" required className="field focus-ring font-normal">
             {merchants.map((merchant) => (
               <option key={merchant.id} value={merchant.id}>
                 {merchant.displayName}
@@ -103,7 +109,7 @@ export function BalanceAdjustClient({ merchants }: { merchants: MerchantOption[]
         </label>
         <label className="grid gap-1 text-sm font-semibold">
           Операция
-          <select name="operation" required className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 font-normal outline-none transition focus:border-jade">
+          <select name="operation" required className="field focus-ring font-normal">
             {operations.map((operation) => (
               <option key={operation.value} value={operation.value}>
                 {operation.label}
@@ -113,18 +119,18 @@ export function BalanceAdjustClient({ merchants }: { merchants: MerchantOption[]
         </label>
         <label className="grid gap-1 text-sm font-semibold">
           Валюта
-          <select name="currency" required className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 font-normal outline-none transition focus:border-jade">
+          <select name="currency" required className="field focus-ring font-normal">
             <option value="RUB">RUB — рубли</option>
             <option value="USD">USD — доллары</option>
           </select>
         </label>
         <label className="grid gap-1 text-sm font-semibold">
           Сумма
-          <input name="amount" type="number" min="1" step="100" required placeholder="100000" className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 font-normal outline-none transition focus:border-jade" />
+          <input name="amount" type="number" min="1" step="0.01" required placeholder="100000" className="field focus-ring font-normal" />
         </label>
         <label className="grid gap-1 text-sm font-semibold">
           Причина
-          <input name="description" required placeholder="Корректировка для демо-показа" className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 font-normal outline-none transition focus:border-jade" />
+          <input name="description" required placeholder="Корректировка для демо-показа" className="field focus-ring font-normal" />
         </label>
         {!can(role, "balance:adjust") ? <div className="rounded-2xl border border-brass/25 bg-brass/10 px-4 py-3 text-sm font-semibold text-brass md:col-span-2">{disabledReason}</div> : null}
         <button disabled={isSubmitting || merchants.length === 0 || Boolean(disabledReason)} title={disabledReason ?? undefined} className="focus-ring rounded-2xl bg-jade px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss disabled:cursor-not-allowed disabled:opacity-50 md:col-span-2">

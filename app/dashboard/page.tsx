@@ -18,7 +18,7 @@ type ChartPoint = {
 type DashboardPeriodKey = "24h" | "7d" | "30d" | "month" | "quarter";
 
 type DashboardPageProps = {
-  searchParams?: Promise<{ period?: string | string[] }>;
+  searchParams?: Promise<{ period?: string | string[]; merchantId?: string | string[] }>;
 };
 
 const periodOptions: Array<{ key: DashboardPeriodKey; label: string; title: string }> = [
@@ -132,6 +132,12 @@ function normalizePeriod(value: string | string[] | undefined): DashboardPeriodK
   return periodOptions.some((item) => item.key === rawValue) ? (rawValue as DashboardPeriodKey) : "7d";
 }
 
+function normalizeMerchantParam(value: string | string[] | undefined) {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  const normalized = rawValue?.trim();
+  return normalized || null;
+}
+
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
@@ -227,12 +233,17 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const params = searchParams ? await searchParams : {};
   const selectedPeriod = normalizePeriod(params.period);
   const selectedPeriodOption = periodOptions.find((item) => item.key === selectedPeriod) ?? periodOptions[1];
+  const requestedMerchantId = normalizeMerchantParam(params.merchantId);
+  const scopeMerchant = requestedMerchantId
+    ? await prisma.merchant.findUnique({ where: { id: requestedMerchantId }, select: { id: true, displayName: true } })
+    : null;
+  const scopedWhere = scopeMerchant ? { merchantId: scopeMerchant.id } : undefined;
 
   const [orders, payouts, balances, appeals, events, providers, fx] = await Promise.all([
-    prisma.paymentOrder.findMany({ include: { merchant: true, provider: true, requisite: true }, orderBy: { createdAt: "desc" } }),
-    prisma.payout.findMany({ include: { merchant: true }, orderBy: { createdAt: "desc" } }),
-    prisma.balanceAccount.findMany({ include: { merchant: true } }),
-    prisma.appeal.findMany({ include: { order: true, merchant: true }, orderBy: { updatedAt: "desc" } }),
+    prisma.paymentOrder.findMany({ where: scopedWhere, include: { merchant: true, provider: true, requisite: true }, orderBy: { createdAt: "desc" } }),
+    prisma.payout.findMany({ where: scopedWhere, include: { merchant: true }, orderBy: { createdAt: "desc" } }),
+    prisma.balanceAccount.findMany({ where: scopedWhere, include: { merchant: true } }),
+    prisma.appeal.findMany({ where: scopedWhere, include: { order: true, merchant: true }, orderBy: { updatedAt: "desc" } }),
     prisma.eventLog.findMany({ orderBy: { createdAt: "desc" }, take: 8 }),
     prisma.provider.findMany({ orderBy: { availability: "desc" } }),
     getFxSnapshot()
@@ -291,19 +302,29 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const turnover7dBase = sumOrdersBase(orders.filter((order) => isInPeriod(order.createdAt, "7d", now)), fx);
   const turnover30dBase = sumOrdersBase(orders.filter((order) => isInPeriod(order.createdAt, "30d", now)), fx);
   const paymentVolumePoints = buildPaymentVolumePoints(periodOrders, selectedPeriod, fx, now);
+  const dashboardDescription = scopeMerchant
+    ? `Финансовый control room по мерчанту ${scopeMerchant.displayName}: где деньги, что в холде, какие операции требуют внимания и как чувствует себя API-контур.`
+    : "Финансовый control room платежной платформы: где деньги, что в холде, какие операции требуют внимания и как чувствует себя API-контур.";
+
+  const periodHref = (period: DashboardPeriodKey) => {
+    const nextParams = new URLSearchParams({ period });
+    if (scopeMerchant) nextParams.set("merchantId", scopeMerchant.id);
+    return `/dashboard?${nextParams.toString()}`;
+  };
 
   return (
     <div className="page-stack">
       <PageHeader
         eyebrow="Общий обзор"
         title="Главная панель"
-        description="Финансовый control room платежной платформы: где деньги, что в холде, какие операции требуют внимания и как чувствует себя API-контур."
+        description={dashboardDescription}
       >
         <div className="flex flex-wrap gap-2">
+          {scopeMerchant ? <span className="pill bg-jade/10 text-jade">Фокус: {scopeMerchant.displayName}</span> : <span className="pill bg-white/60 text-graphite/70">Фокус: вся платформа</span>}
           {periodOptions.map((period) => (
             <Link
               key={period.key}
-              href={`/dashboard?period=${period.key}`}
+              href={periodHref(period.key)}
               aria-current={period.key === selectedPeriod ? "page" : undefined}
               className={`pill transition ${period.key === selectedPeriod ? "bg-ink text-white" : "bg-white/60 text-graphite/70 hover:bg-white hover:text-ink"}`}
             >

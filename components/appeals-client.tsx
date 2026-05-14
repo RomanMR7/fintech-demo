@@ -1,16 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { EmptyState } from "@/components/empty-state";
 import { useRole } from "@/components/role-provider";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDate, formatMoney } from "@/lib/format";
+import { disabledActionReason } from "@/lib/rbac";
 import { UiAppeal } from "@/lib/ui-types";
 
 export function AppealsClient({ appeals }: { appeals: UiAppeal[] }) {
   const router = useRouter();
   const { role, merchantId } = useRole();
   const [isPending, startTransition] = useTransition();
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const resolveDisabledReason = disabledActionReason(role, "appeal:resolve");
 
   const visibleAppeals = useMemo(
     () => appeals.filter((appeal) => (role === "MERCHANT" ? appeal.merchantId === merchantId : true)),
@@ -19,10 +23,21 @@ export function AppealsClient({ appeals }: { appeals: UiAppeal[] }) {
 
   const mutate = (action: () => Promise<void>) => {
     startTransition(async () => {
-      await action();
-      router.refresh();
+      setMessage(null);
+      try {
+        await action();
+        setMessage({ type: "success", text: "Апелляция обновлена, событие записано в журнал аудита." });
+        router.refresh();
+      } catch (error) {
+        setMessage({ type: "error", text: error instanceof Error ? error.message : "Не удалось обновить апелляцию." });
+      }
     });
   };
+
+  async function ensureOk(response: Response, fallback: string) {
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error ?? payload.message ?? fallback);
+  }
 
   return (
     <div className="grid gap-4">
@@ -39,6 +54,12 @@ export function AppealsClient({ appeals }: { appeals: UiAppeal[] }) {
           Создать апелляцию
         </button>
       </div>
+      {message ? (
+        <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${message.type === "success" ? "border-jade/25 bg-jade/10 text-moss" : "border-red-200 bg-red-50 text-red-700"}`}>
+          {message.text}
+        </div>
+      ) : null}
+      {!visibleAppeals.length ? <EmptyState title="Апелляций пока нет" description="Когда появится спорная операция, здесь будет виден ордер, сумма hold, причина и действия support-команды." /> : null}
       {visibleAppeals.map((appeal) => (
         <article key={appeal.id} className="card rounded-[1.75rem] p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -55,10 +76,18 @@ export function AppealsClient({ appeals }: { appeals: UiAppeal[] }) {
             <div className="flex flex-wrap gap-2">
               {["NEW"].includes(appeal.status) ? (
                 <button
-                  disabled={isPending}
+                  disabled={isPending || Boolean(resolveDisabledReason)}
+                  title={resolveDisabledReason ?? undefined}
                   onClick={() =>
                     mutate(async () => {
-                      await fetch(`/api/appeals/${appeal.id}/open`, { method: "PATCH" });
+                      await ensureOk(
+                        await fetch(`/api/appeals/${appeal.id}/open`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ actorRole: role })
+                        }),
+                        "Не удалось взять апелляцию в работу."
+                      );
                     })
                   }
                   className="rounded-full bg-sky-100 px-3 py-1.5 text-xs font-semibold text-sky-800"
@@ -69,14 +98,18 @@ export function AppealsClient({ appeals }: { appeals: UiAppeal[] }) {
               {["NEW", "OPEN"].includes(appeal.status) ? (
                 <>
                   <button
-                    disabled={isPending}
+                    disabled={isPending || Boolean(resolveDisabledReason)}
+                    title={resolveDisabledReason ?? undefined}
                     onClick={() =>
                       mutate(async () => {
-                        await fetch(`/api/appeals/${appeal.id}/resolve`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ resolution: "merchant" })
-                        });
+                        await ensureOk(
+                          await fetch(`/api/appeals/${appeal.id}/resolve`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ resolution: "merchant", actorRole: role })
+                          }),
+                          "Не удалось решить апелляцию."
+                        );
                       })
                     }
                     className="rounded-full bg-jade px-3 py-1.5 text-xs font-semibold text-white"
@@ -84,14 +117,18 @@ export function AppealsClient({ appeals }: { appeals: UiAppeal[] }) {
                     В пользу мерчанта
                   </button>
                   <button
-                    disabled={isPending}
+                    disabled={isPending || Boolean(resolveDisabledReason)}
+                    title={resolveDisabledReason ?? undefined}
                     onClick={() =>
                       mutate(async () => {
-                        await fetch(`/api/appeals/${appeal.id}/resolve`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ resolution: "platform" })
-                        });
+                        await ensureOk(
+                          await fetch(`/api/appeals/${appeal.id}/resolve`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ resolution: "platform", actorRole: role })
+                          }),
+                          "Не удалось решить апелляцию."
+                        );
                       })
                     }
                     className="rounded-full bg-brass/15 px-3 py-1.5 text-xs font-semibold text-brass"

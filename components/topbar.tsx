@@ -53,6 +53,8 @@ export function Topbar() {
         }
       } catch {
         setMerchants(fallbackMerchants);
+        const fallbackMerchant = fallbackMerchants[0];
+        setMerchantContext({ id: fallbackMerchant.id, name: fallbackMerchant.label });
       }
     }
 
@@ -88,10 +90,14 @@ export function Topbar() {
   }, []);
 
   useEffect(() => {
-    if (pathname !== "/merchant") return;
+    if (pathname !== "/merchant" && pathname !== "/dashboard") return;
 
-    const urlMerchantId = new URLSearchParams(window.location.search).get("merchantId");
+    const params = new URLSearchParams(window.location.search);
+    const urlMerchantId = params.get("merchantId");
     const selectedMerchant = merchants.find((merchant) => merchant.id === merchantId) ?? merchants[0] ?? fallbackMerchants[0];
+
+    if (pathname === "/dashboard" && !urlMerchantId) return;
+
     if (urlMerchantId) {
       const urlMerchant = merchants.find((merchant) => merchant.id === urlMerchantId);
       if (urlMerchant) {
@@ -101,7 +107,13 @@ export function Topbar() {
         return;
       }
 
-      router.replace(`/merchant?merchantId=${encodeURIComponent(selectedMerchant?.id ?? defaultMerchantId)}`);
+      if (pathname === "/dashboard") {
+        params.delete("merchantId");
+        const nextQuery = params.toString();
+        router.replace(nextQuery ? `/dashboard?${nextQuery}` : "/dashboard");
+      } else {
+        router.replace(`/merchant?merchantId=${encodeURIComponent(selectedMerchant?.id ?? defaultMerchantId)}`);
+      }
       return;
     }
 
@@ -113,8 +125,10 @@ export function Topbar() {
     const nextMerchant = merchants.find((merchant) => merchant.id === nextMerchantId);
     setMerchantContext({ id: nextMerchantId, name: nextMerchant?.label ?? nextMerchantId });
 
-    if (pathname === "/merchant") {
-      router.push(`/merchant?merchantId=${encodeURIComponent(nextMerchantId)}`);
+    if (pathname === "/merchant" || pathname === "/dashboard") {
+      const params = new URLSearchParams(window.location.search);
+      params.set("merchantId", nextMerchantId);
+      router.push(`${pathname}?${params.toString()}`);
     }
   };
 

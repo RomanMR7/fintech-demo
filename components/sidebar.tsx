@@ -92,6 +92,10 @@ function isActivePath(pathname: string, href: string) {
 }
 
 function getNavigationHref(item: NavItem, merchantId: string) {
+  if (item.href === "/dashboard") {
+    return `/dashboard?merchantId=${encodeURIComponent(merchantId)}`;
+  }
+
   if (item.href === "/merchant") {
     return `/merchant?merchantId=${encodeURIComponent(merchantId)}`;
   }

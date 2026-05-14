@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
+import { EmptyState } from "@/components/empty-state";
 import { useRole } from "@/components/role-provider";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -193,6 +194,7 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
       ) : null}
 
       <div className="mt-5 grid gap-3 lg:hidden">
+        {!pagedOrders.length ? <EmptyState title="Ордеры не найдены" description="Измените поиск, фильтры или создайте новый sandbox-ордер для выбранного мерчанта." /> : null}
         {pagedOrders.map((order) => {
           const score = riskScore(order);
           return (
@@ -279,7 +281,7 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
       </div>
 
       <div className="mt-5 hidden overflow-x-auto lg:block">
-        <table className="enterprise-table min-w-[1120px] text-left text-sm">
+        {pagedOrders.length ? <table className="enterprise-table min-w-[1120px] text-left text-sm">
           <thead>
             <tr>
               <th className="px-4 py-2">ID ордера</th>
@@ -364,7 +366,7 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table> : <EmptyState title="Ордеры не найдены" description="Измените поиск, фильтры или создайте новый sandbox-ордер для выбранного мерчанта." />}
       </div>
 
       <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-ink/10 bg-white/55 px-4 py-3 text-sm text-graphite/65 sm:flex-row sm:items-center sm:justify-between">

@@ -1,32 +1,45 @@
 import { NextResponse } from "next/server";
 import { EventType, RequisiteStatus, UserRole } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
+import { can } from "@/lib/rbac";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const body = await request.json();
-  const status = body.status as string;
+  try {
+    const { id } = await params;
+    const body = await request.json().catch(() => ({}));
+    const actorRole = String(body.actorRole ?? UserRole.VIEWER);
+    const status = body.status as string;
 
-  if (!Object.values(RequisiteStatus).includes(status as (typeof RequisiteStatus)[keyof typeof RequisiteStatus])) {
-    return NextResponse.json({ message: "Некорректный статус реквизита" }, { status: 400 });
-  }
-
-  const requisite = await prisma.paymentRequisite.update({
-    where: { id },
-    data: { status }
-  });
-
-  await prisma.eventLog.create({
-    data: {
-      actorRole: UserRole.OPERATOR,
-      actorName: "Мария Лебедева",
-      type: EventType.REQUISITE_CHANGED,
-      entityType: "PaymentRequisite",
-      entityId: requisite.id,
-      title: "Статус реквизита изменен",
-      description: `Реквизит ${requisite.bank} ${requisite.maskedNumber} переведен в статус ${status}.`
+    if (!can(actorRole, "requisite:manage")) {
+      return NextResponse.json({ error: "Недостаточно прав для управления реквизитами." }, { status: 403 });
     }
-  });
 
-  return NextResponse.json(requisite);
+    if (!Object.values(RequisiteStatus).includes(status as (typeof RequisiteStatus)[keyof typeof RequisiteStatus])) {
+      return NextResponse.json({ message: "Некорректный статус реквизита" }, { status: 400 });
+    }
+
+    const existing = await prisma.paymentRequisite.findUnique({ where: { id } });
+    if (!existing) return NextResponse.json({ error: "Реквизит не найден." }, { status: 404 });
+
+    const requisite = await prisma.paymentRequisite.update({
+      where: { id },
+      data: { status }
+    });
+
+    await prisma.eventLog.create({
+      data: {
+        actorRole,
+        actorName: actorRole === UserRole.OPERATOR ? "Мария Лебедева" : "Demo user",
+        type: EventType.REQUISITE_CHANGED,
+        entityType: "PaymentRequisite",
+        entityId: requisite.id,
+        title: "Статус реквизита изменен",
+        description: `Реквизит ${requisite.bank} ${requisite.maskedNumber} переведен в статус ${status}.`
+      }
+    });
+
+    return NextResponse.json(requisite);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Не удалось изменить реквизит." }, { status: 400 });
+  }
 }

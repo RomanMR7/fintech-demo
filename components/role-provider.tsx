@@ -35,13 +35,17 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setMerchantId = useCallback((nextMerchantId: string) => {
-    setMerchantIdState(nextMerchantId);
-    window.localStorage.setItem("demo-merchant-id", nextMerchantId);
+    const safeMerchantId = nextMerchantId || defaultMerchantId;
+    setMerchantIdState(safeMerchantId);
+    setMerchantName(null);
+    window.localStorage.setItem("demo-merchant-id", safeMerchantId);
+    window.localStorage.removeItem("demo-merchant-name");
   }, []);
 
   const setMerchantContext = useCallback((merchant: { id: string; name?: string | null }) => {
-    setMerchantIdState(merchant.id);
-    window.localStorage.setItem("demo-merchant-id", merchant.id);
+    const safeMerchantId = merchant.id || defaultMerchantId;
+    setMerchantIdState(safeMerchantId);
+    window.localStorage.setItem("demo-merchant-id", safeMerchantId);
 
     if (merchant.name) {
       setMerchantName(merchant.name);
