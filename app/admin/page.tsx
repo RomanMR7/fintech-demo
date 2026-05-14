@@ -115,7 +115,7 @@ export default async function AdminPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Link href="/events" className="rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss">
-              Audit log
+              Журнал аудита
             </Link>
             <Link href="/integrations" className="rounded-2xl border border-ink/10 bg-white/70 px-4 py-3 text-sm font-semibold text-ink transition hover:bg-white">
               Интеграции

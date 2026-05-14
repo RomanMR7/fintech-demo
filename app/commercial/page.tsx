@@ -87,18 +87,18 @@ export default async function CommercialPage() {
           </div>
         </div>
 
-        <div className="dark-panel rounded-[1.75rem] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/50">Простая формула</p>
-          <h2 className="mt-2 font-display text-2xl font-semibold">Доход = оборот × комиссия + снижение потерь</h2>
-          <div className="mt-5 grid gap-3 text-sm leading-6 text-white/76">
-            <p><span className="font-semibold text-white">Прием платежей:</span> мерчант платит комиссию за прием платежей.</p>
-            <p><span className="font-semibold text-white">Выплаты:</span> мерчант платит комиссию за вывод средств.</p>
-            <p><span className="font-semibold text-white">Снижение потерь:</span> платформа меньше теряет на спорных операциях, ошибках и ручной обработке.</p>
-            <p><span className="font-semibold text-white">Расширенные модули:</span> крупные клиенты могут платить за SLA, индивидуальные лимиты, интеграции и аналитику.</p>
+        <div className="card rounded-[1.75rem] p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-jade">Коммерческая логика</p>
+          <h2 className="mt-2 font-display text-2xl font-semibold text-ink">Доход = оборот × комиссия + снижение потерь</h2>
+          <div className="mt-5 grid gap-3 text-sm leading-6 text-graphite/70">
+            <p className="rounded-2xl border border-ink/10 bg-white/55 p-4"><span className="font-semibold text-ink">Прием платежей:</span> мерчант платит комиссию за прием платежей.</p>
+            <p className="rounded-2xl border border-ink/10 bg-white/55 p-4"><span className="font-semibold text-ink">Выплаты:</span> мерчант платит комиссию за вывод средств.</p>
+            <p className="rounded-2xl border border-ink/10 bg-white/55 p-4"><span className="font-semibold text-ink">Снижение потерь:</span> платформа меньше теряет на спорных операциях, ошибках и ручной обработке.</p>
+            <p className="rounded-2xl border border-ink/10 bg-white/55 p-4"><span className="font-semibold text-ink">Расширенные модули:</span> крупные клиенты могут платить за SLA, индивидуальные лимиты, интеграции и аналитику.</p>
           </div>
-          <div className="mt-6 rounded-2xl bg-white/10 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-white/45">Демо-контур</p>
-            <p className="mt-2 text-sm leading-6 text-white/78">
+          <div className="mt-6 rounded-2xl border border-jade/20 bg-jade/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-jade">Демо-контур</p>
+            <p className="mt-2 text-sm leading-6 text-graphite/72">
               Сейчас в базе {merchants.length} мерчанта, {providers.length} провайдеров, {orders.length} ордеров и {payouts.length} выплат. Этого достаточно, чтобы показать механику продаж и операционный контроль.
             </p>
           </div>

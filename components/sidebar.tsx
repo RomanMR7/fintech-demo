@@ -28,7 +28,7 @@ export const navigationSections: NavSection[] = [
   {
     title: "Обзор",
     items: [
-      { href: "/dashboard", label: "Главный dashboard", description: "Деньги, риски, API и последние события.", roles: allRoles },
+      { href: "/dashboard", label: "Главная панель", description: "Деньги, риски, API и последние события.", roles: allRoles },
       { href: "/commercial", label: "Экономика продукта", description: "Юнит-экономика, комиссии и потенциал выручки.", roles: financeRoles },
       { href: "/merchant", label: "Кабинет мерчанта", description: "Баланс, выплаты, API key и интеграция.", roles: merchantRoles },
       { href: "/admin", label: "Админ-панель", description: "Мерчанты, лимиты, комиссии и контроль платформы.", roles: ["PLATFORM_ADMIN"] },
@@ -47,19 +47,19 @@ export const navigationSections: NavSection[] = [
   {
     title: "Риск и контроль",
     items: [
-      { href: "/appeals", label: "Апелляции / disputes", description: "Споры, комментарии, решения и SLA.", roles: opsRoles },
+      { href: "/appeals", label: "Апелляции", description: "Споры, комментарии, решения и SLA.", roles: opsRoles },
       { href: "/commissions", label: "Комиссии", description: "Модель дохода платформы и удержания.", roles: financeRoles },
       { href: "/exchange-rates", label: "Курсы валют", description: "RUB/USD, источник и дата актуальности.", roles: financeRoles },
-      { href: "/events", label: "Audit log", description: "Журнал действий, статусов и финансовых событий.", roles: allRoles },
+      { href: "/events", label: "Журнал аудита", description: "Журнал действий, статусов и финансовых событий.", roles: allRoles },
       { href: "/notifications", label: "Уведомления", description: "События для текущей роли и мерчанта.", roles: allRoles }
     ]
   },
   {
     title: "API и webhooks",
     items: [
-      { href: "/api-demo", label: "API demo", description: "Примеры создания ордера, webhook и ответа API.", roles: allRoles },
+      { href: "/api-demo", label: "API-демо", description: "Примеры создания ордера, webhook и ответа API.", roles: allRoles },
       { href: "/integrations", label: "Интеграции", description: "Провайдеры, доступность, комиссии и тестовый режим.", roles: ["PLATFORM_ADMIN", "OPERATOR", "MERCHANT"] },
-      { href: "/scenarios", label: "Live-сценарии", description: "Кликабельная симуляция операций и последствий.", roles: allRoles },
+      { href: "/scenarios", label: "Демо-сценарии", description: "Кликабельная симуляция операций и последствий.", roles: allRoles },
       { href: "/process-map", label: "Карта процессов", description: "Жизненные циклы ордера, выплаты, апелляции и баланса.", roles: allRoles }
     ]
   },
@@ -125,8 +125,8 @@ export function Sidebar() {
       <div className="rounded-[1.2rem] bg-ink px-4 py-4 text-white shadow-soft">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-white/48">Payment Platform</p>
-            <h1 className="mt-1 text-lg font-semibold leading-tight tracking-[-0.03em]">Fintech OS</h1>
+            <p className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-white/48">Платежная платформа</p>
+            <h1 className="mt-1 text-lg font-semibold leading-tight tracking-[-0.03em]">Fintech OS Demo</h1>
           </div>
           <span className="status-dot bg-emerald-300" />
         </div>
