@@ -23,6 +23,23 @@
   --radius-xl: 1.625rem;
   --shadow-card: 0 14px 44px rgba(21, 35, 31, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.72);
   --shadow-control: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  --sidebar-brand-bg:
+    radial-gradient(circle at 12% 8%, rgba(13, 118, 108, 0.12), transparent 14rem),
+    linear-gradient(135deg, rgba(255, 253, 248, 0.9), rgba(236, 248, 242, 0.78));
+  --sidebar-brand-border: rgba(13, 118, 108, 0.16);
+  --sidebar-brand-text: #15231f;
+  --sidebar-brand-muted: rgba(41, 53, 50, 0.62);
+  --sidebar-brand-role-bg: rgba(13, 118, 108, 0.075);
+  --sidebar-brand-role-border: rgba(13, 118, 108, 0.14);
+  --sidebar-brand-shadow: 0 14px 34px rgba(21, 35, 31, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  --sidebar-nav-active-bg:
+    linear-gradient(135deg, rgba(13, 118, 108, 0.13), rgba(181, 134, 59, 0.075));
+  --sidebar-nav-active-text: #0f4e47;
+  --sidebar-nav-active-border: rgba(13, 118, 108, 0.18);
+  --sidebar-nav-hover-bg: rgba(255, 255, 255, 0.66);
+  --sidebar-nav-hover-text: var(--ink);
+  --sidebar-nav-dot: rgba(102, 115, 111, 0.34);
+  --sidebar-nav-dot-active: var(--jade);
 }
 
 * {
@@ -464,6 +481,73 @@ textarea {
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--jade) 16%, transparent);
 }
 
+.sidebar-brand {
+  border: 1px solid var(--sidebar-brand-border);
+  background: var(--sidebar-brand-bg);
+  box-shadow: var(--sidebar-brand-shadow);
+  color: var(--sidebar-brand-text);
+  backdrop-filter: blur(18px);
+}
+
+.sidebar-brand-muted {
+  color: var(--sidebar-brand-muted);
+}
+
+.sidebar-role-card {
+  border: 1px solid var(--sidebar-brand-role-border);
+  background: var(--sidebar-brand-role-bg);
+  box-shadow: var(--shadow-control);
+}
+
+.sidebar-nav-link {
+  border: 1px solid transparent;
+  color: color-mix(in srgb, var(--muted) 88%, var(--ink));
+}
+
+.sidebar-nav-link:hover {
+  border-color: var(--line);
+  background: var(--sidebar-nav-hover-bg);
+  color: var(--sidebar-nav-hover-text);
+}
+
+.sidebar-nav-link-active {
+  border-color: var(--sidebar-nav-active-border);
+  background: var(--sidebar-nav-active-bg);
+  color: var(--sidebar-nav-active-text);
+  box-shadow: var(--shadow-control);
+}
+
+.sidebar-nav-dot {
+  background: var(--sidebar-nav-dot);
+  transition: background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.sidebar-nav-link:hover .sidebar-nav-dot,
+.sidebar-nav-link-active .sidebar-nav-dot {
+  background: var(--sidebar-nav-dot-active);
+}
+
+.sidebar-nav-link-active .sidebar-nav-dot {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--sidebar-nav-dot-active) 14%, transparent);
+}
+
+.sidebar-quick-link {
+  border: 1px solid var(--line);
+  background: var(--panel-muted);
+  color: color-mix(in srgb, var(--muted) 88%, var(--ink));
+}
+
+.sidebar-quick-link:hover {
+  background: var(--sidebar-nav-hover-bg);
+  color: var(--sidebar-nav-hover-text);
+}
+
+.sidebar-quick-link-active {
+  border-color: var(--sidebar-nav-active-border);
+  background: var(--sidebar-nav-active-bg);
+  color: var(--sidebar-nav-active-text);
+}
+
 .focus-ring {
   outline: none;
 }
@@ -493,6 +577,22 @@ html.theme-dark {
   --info: #7dd3fc;
   --shadow-card: 0 18px 54px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   --shadow-control: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --sidebar-brand-bg:
+    radial-gradient(circle at 18% 12%, rgba(71, 213, 197, 0.13), transparent 16rem),
+    linear-gradient(135deg, rgba(18, 33, 30, 0.88), rgba(13, 27, 24, 0.78));
+  --sidebar-brand-border: rgba(218, 236, 228, 0.14);
+  --sidebar-brand-text: #eef7f3;
+  --sidebar-brand-muted: rgba(170, 184, 179, 0.72);
+  --sidebar-brand-role-bg: rgba(255, 255, 255, 0.06);
+  --sidebar-brand-role-border: rgba(218, 236, 228, 0.12);
+  --sidebar-brand-shadow: 0 16px 42px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --sidebar-nav-active-bg: linear-gradient(135deg, rgba(71, 213, 197, 0.16), rgba(221, 182, 109, 0.08));
+  --sidebar-nav-active-text: #eef7f3;
+  --sidebar-nav-active-border: rgba(71, 213, 197, 0.22);
+  --sidebar-nav-hover-bg: rgba(255, 255, 255, 0.07);
+  --sidebar-nav-hover-text: #eef7f3;
+  --sidebar-nav-dot: rgba(170, 184, 179, 0.38);
+  --sidebar-nav-dot-active: #47d5c5;
   background:
     radial-gradient(circle at 15% 8%, rgba(71, 213, 197, 0.16), transparent 26rem),
     radial-gradient(circle at 88% 4%, rgba(221, 182, 109, 0.12), transparent 28rem),
@@ -516,6 +616,25 @@ html.theme-cosmic {
   --info: #93c5fd;
   --shadow-card: 0 18px 64px rgba(20, 32, 92, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.12);
   --shadow-control: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --sidebar-brand-bg:
+    radial-gradient(circle at 18% 10%, rgba(125, 211, 252, 0.22), transparent 14rem),
+    radial-gradient(circle at 88% 16%, rgba(240, 171, 252, 0.12), transparent 12rem),
+    linear-gradient(145deg, rgba(20, 29, 70, 0.78), rgba(12, 18, 48, 0.68));
+  --sidebar-brand-border: rgba(189, 207, 255, 0.2);
+  --sidebar-brand-text: #f3f7ff;
+  --sidebar-brand-muted: rgba(206, 216, 255, 0.72);
+  --sidebar-brand-role-bg: rgba(125, 211, 252, 0.08);
+  --sidebar-brand-role-border: rgba(189, 207, 255, 0.16);
+  --sidebar-brand-shadow: 0 18px 48px rgba(20, 32, 92, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --sidebar-nav-active-bg:
+    radial-gradient(circle at 10% 30%, rgba(125, 211, 252, 0.18), transparent 8rem),
+    linear-gradient(135deg, rgba(125, 211, 252, 0.14), rgba(240, 171, 252, 0.09));
+  --sidebar-nav-active-text: #f3f7ff;
+  --sidebar-nav-active-border: rgba(125, 211, 252, 0.26);
+  --sidebar-nav-hover-bg: rgba(125, 211, 252, 0.09);
+  --sidebar-nav-hover-text: #f3f7ff;
+  --sidebar-nav-dot: rgba(184, 193, 223, 0.42);
+  --sidebar-nav-dot-active: #7dd3fc;
   background:
     radial-gradient(circle at 18% 16%, rgba(125, 211, 252, 0.24), transparent 22rem),
     radial-gradient(circle at 78% 10%, rgba(240, 171, 252, 0.2), transparent 24rem),

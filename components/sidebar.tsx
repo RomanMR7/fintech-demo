@@ -106,11 +106,9 @@ function MiniNavLink({ item, active, href, label, onClick }: { item: NavItem; ac
       href={href ?? item.href}
       onClick={onClick}
       title={item.description}
-      className={`group grid min-h-10 grid-cols-[1rem_minmax(0,1fr)] items-center gap-2.5 rounded-[0.95rem] px-2.5 text-sm transition ${
-        active ? "bg-ink text-white shadow-insetSoft" : "text-graphite/76 hover:bg-white/64 hover:text-ink"
-      }`}
+      className={`sidebar-nav-link group grid min-h-10 grid-cols-[1rem_minmax(0,1fr)] items-center gap-2.5 rounded-[0.95rem] px-2.5 text-sm transition ${active ? "sidebar-nav-link-active" : ""}`}
     >
-      <span className={`mx-auto h-1.5 w-1.5 rounded-full ${active ? "bg-jade" : "bg-graphite/22 group-hover:bg-jade"}`} />
+      <span className="sidebar-nav-dot mx-auto h-1.5 w-1.5 rounded-full" />
       <span className="truncate font-semibold">{label ?? item.label}</span>
     </Link>
   );
@@ -124,17 +122,17 @@ export function Sidebar() {
 
   return (
     <aside className="card sticky top-6 hidden h-[calc(100vh-3rem)] flex-col overflow-hidden rounded-[var(--radius-xl)] p-3 lg:flex">
-      <div className="rounded-[1.2rem] bg-ink px-4 py-4 text-white shadow-soft">
+      <div className="sidebar-brand rounded-[1.2rem] px-4 py-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-white/48">Платежная платформа</p>
+            <p className="sidebar-brand-muted text-[0.68rem] font-bold uppercase tracking-[0.12em]">Платежная платформа</p>
             <h1 className="mt-1 text-lg font-semibold leading-tight tracking-[-0.03em]">Fintech OS Demo</h1>
           </div>
-          <span className="status-dot bg-emerald-300" />
+          <span className="status-dot" />
         </div>
-        <div className="mt-3 rounded-[0.95rem] border border-white/10 bg-white/8 px-3 py-2">
-          <p className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-white/42">Роль</p>
-          <p className="mt-1 truncate text-sm font-semibold text-white">{currentRoleLabel}</p>
+        <div className="sidebar-role-card mt-3 rounded-[0.95rem] px-3 py-2">
+          <p className="sidebar-brand-muted text-[0.65rem] font-bold uppercase tracking-[0.12em]">Роль</p>
+          <p className="mt-1 truncate text-sm font-semibold">{currentRoleLabel}</p>
         </div>
       </div>
 
@@ -222,7 +220,7 @@ export function MobileNavigation() {
         {quickItems.map((item) => {
           const active = isActivePath(pathname, item.href);
           return (
-            <Link href={getNavigationHref(item, merchantId)} key={item.href} className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold shadow-insetSoft transition ${active ? "bg-ink text-white" : "border border-ink/10 bg-white/70 text-graphite hover:bg-white"}`}>
+            <Link href={getNavigationHref(item, merchantId)} key={item.href} className={`sidebar-quick-link shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold shadow-insetSoft transition ${active ? "sidebar-quick-link-active" : ""}`}>
               {item.href === "/merchant" ? merchantMenuLabel : item.label}
             </Link>
           );
