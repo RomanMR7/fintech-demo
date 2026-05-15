@@ -46,7 +46,7 @@ function FinanceKpiCard({
     jade: "bg-jade/10 text-jade border-jade/20",
     brass: "bg-brass/10 text-brass border-brass/25",
     moss: "bg-moss/10 text-moss border-moss/20",
-    red: "bg-red-500/10 text-red-700 border-red-500/20",
+    red: "tone-red",
     blue: "bg-sky-500/10 text-sky-700 border-sky-500/20"
   }[tone];
 

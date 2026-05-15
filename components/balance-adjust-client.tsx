@@ -91,7 +91,7 @@ export function BalanceAdjustClient({ merchants }: { merchants: MerchantOption[]
       <p className="mt-1 text-sm text-graphite/60">Для демо можно вручную пополнять, списывать, замораживать и размораживать средства мерчанта.</p>
 
       {message ? (
-        <div className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-medium ${message.type === "success" ? "border-jade/25 bg-jade/10 text-moss" : "border-red-200 bg-red-50 text-red-700"}`}>
+        <div className={`alert mt-4 ${message.type === "success" ? "alert-success" : "alert-error"}`}>
           {message.text}
         </div>
       ) : null}
@@ -133,7 +133,7 @@ export function BalanceAdjustClient({ merchants }: { merchants: MerchantOption[]
           <input name="description" required placeholder="Корректировка для демо-показа" className="field focus-ring font-normal" />
         </label>
         {!can(role, "balance:adjust") ? <div className="rounded-2xl border border-brass/25 bg-brass/10 px-4 py-3 text-sm font-semibold text-brass md:col-span-2">{disabledReason}</div> : null}
-        <button disabled={isSubmitting || merchants.length === 0 || Boolean(disabledReason)} title={disabledReason ?? undefined} className="focus-ring rounded-2xl bg-jade px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss disabled:cursor-not-allowed disabled:opacity-50 md:col-span-2">
+        <button disabled={isSubmitting || merchants.length === 0 || Boolean(disabledReason)} title={disabledReason ?? undefined} className="btn btn-primary focus-ring disabled:cursor-not-allowed disabled:opacity-50 md:col-span-2">
           {isSubmitting ? "Обновляю баланс..." : "Применить корректировку"}
         </button>
       </form>

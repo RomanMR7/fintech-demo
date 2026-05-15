@@ -142,7 +142,7 @@ export function Topbar() {
             <span className="status-dot" />
             Sandbox
           </span>
-          <span className="pill border-emerald-500/20 bg-emerald-500/10 text-emerald-700">API 99.4%</span>
+          <span className="pill tone-green">API 99.4%</span>
           <span className="pill hidden bg-white/45 text-graphite/70 2xl:inline-flex">Demo без реальных финансовых операций</span>
         </div>
         <GlobalSearch />

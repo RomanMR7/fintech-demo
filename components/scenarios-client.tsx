@@ -314,8 +314,8 @@ export function ScenariosClient({ scenarios }: { scenarios: Scenario[] }) {
 
       {message ? (
         <div
-          className={`rounded-[1.25rem] border px-4 py-3 text-sm font-medium ${
-            message.type === "success" ? "border-jade/25 bg-jade/10 text-moss" : "border-red-200 bg-red-50 text-red-700"
+          className={`alert ${
+            message.type === "success" ? "alert-success" : "alert-error"
           }`}
         >
           {message.text}

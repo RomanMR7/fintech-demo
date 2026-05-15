@@ -40,7 +40,7 @@ function riskScore(order: UiOrder) {
 function RiskBadge({ score }: { score: number }) {
   const meta =
     score >= 80
-      ? { label: "Высокий", className: "border-red-500/20 bg-red-500/10 text-red-700" }
+      ? { label: "Высокий", className: "tone-red" }
       : score >= 50
         ? { label: "Проверка", className: "border-brass/25 bg-brass/10 text-brass" }
         : { label: "Низкий", className: "border-jade/20 bg-jade/10 text-jade" };
@@ -188,7 +188,7 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
       </div>
 
       {message ? (
-        <div className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-medium ${message.type === "success" ? "border-jade/25 bg-jade/10 text-moss" : "border-red-200 bg-red-50 text-red-700"}`}>
+        <div className={`alert mt-4 ${message.type === "success" ? "alert-success" : "alert-error"}`}>
           {message.text}
         </div>
       ) : null}
@@ -248,7 +248,7 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
                         );
                       })
                     }
-                    className="rounded-2xl bg-jade px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-moss disabled:opacity-50"
+                    className="btn btn-primary focus-ring min-h-10 text-xs disabled:opacity-50"
                   >
                     Следующий статус
                   </button>
@@ -269,7 +269,7 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
                         );
                       })
                     }
-                    className="rounded-2xl bg-rose-100 px-3 py-2.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-200 disabled:opacity-50"
+                    className="btn btn-danger focus-ring min-h-10 text-xs disabled:opacity-50"
                   >
                     В спор
                   </button>
@@ -335,7 +335,7 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
                             );
                           })
                         }
-                        className="rounded-full bg-jade px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-moss disabled:opacity-50"
+                        className="btn btn-primary btn-sm focus-ring disabled:opacity-50"
                       >
                         Следующий
                       </button>
@@ -356,7 +356,7 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
                             );
                           })
                         }
-                        className="rounded-full bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-200 disabled:opacity-50"
+                        className="btn btn-danger btn-sm focus-ring disabled:opacity-50"
                       >
                         В спор
                       </button>

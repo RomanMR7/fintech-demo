@@ -93,7 +93,7 @@ export function MerchantAdminClient({ merchants }: { merchants: MerchantOption[]
       </div>
 
       {message ? (
-        <div className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-medium ${message.type === "success" ? "border-jade/25 bg-jade/10 text-moss" : "border-red-200 bg-red-50 text-red-700"}`}>
+        <div className={`alert mt-4 ${message.type === "success" ? "alert-success" : "alert-error"}`}>
           {message.text}
         </div>
       ) : null}

@@ -49,13 +49,13 @@ export function AppealsClient({ appeals }: { appeals: UiAppeal[] }) {
               await fetch("/api/appeals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
             })
           }
-          className="focus-ring rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-moss disabled:opacity-50"
+          className="btn btn-primary focus-ring disabled:opacity-50"
         >
           Создать апелляцию
         </button>
       </div>
       {message ? (
-        <div className={`rounded-2xl border px-4 py-3 text-sm font-medium ${message.type === "success" ? "border-jade/25 bg-jade/10 text-moss" : "border-red-200 bg-red-50 text-red-700"}`}>
+        <div className={`alert ${message.type === "success" ? "alert-success" : "alert-error"}`}>
           {message.text}
         </div>
       ) : null}
@@ -112,7 +112,7 @@ export function AppealsClient({ appeals }: { appeals: UiAppeal[] }) {
                         );
                       })
                     }
-                    className="rounded-full bg-jade px-3 py-1.5 text-xs font-semibold text-white"
+                    className="btn btn-primary btn-sm focus-ring"
                   >
                     В пользу мерчанта
                   </button>

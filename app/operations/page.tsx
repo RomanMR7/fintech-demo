@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 function priority(status: string, amount: number) {
-  if (["DISPUTED", "FAILED", AppealStatus.NEW, AppealStatus.OPEN].includes(status)) return { label: "P1", className: "bg-red-500/10 text-red-700 border-red-500/20" };
+  if (["DISPUTED", "FAILED", AppealStatus.NEW, AppealStatus.OPEN].includes(status)) return { label: "P1", className: "tone-red" };
   if (amount > 150000 || status === PayoutStatus.HOLD) return { label: "P2", className: "bg-brass/10 text-brass border-brass/25" };
   return { label: "P3", className: "bg-jade/10 text-jade border-jade/20" };
 }

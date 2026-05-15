@@ -275,6 +275,16 @@ textarea {
   background: rgba(255, 255, 255, 0.86);
 }
 
+.btn-danger {
+  border-color: color-mix(in srgb, var(--danger) 28%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+}
+
 .pill {
   display: inline-flex;
   min-height: 1.75rem;
@@ -331,6 +341,37 @@ textarea {
   border-color: var(--line);
   background: color-mix(in srgb, var(--muted) 10%, transparent);
   color: color-mix(in srgb, var(--muted) 88%, var(--ink));
+}
+
+.alert {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 0.85rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.alert-success {
+  border-color: color-mix(in srgb, var(--success) 24%, transparent);
+  background: color-mix(in srgb, var(--success) 11%, transparent);
+  color: color-mix(in srgb, var(--success) 78%, var(--ink));
+}
+
+.alert-error {
+  border-color: color-mix(in srgb, var(--danger) 28%, transparent);
+  background: color-mix(in srgb, var(--danger) 11%, transparent);
+  color: color-mix(in srgb, var(--danger) 82%, var(--ink));
+}
+
+.alert-warning {
+  border-color: color-mix(in srgb, var(--warning) 28%, transparent);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  color: color-mix(in srgb, var(--warning) 78%, var(--ink));
+}
+
+.text-danger {
+  color: var(--danger);
 }
 
 .filter-grid {

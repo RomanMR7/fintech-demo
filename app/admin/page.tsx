@@ -12,7 +12,7 @@ import { getPermissionMatrix, permissionLabels } from "@/lib/rbac";
 export const dynamic = "force-dynamic";
 
 function riskLevel(disputes: number, volume: number) {
-  if (disputes >= 2 || volume > 250000) return { label: "High", className: "border-red-500/20 bg-red-500/10 text-red-700" };
+  if (disputes >= 2 || volume > 250000) return { label: "High", className: "tone-red" };
   if (disputes === 1 || volume > 120000) return { label: "Review", className: "border-brass/25 bg-brass/10 text-brass" };
   return { label: "Low", className: "border-jade/20 bg-jade/10 text-jade" };
 }
