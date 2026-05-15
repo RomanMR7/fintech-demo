@@ -76,7 +76,7 @@ export function OrdersClient({ orders }: { orders: UiOrder[] }) {
   const visibleOrders = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const filtered = orders
-      .filter((order) => (role === "MERCHANT" ? order.merchantId === merchantId : true))
+      .filter((order) => order.merchantId === merchantId)
       .filter((order) => (status === "ALL" ? true : order.status === status))
       .filter((order) => (currencyFilter === "ALL" ? true : order.currency === currencyFilter))
       .filter((order) => {

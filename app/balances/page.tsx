@@ -9,17 +9,31 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export default async function BalancesPage() {
+type BalancesPageProps = {
+  searchParams?: Promise<{ merchantId?: string | string[] }>;
+};
+
+function normalizeMerchantParam(value: string | string[] | undefined) {
+  const normalized = Array.isArray(value) ? value[0] : value;
+  return normalized?.trim() || null;
+}
+
+export default async function BalancesPage({ searchParams }: BalancesPageProps) {
+  const params = searchParams ? await searchParams : {};
+  const requestedMerchantId = normalizeMerchantParam(params.merchantId);
   const [balances, transactions, merchants, fx] = await Promise.all([
     prisma.balanceAccount.findMany({ include: { merchant: true }, orderBy: [{ merchantId: "asc" }, { type: "asc" }] }),
     prisma.balanceTransaction.findMany({ include: { merchant: true }, orderBy: { createdAt: "desc" }, take: 18 }),
     prisma.merchant.findMany({ orderBy: { displayName: "asc" } }),
     getFxSnapshot()
   ]);
+  const scopedMerchant = requestedMerchantId ? merchants.find((merchant) => merchant.id === requestedMerchantId) ?? null : null;
+  const visibleBalances = scopedMerchant ? balances.filter((balance) => balance.merchantId === scopedMerchant.id) : balances;
+  const visibleTransactions = scopedMerchant ? transactions.filter((tx) => tx.merchantId === scopedMerchant.id) : transactions;
 
-  const available = totalByCurrency(balances.filter((item) => item.type === "AVAILABLE"), (item) => item.amount, (item) => item.currency);
-  const frozen = totalByCurrency(balances.filter((item) => item.type === "FROZEN"), (item) => item.amount, (item) => item.currency);
-  const fees = totalByCurrency(balances.filter((item) => item.type === "FEES"), (item) => item.amount, (item) => item.currency);
+  const available = totalByCurrency(visibleBalances.filter((item) => item.type === "AVAILABLE"), (item) => item.amount, (item) => item.currency);
+  const frozen = totalByCurrency(visibleBalances.filter((item) => item.type === "FROZEN"), (item) => item.amount, (item) => item.currency);
+  const fees = totalByCurrency(visibleBalances.filter((item) => item.type === "FEES"), (item) => item.amount, (item) => item.currency);
   const availableBase = convertBreakdownToBase(available, fx);
   const frozenBase = convertBreakdownToBase(frozen, fx);
   const feesBase = convertBreakdownToBase(fees, fx);
@@ -29,8 +43,10 @@ export default async function BalancesPage() {
       <PageHeader
         eyebrow="Финансовая модель"
         title="Балансы"
-        description="Баланс показывает, какие средства доступны мерчанту, какие заморожены по выплатам/спорам и сколько удержано комиссий."
-      />
+        description={scopedMerchant ? `Фокус на мерчанте ${scopedMerchant.displayName}: доступны только его кошельки, холды, комиссии и ledger-события.` : "Баланс показывает, какие средства доступны мерчантам, какие заморожены по выплатам/спорам и сколько удержано комиссий."}
+      >
+        <span className="pill bg-white/60 text-ink">{scopedMerchant ? `Фокус: ${scopedMerchant.displayName}` : "Фокус: вся платформа"}</span>
+      </PageHeader>
       <section className="grid gap-4 md:grid-cols-3">
         <MetricCard
           label="Доступно по валютам"
@@ -73,7 +89,7 @@ export default async function BalancesPage() {
         <div className="card rounded-[1.75rem] p-5">
           <h2 className="font-display text-2xl font-semibold">Состояние счетов</h2>
           <div className="mt-4 grid gap-3">
-            {balances.map((balance) => (
+            {visibleBalances.map((balance) => (
               <div key={balance.id} className="rounded-2xl bg-white/60 p-4">
                 <div className="flex justify-between gap-4">
                   <p className="font-semibold">{balance.merchant.displayName}</p>
@@ -88,7 +104,7 @@ export default async function BalancesPage() {
         <div className="card rounded-[1.75rem] p-5">
           <h2 className="font-display text-2xl font-semibold">История изменений</h2>
           <div className="mt-4 grid gap-3">
-            {transactions.map((tx) => (
+            {visibleTransactions.map((tx) => (
               <div key={tx.id} className="rounded-2xl border border-ink/10 bg-white/55 p-4">
                 <div className="flex justify-between gap-3">
                   <p className="font-semibold">{tx.description}</p>

@@ -50,6 +50,9 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     if (merchant.name) {
       setMerchantName(merchant.name);
       window.localStorage.setItem("demo-merchant-name", merchant.name);
+    } else {
+      setMerchantName(null);
+      window.localStorage.removeItem("demo-merchant-name");
     }
   }, []);
 

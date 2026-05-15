@@ -22,6 +22,7 @@ export default async function RequisitesPage() {
       <RequisitesClient
         requisites={requisites.map((item) => ({
           id: item.id,
+          merchantId: item.merchantId,
           type: item.type,
           bank: item.bank,
           maskedNumber: item.maskedNumber,

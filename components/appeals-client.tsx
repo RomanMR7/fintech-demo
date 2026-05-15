@@ -17,8 +17,8 @@ export function AppealsClient({ appeals }: { appeals: UiAppeal[] }) {
   const resolveDisabledReason = disabledActionReason(role, "appeal:resolve");
 
   const visibleAppeals = useMemo(
-    () => appeals.filter((appeal) => (role === "MERCHANT" ? appeal.merchantId === merchantId : true)),
-    [appeals, role, merchantId]
+    () => appeals.filter((appeal) => appeal.merchantId === merchantId),
+    [appeals, merchantId]
   );
 
   const mutate = (action: () => Promise<void>) => {

@@ -131,6 +131,25 @@ export function CommercialCalculatorClient({ usdRubRate }: { usdRubRate: number 
         </div>
       </div>
 
+      <div className="mt-5 rounded-[1.5rem] border border-ink/10 bg-white/55 p-4 shadow-insetSoft">
+        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="eyebrow">Как считается модель</p>
+            <h3 className="card-title mt-2 text-ink">Формулы разделяют выручку, расходы и чистую маржу</h3>
+          </div>
+          <span className="pill bg-brass/10 text-brass">Demo assumptions</span>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <FormulaRow title="Monthly gross revenue" value="Acquiring fee revenue + Payout fee revenue + Loss reduction effect" />
+          <FormulaRow title="Total monthly costs" value="Provider cost + Operational cost + Risk / dispute loss" />
+          <FormulaRow title="Net monthly margin" value="Gross revenue - Total costs" />
+          <FormulaRow title="Take rate after costs" value="Net monthly margin / Acquiring volume" />
+        </div>
+        <p className="mt-4 text-sm leading-6 text-graphite/68">
+          Все значения являются демонстрационными assumptions и не являются гарантией доходности. Если расходы и risk-loss выше валовой выручки, модель честно показывает отрицательную маржу и статус ниже break-even.
+        </p>
+      </div>
+
       <div className="mt-5 rounded-2xl border border-brass/25 bg-brass/10 p-4 text-sm leading-6 text-graphite/72">
         Расчеты являются демонстрационной моделью и не являются обещанием доходности. Для production-запуска необходимо учитывать налоги, стоимость provider-каналов, риск-профиль, fraud-loss, chargeback/dispute rate, требования комплаенса и реальные операционные расходы.
       </div>
@@ -160,10 +179,11 @@ function NumberField({
   onChange: (value: number) => void;
 }) {
   const [draftValue, setDraftValue] = useState(String(value));
+  const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
-    setDraftValue(String(value));
-  }, [value]);
+    if (!isFocused) setDraftValue(String(value));
+  }, [isFocused, value]);
 
   const commitValue = (rawValue: string) => {
     const parsedValue = parseNumericInput(rawValue);
@@ -177,13 +197,17 @@ function NumberField({
       {label}
       <div className="economy-input-shell flex items-center overflow-hidden rounded-2xl shadow-insetSoft">
         <input
-          type="number"
+          type="text"
           value={draftValue}
           min={min}
           max={max}
           step={step}
           inputMode="decimal"
-          onBlur={(event) => commitValue(event.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={(event) => {
+            setIsFocused(false);
+            commitValue(event.target.value);
+          }}
           onChange={(event) => {
             const nextValue = event.target.value;
             setDraftValue(nextValue);
@@ -217,6 +241,15 @@ function ResultCard({ label, value, hint, accent = false }: { label: string; val
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-graphite/45">{label}</p>
       <p className="mt-2 font-display text-2xl font-semibold text-ink">{value}</p>
       <p className="mt-2 text-sm leading-5 text-graphite/60">{hint}</p>
+    </div>
+  );
+}
+
+function FormulaRow({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-ink/10 bg-white/60 p-4">
+      <p className="font-mono text-xs font-semibold uppercase tracking-[0.12em] text-jade">{title}</p>
+      <p className="mt-2 text-sm font-semibold leading-6 text-ink">{value}</p>
     </div>
   );
 }

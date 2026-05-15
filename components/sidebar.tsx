@@ -91,15 +91,12 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+const merchantScopedNav = new Set(["/dashboard", "/merchant", "/orders", "/payouts", "/balances", "/requisites", "/appeals"]);
+
 function getNavigationHref(item: NavItem, merchantId: string) {
-  if (item.href === "/dashboard") {
-    return `/dashboard?merchantId=${encodeURIComponent(merchantId)}`;
+  if (merchantScopedNav.has(item.href)) {
+    return `${item.href}?merchantId=${encodeURIComponent(merchantId)}`;
   }
-
-  if (item.href === "/merchant") {
-    return `/merchant?merchantId=${encodeURIComponent(merchantId)}`;
-  }
-
   return item.href;
 }
 

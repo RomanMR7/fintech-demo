@@ -33,7 +33,7 @@ export function PayoutsClient({ payouts }: { payouts: UiPayout[] }) {
   const visiblePayouts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const filtered = payouts
-      .filter((payout) => (role === "MERCHANT" ? payout.merchantId === merchantId : true))
+      .filter((payout) => payout.merchantId === merchantId)
       .filter((payout) => (statusFilter === "ALL" ? true : payout.status === statusFilter))
       .filter((payout) => (currencyFilter === "ALL" ? true : payout.currency === currencyFilter))
       .filter((payout) => `${payout.id} ${payout.merchantName} ${payout.recipient}`.toLowerCase().includes(normalizedQuery));

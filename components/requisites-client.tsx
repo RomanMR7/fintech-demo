@@ -10,6 +10,7 @@ import { disabledActionReason } from "@/lib/rbac";
 
 type Requisite = {
   id: string;
+  merchantId: string | null;
   type: string;
   bank: string;
   maskedNumber: string;
@@ -24,10 +25,11 @@ type Requisite = {
 
 export function RequisitesClient({ requisites }: { requisites: Requisite[] }) {
   const router = useRouter();
-  const { role } = useRole();
+  const { role, merchantId } = useRole();
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const manageDisabledReason = disabledActionReason(role, "requisite:manage");
+  const visibleRequisites = requisites.filter((requisite) => requisite.merchantId === merchantId);
 
   const toggle = (id: string, status: string) => {
     startTransition(async () => {
@@ -56,10 +58,10 @@ export function RequisitesClient({ requisites }: { requisites: Requisite[] }) {
         </div>
       ) : null}
 
-      {!requisites.length ? <EmptyState title="Реквизитов пока нет" description="Когда платформа или мерчант добавит платежные детали, здесь появятся лимиты, статусы и связанные операции." /> : null}
+      {!visibleRequisites.length ? <EmptyState title="Реквизитов пока нет" description="Когда платформа или мерчант добавит платежные детали, здесь появятся лимиты, статусы и связанные операции." /> : null}
 
       <div className="grid gap-3 lg:hidden">
-        {requisites.map((requisite) => (
+        {visibleRequisites.map((requisite) => (
           <article key={requisite.id} className="rounded-[1.25rem] border border-ink/10 bg-white/70 p-4 shadow-insetSoft">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -112,7 +114,7 @@ export function RequisitesClient({ requisites }: { requisites: Requisite[] }) {
             </tr>
           </thead>
           <tbody>
-            {requisites.map((requisite) => (
+            {visibleRequisites.map((requisite) => (
               <tr key={requisite.id} className="bg-white/60">
                 <td className="rounded-l-2xl px-4 py-3 font-semibold">{requisite.type}</td>
                 <td className="px-4 py-3">

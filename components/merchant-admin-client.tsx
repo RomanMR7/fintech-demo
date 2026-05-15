@@ -98,7 +98,7 @@ export function MerchantAdminClient({ merchants }: { merchants: MerchantOption[]
         </div>
       ) : null}
 
-      <form onSubmit={submit} className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <form onSubmit={submit} className="mt-5 grid max-w-5xl gap-3 md:grid-cols-2 xl:grid-cols-3">
         <label className="grid gap-1 text-sm font-semibold text-ink">
           Название в интерфейсе
           <input name="displayName" required placeholder="Орбита" className="field focus-ring font-normal" />
@@ -139,7 +139,7 @@ export function MerchantAdminClient({ merchants }: { merchants: MerchantOption[]
             {createDisabledReason}
           </div>
         ) : null}
-        <button disabled={isSubmitting || Boolean(createDisabledReason)} title={createDisabledReason ?? undefined} className="btn btn-primary focus-ring disabled:cursor-not-allowed disabled:opacity-50 md:col-span-2 xl:col-span-3">
+        <button type="submit" disabled={isSubmitting || Boolean(createDisabledReason)} title={createDisabledReason ?? undefined} className="btn btn-primary focus-ring disabled:cursor-not-allowed disabled:opacity-50 md:col-span-2 xl:col-span-3">
           {isSubmitting ? "Создаю мерчанта..." : "Создать мерчанта"}
         </button>
       </form>

@@ -18,6 +18,8 @@ const fallbackMerchants: MerchantOption[] = [
   { id: "merchant-sigma", label: "Sigma Travel" }
 ];
 
+const merchantScopedPaths = new Set(["/dashboard", "/merchant", "/orders", "/payouts", "/balances", "/requisites", "/appeals"]);
+
 export function Topbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -90,13 +92,13 @@ export function Topbar() {
   }, []);
 
   useEffect(() => {
-    if (pathname !== "/merchant" && pathname !== "/dashboard") return;
+    if (!merchantScopedPaths.has(pathname)) return;
 
     const params = new URLSearchParams(window.location.search);
     const urlMerchantId = params.get("merchantId");
     const selectedMerchant = merchants.find((merchant) => merchant.id === merchantId) ?? merchants[0] ?? fallbackMerchants[0];
 
-    if (pathname === "/dashboard" && !urlMerchantId) return;
+    if (pathname !== "/merchant" && !urlMerchantId) return;
 
     if (urlMerchantId) {
       const urlMerchant = merchants.find((merchant) => merchant.id === urlMerchantId);
@@ -107,10 +109,10 @@ export function Topbar() {
         return;
       }
 
-      if (pathname === "/dashboard") {
+      if (pathname !== "/merchant") {
         params.delete("merchantId");
         const nextQuery = params.toString();
-        router.replace(nextQuery ? `/dashboard?${nextQuery}` : "/dashboard");
+        router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
       } else {
         router.replace(`/merchant?merchantId=${encodeURIComponent(selectedMerchant?.id ?? defaultMerchantId)}`);
       }
@@ -125,7 +127,7 @@ export function Topbar() {
     const nextMerchant = merchants.find((merchant) => merchant.id === nextMerchantId);
     setMerchantContext({ id: nextMerchantId, name: nextMerchant?.label ?? nextMerchantId });
 
-    if (pathname === "/merchant" || pathname === "/dashboard") {
+    if (merchantScopedPaths.has(pathname)) {
       const params = new URLSearchParams(window.location.search);
       params.set("merchantId", nextMerchantId);
       router.push(`${pathname}?${params.toString()}`);
