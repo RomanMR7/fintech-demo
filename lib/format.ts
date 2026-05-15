@@ -30,6 +30,23 @@ export function formatNumber(value: number | string) {
   }).format(Number.isFinite(amount) ? amount : 0);
 }
 
+export function formatNumericInputValue(value: number | string, maximumFractionDigits = 2) {
+  const amount = typeof value === "string" ? Number(value) : value;
+  if (!Number.isFinite(amount)) return "";
+
+  const safeAmount = Object.is(amount, -0) ? 0 : amount;
+  const hasFraction = Math.abs(safeAmount % 1) > Number.EPSILON;
+  const fractionDigits = Math.max(0, Math.min(maximumFractionDigits, 6));
+
+  return new Intl.NumberFormat("ru-RU", {
+    useGrouping: true,
+    minimumFractionDigits: hasFraction ? Math.min(fractionDigits, 2) : 0,
+    maximumFractionDigits: fractionDigits
+  })
+    .format(safeAmount)
+    .replace(/[\u00a0\u202f]/g, " ");
+}
+
 export function formatRate(value: number | string) {
   const amount = typeof value === "string" ? Number(value) : value;
   return new Intl.NumberFormat("ru-RU", {

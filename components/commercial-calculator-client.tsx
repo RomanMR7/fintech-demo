@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { calculateCommercialModel, clampNumber, COMMERCIAL_LIMITS, parseNumericInput } from "@/lib/commercial-model";
-import { formatMoney, formatRate } from "@/lib/format";
+import { formatMoney, formatNumericInputValue, formatRate } from "@/lib/format";
 
 export function CommercialCalculatorClient({ usdRubRate }: { usdRubRate: number | null }) {
   const [payinTurnover, setPayinTurnover] = useState(10000000);
@@ -94,7 +94,7 @@ export function CommercialCalculatorClient({ usdRubRate }: { usdRubRate: number 
               <option value="USD">USD — долларовая модель</option>
             </select>
           </label>
-          <NumberField label="Оборот приема в месяц" suffix={currency} value={payinTurnover} min={COMMERCIAL_LIMITS.acquiringVolume.min} max={COMMERCIAL_LIMITS.acquiringVolume.max} step={currency === "USD" ? 1000 : 500000} helper="Можно стереть поле, вставить крупную сумму или ввести 0. Расчет использует последнее корректное значение, а финальная проверка происходит при выходе из поля." onChange={setPayinTurnover} />
+          <NumberField label="Оборот приема в месяц" suffix={currency} value={payinTurnover} min={COMMERCIAL_LIMITS.acquiringVolume.min} max={COMMERCIAL_LIMITS.acquiringVolume.max} step={currency === "USD" ? 1000 : 500000} helper="Можно стереть поле, вставить крупную сумму или ввести 0. После ввода сумма показывается с разделителями тысяч, а расчет по-прежнему использует число." formatDisplay onChange={setPayinTurnover} />
           <NumberField label="Комиссия приема" suffix="%" value={payinFee} min={0} max={100} step={0.1} helper="Формула: оборот приема × комиссия приема." warning={payinFee > COMMERCIAL_LIMITS.feeWarningPercent ? "Выше 10%: проверьте реалистичность тарифа." : undefined} onChange={setPayinFee} />
           <NumberField label="Доля выплат от оборота" suffix="%" value={payoutShare} min={0} max={100} step={5} helper="Определяет объем payout-операций." onChange={setPayoutShare} />
           <NumberField label="Комиссия выплат" suffix="%" value={payoutFee} min={0} max={100} step={0.1} helper="Формула: объем выплат × комиссия выплат." warning={payoutFee > COMMERCIAL_LIMITS.feeWarningPercent ? "Выше 10%: проверьте реалистичность тарифа." : undefined} onChange={setPayoutFee} />
@@ -166,6 +166,7 @@ function NumberField({
   step,
   helper,
   warning,
+  formatDisplay = false,
   onChange
 }: {
   label: string;
@@ -176,19 +177,20 @@ function NumberField({
   step: number;
   helper: string;
   warning?: string;
+  formatDisplay?: boolean;
   onChange: (value: number) => void;
 }) {
-  const [draftValue, setDraftValue] = useState(String(value));
+  const [draftValue, setDraftValue] = useState(() => toNumberFieldDraftValue(value, formatDisplay));
   const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
-    if (!isFocused) setDraftValue(String(value));
-  }, [isFocused, value]);
+    if (!isFocused) setDraftValue(toNumberFieldDraftValue(value, formatDisplay));
+  }, [formatDisplay, isFocused, value]);
 
   const commitValue = (rawValue: string) => {
     const parsedValue = parseNumericInput(rawValue);
     const nextValue = clampNumber(parsedValue ?? min, min, max);
-    setDraftValue(String(nextValue));
+    setDraftValue(toNumberFieldDraftValue(nextValue, formatDisplay));
     onChange(nextValue);
   };
 
@@ -233,6 +235,10 @@ function NumberField({
       {warning ? <span className="text-xs font-semibold leading-5 text-brass">{warning}</span> : null}
     </label>
   );
+}
+
+function toNumberFieldDraftValue(value: number, formatDisplay: boolean) {
+  return formatDisplay ? formatNumericInputValue(value) : String(value);
 }
 
 function ResultCard({ label, value, hint, accent = false }: { label: string; value: string; hint: string; accent?: boolean }) {

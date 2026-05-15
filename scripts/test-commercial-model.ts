@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
 import { calculateCommercialModel, clampNumber, COMMERCIAL_LIMITS, parseNumericInput, safeNumber } from "../lib/commercial-model";
-import { formatMoney, formatRate } from "../lib/format";
+import { formatMoney, formatNumericInputValue, formatRate } from "../lib/format";
 
 function assertFiniteModel(model: ReturnType<typeof calculateCommercialModel>) {
   Object.entries(model).forEach(([key, value]) => {
@@ -99,6 +99,7 @@ assertFiniteModel(clampedModel);
 
 assert.equal(parseNumericInput("1 250 000,75 ₽"), 1250000.75);
 assert.equal(parseNumericInput("$10,000"), 10000);
+assert.equal(parseNumericInput("150 000 000,50"), 150000000.5);
 assert.equal(parseNumericInput("2,5"), 2.5);
 assert.equal(parseNumericInput(""), null);
 assert.equal(safeNumber("bad", 7), 7);
@@ -109,6 +110,10 @@ assert.equal(readable(formatMoney(1_000_000, "RUB")), "1 000 000 ₽");
 assert.equal(readable(formatMoney(10_000, "USD")), "$10,000.00");
 assert.equal(readable(formatMoney(Number.NaN, "USD")), "$0.00");
 assert.equal(readable(formatMoney(Number.POSITIVE_INFINITY, "RUB")), "0 ₽");
+assert.equal(readable(formatNumericInputValue(1_000_000)), "1 000 000");
+assert.equal(readable(formatNumericInputValue(25_000_000)), "25 000 000");
+assert.equal(readable(formatNumericInputValue(150_000_000.5)), "150 000 000,50");
+assert.equal(readable(formatNumericInputValue(Number.NaN)), "");
 assert.equal(readable(formatRate(Number.NaN)), "0,00");
 
 console.log("Unit-тесты commercial model пройдены: формулы, NaN/Infinity, валидация, форматирование RUB/USD и break-even работают ожидаемо.");
