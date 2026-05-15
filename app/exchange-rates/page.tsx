@@ -75,18 +75,26 @@ export default async function ExchangeRatesPage() {
         </div>
       </section>
 
-      <section className="dark-panel rounded-[1.75rem] p-5">
-        <h2 className="font-display text-2xl font-semibold">Почему это важно для инвестора и клиента</h2>
-        <p className="mt-3 max-w-4xl text-sm leading-6 text-white/75">
-          Если платформа работает с RUB и USD, нельзя просто сложить 100 000 RUB и 2 000 USD как одну сумму. Нужно показать исходные валюты,
-          курс, дату курса и управленческий эквивалент. Так финансовые показатели выглядят честно, объяснимо и пригодно для обсуждения экономики продукта.
-        </p>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Link href="/dashboard" className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-ink transition hover:bg-jade hover:text-white">На дашборд</Link>
-          <Link href="/commercial" className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-ink">Экономика</Link>
-          <Link href="/balances" className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-ink">Балансы</Link>
+      <details className="surface-muted group rounded-[1.75rem] p-4 sm:p-5">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-[1.25rem] px-1 py-1 text-sm font-semibold text-ink transition hover:text-jade focus:outline-none focus-visible:ring-2 focus-visible:ring-jade/25">
+          <span>
+            <span className="eyebrow block">Пояснение</span>
+            <span className="mt-1 block font-display text-xl font-semibold tracking-[-0.02em]">Как читать RUB и USD в демо</span>
+          </span>
+          <span className="pill bg-jade/10 text-jade transition group-open:rotate-180">⌄</span>
+        </summary>
+        <div className="mt-4 rounded-[1.35rem] border border-ink/10 bg-white/45 p-4 shadow-insetSoft">
+          <p className="max-w-4xl text-sm leading-6 text-graphite/72">
+            Если платформа работает с RUB и USD, нельзя просто сложить 100 000 RUB и 2 000 USD как одну сумму. Нужно показать исходные валюты,
+            курс, дату курса и управленческий эквивалент. Так финансовые показатели выглядят честно, объяснимо и пригодно для обсуждения экономики продукта.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link href="/dashboard" className="btn btn-secondary text-sm">На дашборд</Link>
+            <Link href="/commercial" className="btn btn-secondary text-sm">Экономика</Link>
+            <Link href="/balances" className="btn btn-secondary text-sm">Балансы</Link>
+          </div>
         </div>
-      </section>
+      </details>
 
       <EducationBlock
         items={[

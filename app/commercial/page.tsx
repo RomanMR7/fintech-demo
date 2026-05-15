@@ -37,7 +37,6 @@ export default async function CommercialPage() {
       <PageHeader
         eyebrow="Для инвестора и клиента"
         title="Коммерческая модель"
-        description="Страница для разговора с инвестором или клиентом: как продукт зарабатывает, какие рычаги роста есть и какую ценность дает операционный контроль."
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
