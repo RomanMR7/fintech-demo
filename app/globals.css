@@ -292,6 +292,18 @@ textarea {
   background: rgba(255, 255, 255, 0.86);
 }
 
+.btn-on-light {
+  border-color: color-mix(in srgb, var(--ink) 10%, transparent);
+  background: #fffdf8;
+  color: #15231f;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.btn-on-light:hover {
+  background: #f2fff8;
+  color: #0f4e47;
+}
+
 .btn-danger {
   border-color: color-mix(in srgb, var(--danger) 28%, transparent);
   background: color-mix(in srgb, var(--danger) 12%, transparent);

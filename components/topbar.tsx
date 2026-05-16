@@ -136,14 +136,13 @@ export function Topbar() {
 
   return (
     <header className="card grid min-h-[4.75rem] gap-3 rounded-[var(--radius-xl)] p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-      <div className="grid min-w-0 gap-3 xl:grid-cols-[auto_minmax(18rem,1fr)] xl:items-center">
+      <div className="grid min-w-0 gap-3 2xl:grid-cols-[auto_minmax(18rem,1fr)] 2xl:items-center">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <span className="pill bg-white/60 text-ink">
             <span className="status-dot" />
             Sandbox
           </span>
           <span className="pill tone-green">API 99.4%</span>
-          <span className="pill hidden bg-white/45 text-graphite/70 2xl:inline-flex">Demo без реальных финансовых операций</span>
         </div>
         <GlobalSearch />
       </div>
@@ -168,9 +167,6 @@ export function Topbar() {
             </option>
           ))}
         </select>
-        <Link href="/contact" className="btn btn-secondary focus-ring whitespace-nowrap">
-          PDF и контакты
-        </Link>
         <Link href="/scenarios" className="btn btn-primary focus-ring whitespace-nowrap">
           Запустить сценарий
         </Link>

@@ -52,9 +52,6 @@ export default function ContactPage() {
               <a href={projectContact.presentationPdfUrl} target="_blank" rel="noreferrer" className="btn btn-secondary focus-ring">
                 Открыть PDF
               </a>
-              <a href={projectContact.presentationPptxUrl} download className="btn btn-secondary focus-ring">
-                Скачать PPTX
-              </a>
             </div>
             <p className="mt-3 break-all text-xs font-semibold text-graphite/55">{projectContact.presentationFileName}</p>
           </div>
@@ -135,7 +132,7 @@ export default function ContactPage() {
             <p className="mt-3 text-sm leading-6 text-white/72">
               Напишите, если хотите обсудить разработку, консультацию, демонстрацию проекта, упаковку под инвестора или доработку под вашу бизнес-модель.
             </p>
-            <a href={projectContact.telegramUrl} target="_blank" rel="noreferrer" className="btn mt-5 border-white/10 bg-white text-ink hover:bg-emerald-50">
+            <a href={projectContact.telegramUrl} target="_blank" rel="noreferrer" className="btn btn-on-light focus-ring mt-5">
               Открыть Telegram
             </a>
           </article>
