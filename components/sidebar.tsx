@@ -30,7 +30,6 @@ export const navigationSections: NavSection[] = [
     items: [
       { href: "/dashboard", label: "Главная панель", description: "Деньги, риски, API и последние события.", roles: allRoles },
       { href: "/commercial", label: "Экономика продукта", description: "Юнит-экономика, комиссии и потенциал выручки.", roles: financeRoles },
-      { href: "/contact", label: "Контакты и презентация", description: "Связь для разработки, консультации и investor deck.", roles: allRoles },
       { href: "/merchant", label: "Кабинет мерчанта", description: "Баланс, выплаты, API key и интеграция.", roles: merchantRoles },
       { href: "/admin", label: "Админ-панель", description: "Мерчанты, лимиты, комиссии и контроль платформы.", roles: ["PLATFORM_ADMIN"] },
       { href: "/operations", label: "Операционный кабинет", description: "Очередь задач, проверки, холды и споры.", roles: opsRoles }
@@ -137,17 +136,6 @@ export function Sidebar() {
         </div>
       </div>
 
-      <Link
-        href="/contact"
-        className="focus-ring mt-3 flex min-h-14 items-center justify-between gap-3 rounded-[1.05rem] border border-jade/30 bg-jade/12 px-3.5 py-3 text-sm font-semibold text-ink shadow-insetSoft transition hover:-translate-y-0.5 hover:bg-jade/18"
-      >
-        <span className="min-w-0">
-          <span className="block text-[0.65rem] font-bold uppercase tracking-[0.12em] text-jade">PDF и контакты</span>
-          <span className="mt-0.5 block truncate">Презентация + Telegram</span>
-        </span>
-        <span className="rounded-full bg-jade px-2 py-1 text-[0.65rem] font-bold uppercase tracking-[0.08em] text-white">New</span>
-      </Link>
-
       <nav className="no-scrollbar mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1" aria-label="Основная навигация">
         {sections.map((section) => (
           <div key={section.title}>
@@ -201,10 +189,6 @@ export function MobileNavigation() {
             Все разделы
           </button>
         </div>
-        <Link href="/contact" className="focus-ring mt-3 flex min-h-11 items-center justify-between gap-3 rounded-[1rem] border border-jade/25 bg-jade/10 px-3 py-2.5 text-sm font-semibold text-ink">
-          <span>PDF-презентация и контакты</span>
-          <span className="rounded-full bg-jade px-2 py-1 text-[0.65rem] font-bold uppercase tracking-[0.08em] text-white">PDF</span>
-        </Link>
       </div>
 
       {isOpen ? (

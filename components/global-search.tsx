@@ -50,7 +50,7 @@ export function GlobalSearch() {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Поиск: ордера, выплаты, API, риски..."
-          className="min-w-0 bg-transparent text-sm font-medium text-ink outline-none placeholder:text-graphite/45"
+          className="global-search-input min-w-0 bg-transparent text-sm font-medium text-ink outline-none"
           autoComplete="off"
         />
         <span className="hidden rounded-lg border border-ink/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-graphite/45 sm:inline-flex">

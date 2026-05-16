@@ -252,6 +252,11 @@ textarea {
   font-weight: 560;
 }
 
+.global-search-input::placeholder {
+  color: color-mix(in srgb, var(--muted) 76%, transparent);
+  opacity: 1;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -726,6 +731,11 @@ html.theme-dark :is(input, select, textarea),
 html.theme-cosmic :is(input, select, textarea) {
   color: var(--ink);
   background-color: rgba(255, 255, 255, 0.08);
+}
+
+html.theme-cosmic .global-search-input::placeholder {
+  color: rgba(226, 232, 255, 0.78);
+  opacity: 1;
 }
 
 html.theme-dark :is(.surface, .control, .field, .btn-secondary, .money-row, .enterprise-table tbody tr),
