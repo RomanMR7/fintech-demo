@@ -148,7 +148,7 @@ export function Topbar() {
         <GlobalSearch />
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-3 xl:flex xl:items-center xl:justify-end">
+      <div className="grid gap-2 sm:grid-cols-2 xl:flex xl:items-center xl:justify-end">
         <select value={role} onChange={(event) => setRole(event.target.value as DemoRole)} className="field focus-ring min-w-0 xl:w-[220px]" aria-label="Переключатель роли">
           {roleOptions.map((item) => (
             <option key={item.value} value={item.value}>
@@ -168,6 +168,9 @@ export function Topbar() {
             </option>
           ))}
         </select>
+        <Link href="/contact" className="btn btn-secondary focus-ring whitespace-nowrap">
+          PDF и контакты
+        </Link>
         <Link href="/scenarios" className="btn btn-primary focus-ring whitespace-nowrap">
           Запустить сценарий
         </Link>
