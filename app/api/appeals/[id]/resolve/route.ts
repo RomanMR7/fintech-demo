@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { resolveAppeal } from "@/lib/domain";
 import { UserRole } from "@/lib/constants";
 import { can } from "@/lib/rbac";
+import { resolveRequestActor } from "@/lib/demo-session";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
   try {
-    const actorRole = String(body.actorRole ?? UserRole.VIEWER);
+    const actorRole = resolveRequestActor(request, body, UserRole.VIEWER).role;
     if (!can(actorRole, "appeal:resolve")) {
       return NextResponse.json({ error: "Недостаточно прав для решения апелляции." }, { status: 403 });
     }

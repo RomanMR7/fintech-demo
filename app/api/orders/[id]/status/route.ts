@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { changeOrderStatus } from "@/lib/domain";
 import { OrderStatus, UserRole, type OrderStatusValue } from "@/lib/constants";
 import { can } from "@/lib/rbac";
+import { resolveRequestActor } from "@/lib/demo-session";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => ({}));
   const status = body.status as OrderStatusValue;
-  const actorRole = (body.actorRole as string) ?? UserRole.VIEWER;
+  const actorRole = resolveRequestActor(request, body, UserRole.VIEWER).role;
 
   if (!Object.values(OrderStatus).includes(status)) {
     return NextResponse.json({ message: "Некорректный статус ордера" }, { status: 400 });

@@ -5,6 +5,7 @@ import { assertPercentInput } from "@/lib/finance-guards";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/rbac";
 import { requireReason } from "@/lib/security";
+import { resolveRequestActor } from "@/lib/demo-session";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
-    const actorRole = String(body.actorRole ?? UserRole.VIEWER);
+    const actorRole = resolveRequestActor(request, body, UserRole.VIEWER).role;
     if (!can(actorRole, "merchant:create")) {
       return NextResponse.json({ error: "Недостаточно прав для создания мерчанта." }, { status: 403 });
     }

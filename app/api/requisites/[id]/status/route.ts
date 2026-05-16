@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { EventType, RequisiteStatus, UserRole } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/rbac";
+import { resolveRequestActor } from "@/lib/demo-session";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
-    const actorRole = String(body.actorRole ?? UserRole.VIEWER);
+    const actorRole = resolveRequestActor(request, body, UserRole.VIEWER).role;
     const status = body.status as string;
 
     if (!can(actorRole, "requisite:manage")) {

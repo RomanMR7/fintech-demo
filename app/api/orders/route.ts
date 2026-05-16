@@ -5,6 +5,7 @@ import { parseCurrency } from "@/lib/currency";
 import { assertPositiveMoney, calculateCommission } from "@/lib/finance-guards";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/rbac";
+import { resolveRequestActor } from "@/lib/demo-session";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,10 @@ export async function GET() {
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   let currency: "RUB" | "USD";
-  const actorRole = String(body.actorRole ?? UserRole.MERCHANT);
+  const actor = resolveRequestActor(request, body, UserRole.MERCHANT);
+  const actorRole = actor.role;
+  const requestedMerchantId = body.merchantId ? String(body.merchantId) : actor.merchantId;
+  const merchantId = actorRole === UserRole.MERCHANT ? actor.merchantId : requestedMerchantId;
 
   if (!can(actorRole, "order:create")) {
     return NextResponse.json({ error: "Недостаточно прав для создания ордера." }, { status: 403 });
@@ -31,10 +35,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Некорректная валюта." }, { status: 422 });
   }
 
-  if (!body.amount || !body.merchantId) {
+  if (!body.amount || !merchantId) {
     try {
       const order = await createDemoOrder(actorRole, {
-        merchantId: body.merchantId ? String(body.merchantId) : undefined,
+        merchantId,
         currency
       });
       return NextResponse.json(order, { status: 201 });
@@ -43,7 +47,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const merchant = await prisma.merchant.findUnique({ where: { id: String(body.merchantId) } });
+  const merchant = await prisma.merchant.findUnique({ where: { id: merchantId } });
   if (!merchant) return NextResponse.json({ message: "Мерчант не найден" }, { status: 404 });
 
   let amount;

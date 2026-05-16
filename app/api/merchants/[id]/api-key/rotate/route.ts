@@ -4,6 +4,7 @@ import { EventType, UserRole } from "@/lib/constants";
 import { can } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { assertSandbox2fa, maskSecret, requireReason } from "@/lib/security";
+import { canAccessMerchant, resolveRequestActor } from "@/lib/demo-session";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +15,16 @@ function generateDemoApiKey(merchantId: string) {
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
-  const actorRole = String(body.actorRole ?? UserRole.MERCHANT);
+  const actor = resolveRequestActor(request, body, UserRole.MERCHANT);
+  const actorRole = actor.role;
 
   try {
     if (!can(actorRole, "apiKey:rotate")) {
       return NextResponse.json({ error: "Недостаточно прав для перевыпуска API key." }, { status: 403 });
+    }
+
+    if (!canAccessMerchant(actor, id)) {
+      return NextResponse.json({ error: "API key доступен только выбранному мерчанту." }, { status: 403 });
     }
 
     const reason = requireReason(body.reason, "reason");

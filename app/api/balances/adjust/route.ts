@@ -3,6 +3,7 @@ import { adjustMerchantBalance } from "@/lib/domain";
 import { UserRole } from "@/lib/constants";
 import { can } from "@/lib/rbac";
 import { assertSandbox2fa, requireReason } from "@/lib/security";
+import { resolveRequestActor } from "@/lib/demo-session";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ function requiresLargeBalance2fa(amount: number, currency: string) {
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
-    const actorRole = String(body.actorRole ?? UserRole.VIEWER);
+    const actorRole = resolveRequestActor(request, body, UserRole.VIEWER).role;
     const amount = Number(body.amount ?? 0);
     const currency = body.currency ? String(body.currency) : "RUB";
     const description = requireReason(body.description, "description");

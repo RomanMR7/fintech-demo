@@ -3,16 +3,22 @@ import { writeAuditLog } from "@/lib/audit";
 import { EventType, UserRole } from "@/lib/constants";
 import { can } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
+import { canAccessMerchant, resolveRequestActor } from "@/lib/demo-session";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
-  const actorRole = String(body.actorRole ?? UserRole.MERCHANT);
+  const actor = resolveRequestActor(request, body, UserRole.MERCHANT);
+  const actorRole = actor.role;
 
   if (!can(actorRole, "webhook:test")) {
     return NextResponse.json({ error: "Недостаточно прав для теста webhook." }, { status: 403 });
+  }
+
+  if (!canAccessMerchant(actor, id)) {
+    return NextResponse.json({ error: "Webhook доступен только выбранному мерчанту." }, { status: 403 });
   }
 
   const merchant = await prisma.merchant.findUnique({ where: { id } });

@@ -3,12 +3,13 @@ import { resolvePayout } from "@/lib/domain";
 import { PayoutStatus, UserRole } from "@/lib/constants";
 import { can } from "@/lib/rbac";
 import { assertSandbox2fa, requireReason } from "@/lib/security";
+import { resolveRequestActor } from "@/lib/demo-session";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
   const status = body.status as string;
-  const actorRole = String(body.actorRole ?? UserRole.VIEWER);
+  const actorRole = resolveRequestActor(request, body, UserRole.VIEWER).role;
 
   if (status !== PayoutStatus.COMPLETED && status !== PayoutStatus.CANCELED) {
     return NextResponse.json({ message: "В демо выплату можно подтвердить или отменить" }, { status: 400 });

@@ -20,6 +20,16 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const [merchantId, setMerchantIdState] = useState(defaultMerchantId);
   const [merchantName, setMerchantName] = useState<string | null>(null);
 
+  const syncDemoSession = useCallback((nextRole: DemoRole, nextMerchantId: string) => {
+    void fetch("/api/demo-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: nextRole, merchantId: nextMerchantId })
+    }).catch(() => {
+      // The UI remains usable offline; API routes will fall back to safe defaults/body during transition.
+    });
+  }, []);
+
   useEffect(() => {
     const savedRole = window.localStorage.getItem("demo-role") as DemoRole | null;
     const savedMerchant = window.localStorage.getItem("demo-merchant-id");
@@ -55,6 +65,10 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
       window.localStorage.removeItem("demo-merchant-name");
     }
   }, []);
+
+  useEffect(() => {
+    syncDemoSession(role, merchantId);
+  }, [merchantId, role, syncDemoSession]);
 
   const value = useMemo(
     () => ({
