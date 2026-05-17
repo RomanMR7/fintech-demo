@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 export default async function EventsPage() {
-  const events = await prisma.eventLog.findMany({ orderBy: { createdAt: "desc" } });
+  const events = await prisma.eventLog.findMany({ orderBy: { createdAt: "desc" }, take: 300 });
 
   return (
     <div className="grid gap-5">

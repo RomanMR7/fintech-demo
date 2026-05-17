@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 export default async function PayoutsPage() {
-  const payouts = await prisma.payout.findMany({ include: { merchant: true }, orderBy: { createdAt: "desc" } });
+  const payouts = await prisma.payout.findMany({ include: { merchant: true }, orderBy: { createdAt: "desc" }, take: 300 });
 
   return (
     <div className="grid gap-5">

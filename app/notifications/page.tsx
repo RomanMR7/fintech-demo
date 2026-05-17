@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 export default async function NotificationsPage() {
-  const notifications = await prisma.notification.findMany({ include: { merchant: true }, orderBy: { createdAt: "desc" } });
+  const notifications = await prisma.notification.findMany({ include: { merchant: true }, orderBy: { createdAt: "desc" }, take: 300 });
 
   return (
     <div className="grid gap-5">

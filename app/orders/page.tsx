@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 export default async function OrdersPage() {
   const orders = await prisma.paymentOrder.findMany({
     include: { merchant: true, provider: true, requisite: true },
-    orderBy: { createdAt: "desc" }
+    orderBy: { createdAt: "desc" },
+    take: 300
   });
 
   return (

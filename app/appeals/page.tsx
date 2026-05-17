@@ -15,7 +15,8 @@ export default async function AppealsPage() {
       assignee: true,
       comments: { orderBy: { createdAt: "asc" } }
     },
-    orderBy: { createdAt: "desc" }
+    orderBy: { createdAt: "desc" },
+    take: 200
   });
 
   return (
