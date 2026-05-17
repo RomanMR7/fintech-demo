@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/page-header";
+import { PresentationViewer } from "@/components/presentation-viewer";
 import { projectContact } from "@/lib/project-contact";
 
 const deckHighlights = [
@@ -150,6 +151,8 @@ export default function ContactPage() {
             />
           </div>
         </div>
+
+        <PresentationViewer slides={projectContact.presentationSlides} />
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {projectContact.presentationSlides.map((slide) => (
