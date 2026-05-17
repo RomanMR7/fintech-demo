@@ -3,10 +3,17 @@ import { resolveAppeal } from "@/lib/domain";
 import { UserRole } from "@/lib/constants";
 import { can } from "@/lib/rbac";
 import { resolveRequestActor } from "@/lib/demo-session";
+import { apiErrorResponse, readJsonBody } from "@/lib/api-guards";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = await request.json().catch(() => ({}));
+  let body: Record<string, unknown>;
+  try {
+    body = await readJsonBody(request);
+  } catch (error) {
+    return apiErrorResponse(error, "Некорректный запрос на решение апелляции.");
+  }
+
   try {
     const actorRole = resolveRequestActor(request, body, UserRole.VIEWER).role;
     if (!can(actorRole, "appeal:resolve")) {
@@ -16,6 +23,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const appeal = await resolveAppeal(id, body.resolution === "platform" ? "platform" : "merchant");
     return NextResponse.json(appeal);
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Не удалось обработать апелляцию." }, { status: 409 });
+    return apiErrorResponse(error, "Не удалось обработать апелляцию.", 409);
   }
 }

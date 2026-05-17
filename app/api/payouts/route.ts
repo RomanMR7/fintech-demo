@@ -5,6 +5,7 @@ import { parseCurrency } from "@/lib/currency";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/rbac";
 import { resolveRequestActor } from "@/lib/demo-session";
+import { apiErrorResponse, readJsonBody } from "@/lib/api-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +18,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => ({}));
   try {
+    const body = await readJsonBody(request);
     const actor = resolveRequestActor(request, body, UserRole.MERCHANT);
     const actorRole = actor.role;
     if (!can(actorRole, "payout:create")) {
@@ -31,6 +32,6 @@ export async function POST(request: Request) {
     const payout = await createPayoutForMerchant(merchantId, currency);
     return NextResponse.json(payout, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Не удалось создать выплату." }, { status: 422 });
+    return apiErrorResponse(error, "Не удалось создать выплату.", 422);
   }
 }

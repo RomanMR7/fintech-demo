@@ -3,11 +3,12 @@ import { EventType, RequisiteStatus, UserRole } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/rbac";
 import { resolveRequestActor } from "@/lib/demo-session";
+import { apiErrorResponse, readJsonBody } from "@/lib/api-guards";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const body = await request.json().catch(() => ({}));
+    const body = await readJsonBody(request);
     const actorRole = resolveRequestActor(request, body, UserRole.VIEWER).role;
     const status = body.status as string;
 
@@ -41,6 +42,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     return NextResponse.json(requisite);
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Не удалось изменить реквизит." }, { status: 400 });
+    return apiErrorResponse(error, "Не удалось изменить реквизит.");
   }
 }

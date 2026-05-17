@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/rbac";
 import { requireReason } from "@/lib/security";
 import { resolveRequestActor } from "@/lib/demo-session";
+import { apiErrorResponse, readJsonBody } from "@/lib/api-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json().catch(() => ({}));
+    const body = await readJsonBody(request);
     const actorRole = resolveRequestActor(request, body, UserRole.VIEWER).role;
     if (!can(actorRole, "merchant:create")) {
       return NextResponse.json({ error: "Недостаточно прав для создания мерчанта." }, { status: 403 });
@@ -45,9 +46,6 @@ export async function POST(request: Request) {
     return NextResponse.json(merchant, { status: 201 });
   } catch (error) {
     console.error("Merchant creation failed", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Не удалось создать мерчанта." },
-      { status: 400 }
-    );
+    return apiErrorResponse(error, "Не удалось создать мерчанта.");
   }
 }

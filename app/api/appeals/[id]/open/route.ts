@@ -3,11 +3,12 @@ import { openAppeal } from "@/lib/domain";
 import { UserRole } from "@/lib/constants";
 import { can } from "@/lib/rbac";
 import { resolveRequestActor } from "@/lib/demo-session";
+import { apiErrorResponse, readJsonBody } from "@/lib/api-guards";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const body = await request.json().catch(() => ({}));
+    const body = await readJsonBody(request);
     const actorRole = resolveRequestActor(request, body, UserRole.VIEWER).role;
 
     if (!can(actorRole, "appeal:resolve")) {
@@ -17,6 +18,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const appeal = await openAppeal(id);
     return NextResponse.json(appeal);
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Не удалось взять апелляцию в работу." }, { status: 409 });
+    return apiErrorResponse(error, "Не удалось взять апелляцию в работу.", 409);
   }
 }

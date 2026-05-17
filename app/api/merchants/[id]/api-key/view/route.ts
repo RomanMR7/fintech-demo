@@ -5,12 +5,19 @@ import { maskSecret } from "@/lib/security";
 import { can } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { canAccessMerchant, resolveRequestActor } from "@/lib/demo-session";
+import { apiErrorResponse, readJsonBody } from "@/lib/api-guards";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = await request.json().catch(() => ({}));
+  let body: Record<string, unknown>;
+  try {
+    body = await readJsonBody(request);
+  } catch (error) {
+    return apiErrorResponse(error, "Некорректный запрос на просмотр API key.");
+  }
+
   const actor = resolveRequestActor(request, body, UserRole.MERCHANT);
   const actorRole = actor.role;
 

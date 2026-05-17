@@ -3,10 +3,17 @@ import { changeOrderStatus } from "@/lib/domain";
 import { OrderStatus, UserRole, type OrderStatusValue } from "@/lib/constants";
 import { can } from "@/lib/rbac";
 import { resolveRequestActor } from "@/lib/demo-session";
+import { apiErrorResponse, readJsonBody } from "@/lib/api-guards";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = await request.json().catch(() => ({}));
+  let body: Record<string, unknown>;
+  try {
+    body = await readJsonBody(request);
+  } catch (error) {
+    return apiErrorResponse(error, "Некорректный запрос на изменение статуса ордера.");
+  }
+
   const status = body.status as OrderStatusValue;
   const actorRole = resolveRequestActor(request, body, UserRole.VIEWER).role;
 

@@ -5,6 +5,7 @@ import { can } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { assertSandbox2fa, maskSecret, requireReason } from "@/lib/security";
 import { canAccessMerchant, resolveRequestActor } from "@/lib/demo-session";
+import { apiErrorResponse, readJsonBody } from "@/lib/api-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,13 @@ function generateDemoApiKey(merchantId: string) {
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = await request.json().catch(() => ({}));
+  let body: Record<string, unknown>;
+  try {
+    body = await readJsonBody(request);
+  } catch (error) {
+    return apiErrorResponse(error, "Некорректный запрос на перевыпуск API key.");
+  }
+
   const actor = resolveRequestActor(request, body, UserRole.MERCHANT);
   const actorRole = actor.role;
 
@@ -55,6 +62,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     return NextResponse.json({ maskedApiKey: maskSecret(updated.apiKey) });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Не удалось перевыпустить API key." }, { status: 422 });
+    return apiErrorResponse(error, "Не удалось перевыпустить API key.", 422);
   }
 }

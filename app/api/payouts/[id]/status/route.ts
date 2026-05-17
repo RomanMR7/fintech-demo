@@ -4,10 +4,17 @@ import { PayoutStatus, UserRole } from "@/lib/constants";
 import { can } from "@/lib/rbac";
 import { assertSandbox2fa, requireReason } from "@/lib/security";
 import { resolveRequestActor } from "@/lib/demo-session";
+import { apiErrorResponse, readJsonBody } from "@/lib/api-guards";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = await request.json().catch(() => ({}));
+  let body: Record<string, unknown>;
+  try {
+    body = await readJsonBody(request);
+  } catch (error) {
+    return apiErrorResponse(error, "Некорректный запрос на изменение выплаты.");
+  }
+
   const status = body.status as string;
   const actorRole = resolveRequestActor(request, body, UserRole.VIEWER).role;
 

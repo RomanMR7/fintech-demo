@@ -6,6 +6,7 @@ import { assertPositiveMoney, calculateCommission } from "@/lib/finance-guards";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/rbac";
 import { resolveRequestActor } from "@/lib/demo-session";
+import { apiErrorResponse, readJsonBody } from "@/lib/api-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => ({}));
+  let body: Record<string, unknown>;
+  try {
+    body = await readJsonBody(request);
+  } catch (error) {
+    return apiErrorResponse(error, "Некорректный запрос на создание ордера.");
+  }
+
   let currency: "RUB" | "USD";
   const actor = resolveRequestActor(request, body, UserRole.MERCHANT);
   const actorRole = actor.role;
@@ -60,7 +67,7 @@ export async function POST(request: Request) {
   const commission = calculateCommission(amount, merchant.payinFeeRate);
   const order = await prisma.paymentOrder.create({
     data: {
-      externalId: body.externalId ?? `API-${Date.now().toString().slice(-7)}`,
+      externalId: body.externalId ? String(body.externalId) : `API-${Date.now().toString().slice(-7)}`,
       merchantId: merchant.id,
       amount,
       currency,
