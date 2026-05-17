@@ -6,14 +6,19 @@ import { assertPositiveMoney, calculateCommission } from "@/lib/finance-guards";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/rbac";
 import { resolveRequestActor } from "@/lib/demo-session";
-import { apiErrorResponse, readJsonBody } from "@/lib/api-guards";
+import { apiErrorResponse, getOptionalQueryString, getSafeQueryLimit, readJsonBody } from "@/lib/api-guards";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const actor = resolveRequestActor(request);
+  const requestedMerchantId = getOptionalQueryString(request, "merchantId");
+  const merchantId = actor.role === UserRole.MERCHANT ? actor.merchantId : requestedMerchantId;
   const orders = await prisma.paymentOrder.findMany({
+    where: merchantId ? { merchantId } : undefined,
     include: { merchant: true, provider: true, requisite: true },
-    orderBy: { createdAt: "desc" }
+    orderBy: { createdAt: "desc" },
+    take: getSafeQueryLimit(request)
   });
   return NextResponse.json(orders);
 }

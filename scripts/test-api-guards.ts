@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { ApiRequestError, apiErrorStatus, readJsonBody } from "../lib/api-guards";
+import { ApiRequestError, apiErrorStatus, getOptionalQueryString, getSafeQueryLimit, readJsonBody } from "../lib/api-guards";
 
 async function main() {
   const parsed = await readJsonBody(
@@ -30,6 +30,11 @@ async function main() {
 
   assert.equal(apiErrorStatus(new ApiRequestError("too large", 413)), 413);
   assert.equal(apiErrorStatus(new Error("regular"), 422), 422);
+  assert.equal(getSafeQueryLimit(new Request("http://localhost/api/events?limit=25")), 25);
+  assert.equal(getSafeQueryLimit(new Request("http://localhost/api/events?limit=9999"), { maxLimit: 300 }), 300);
+  assert.equal(getSafeQueryLimit(new Request("http://localhost/api/events?limit=-1"), { defaultLimit: 50 }), 50);
+  assert.equal(getOptionalQueryString(new Request("http://localhost/api/orders?merchantId=merchant-orbita"), "merchantId"), "merchant-orbita");
+  assert.equal(getOptionalQueryString(new Request("http://localhost/api/orders?merchantId=+"), "merchantId"), undefined);
 
   console.log("API guard tests passed");
 }

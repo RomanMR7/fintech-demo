@@ -54,3 +54,21 @@ export function apiErrorResponse(error: unknown, fallbackMessage: string, fallba
     { status: apiErrorStatus(error, fallbackStatus) }
   );
 }
+
+export function getSafeQueryLimit(
+  request: Request,
+  options: { defaultLimit?: number; maxLimit?: number } = {}
+) {
+  const defaultLimit = options.defaultLimit ?? 100;
+  const maxLimit = options.maxLimit ?? 500;
+  const rawLimit = new URL(request.url).searchParams.get("limit");
+  const parsed = rawLimit ? Number(rawLimit) : defaultLimit;
+
+  if (!Number.isFinite(parsed) || parsed <= 0) return defaultLimit;
+  return Math.min(Math.floor(parsed), maxLimit);
+}
+
+export function getOptionalQueryString(request: Request, key: string) {
+  const value = new URL(request.url).searchParams.get(key)?.trim();
+  return value || undefined;
+}

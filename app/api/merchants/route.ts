@@ -6,14 +6,15 @@ import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/rbac";
 import { requireReason } from "@/lib/security";
 import { resolveRequestActor } from "@/lib/demo-session";
-import { apiErrorResponse, readJsonBody } from "@/lib/api-guards";
+import { apiErrorResponse, getSafeQueryLimit, readJsonBody } from "@/lib/api-guards";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   const merchants = await prisma.merchant.findMany({
     include: { balances: true },
-    orderBy: { displayName: "asc" }
+    orderBy: { displayName: "asc" },
+    take: getSafeQueryLimit(request, { defaultLimit: 100, maxLimit: 500 })
   });
 
   return NextResponse.json(merchants);
