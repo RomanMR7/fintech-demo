@@ -63,10 +63,19 @@ export function getDemoSessionFromRequest(request: Request): DemoRequestActor {
 export function resolveRequestActor(
   request: Request,
   body: Record<string, unknown> = {},
-  fallbackRole: UserRoleValue = UserRole.VIEWER
+  fallbackRole: UserRoleValue = UserRole.VIEWER,
+  options: { allowBodyFallback?: boolean } = {}
 ): DemoRequestActor {
   const cookieSession = getDemoSessionFromRequest(request);
   if (cookieSession.source === "cookie") return cookieSession;
+
+  if (!options.allowBodyFallback) {
+    return {
+      role: UserRole.VIEWER,
+      merchantId: defaultMerchantId,
+      source: "default"
+    };
+  }
 
   const bodyRole = body.actorRole ?? body.role;
   const bodyMerchantId = body.merchantId;

@@ -28,10 +28,22 @@ const cookieWins = resolveRequestActor(cookieRequest, {
 assert.equal(cookieWins.role, UserRole.OPERATOR);
 assert.equal(cookieWins.merchantId, "merchant-nova");
 
+const strictDefault = resolveRequestActor(
+  new Request("http://localhost/api/orders"),
+  {
+    actorRole: UserRole.FINANCE_MANAGER,
+    merchantId: "merchant-sigma"
+  },
+  UserRole.MERCHANT
+);
+assert.equal(strictDefault.role, UserRole.VIEWER);
+assert.equal(strictDefault.merchantId, defaultMerchantId);
+assert.equal(strictDefault.source, "default");
+
 const bodyFallback = resolveRequestActor(new Request("http://localhost/api/orders"), {
   actorRole: UserRole.FINANCE_MANAGER,
   merchantId: "merchant-sigma"
-});
+}, UserRole.VIEWER, { allowBodyFallback: true });
 assert.equal(bodyFallback.role, UserRole.FINANCE_MANAGER);
 assert.equal(bodyFallback.merchantId, "merchant-sigma");
 assert.equal(bodyFallback.source, "body-fallback");
@@ -57,4 +69,3 @@ assert.equal(canAccessMerchant({ role: UserRole.MERCHANT, merchantId: "merchant-
 assert.equal(canAccessMerchant({ role: UserRole.PLATFORM_ADMIN, merchantId: "merchant-orbita" }, "merchant-nova"), true);
 
 console.log("Demo session guard tests passed");
-

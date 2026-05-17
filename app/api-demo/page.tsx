@@ -39,11 +39,11 @@ const statusChange = `PATCH /api/orders/{id}/status
 Content-Type: application/json
 
 {
-  "status": "WAITING_PAYMENT",
-  "actorRole": "OPERATOR"
+  "status": "WAITING_PAYMENT"
 }
 
-Важно: статусы нельзя перескакивать.
+Важно: демо-API берет роль из server-side sandbox session, а не из body.
+Статусы нельзя перескакивать.
 Правильная цепочка: CREATED -> WAITING_PAYMENT -> PAID -> CONFIRMED -> COMPLETED.`;
 
 const exchangeRate = `GET /api/exchange-rates
