@@ -37,7 +37,7 @@ export function GlobalSearch() {
     : items.filter((item) => ["/orders", "/payouts", "/balances", "/api-demo", "/events"].includes(item.href)).slice(0, 5);
 
   return (
-    <div className="relative min-w-0 flex-1">
+    <div className="relative z-50 min-w-0 flex-1">
       <label className="sr-only" htmlFor="global-command-search">
         Глобальный поиск
       </label>
@@ -59,7 +59,7 @@ export function GlobalSearch() {
       </div>
 
       {query.trim() ? (
-        <div className="card absolute left-0 right-0 top-[calc(100%+0.5rem)] z-40 overflow-hidden rounded-2xl p-2">
+        <div className="card absolute left-0 right-0 top-[calc(100%+0.5rem)] z-[90] overflow-hidden rounded-2xl p-2">
           {results.length ? (
             results.map((item) => (
               <Link
