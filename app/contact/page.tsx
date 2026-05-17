@@ -154,28 +154,6 @@ export default function ContactPage() {
 
         <PresentationViewer slides={projectContact.presentationSlides} />
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          {projectContact.presentationSlides.map((slide) => (
-            <a
-              key={slide.number}
-              href={slide.imageUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="group rounded-[var(--radius-lg)] border border-ink/10 bg-white/55 p-2 transition hover:-translate-y-0.5 hover:bg-white"
-            >
-              <img
-                src={slide.imageUrl}
-                alt={`${slide.title} презентации Fintech OS`}
-                loading="lazy"
-                className="aspect-video w-full rounded-xl border border-ink/10 object-cover"
-              />
-              <div className="mt-2 flex items-center justify-between gap-2 px-1">
-                <span className="text-xs font-semibold text-ink">{slide.title}</span>
-                <span className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-jade">preview</span>
-              </div>
-            </a>
-          ))}
-        </div>
       </section>
 
       <section className="section-card">
