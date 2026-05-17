@@ -9,7 +9,7 @@
     "start": "next start",
     "postinstall": "prisma generate",
     "seed": "tsx scripts/seed.ts",
-    "test": "tsx scripts/test-commercial-model.ts && tsx scripts/test-demo-session.ts && tsx scripts/test-api-guards.ts",
+    "test": "tsx scripts/test-commercial-model.ts && tsx scripts/test-dashboard-metrics.ts && tsx scripts/test-demo-session.ts && tsx scripts/test-api-guards.ts",
     "verify:logic": "tsx scripts/verify-business-logic.ts",
     "verify:financial": "tsx scripts/verify-financial-guards.ts",
     "verify:scenarios": "tsx scripts/verify-scenarios.ts",

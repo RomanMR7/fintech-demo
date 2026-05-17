@@ -22,6 +22,7 @@ const hoursAgo = (hours: number) => new Date(now.getTime() - hours * 60 * 60 * 1
 const money = (value: number) => value.toFixed(2);
 const commission = (amount: number, rate: number) => Number((amount * rate).toFixed(2));
 const CBR_DAILY_RATES_URL = "https://www.cbr.ru/scripts/XML_daily.asp";
+const paidLikeOrderStatuses = new Set<string>([OrderStatus.PAID, OrderStatus.CONFIRMED, OrderStatus.COMPLETED, OrderStatus.DISPUTED]);
 
 function parseCbrDate(value: string | undefined) {
   if (!value) return new Date();
@@ -375,16 +376,16 @@ async function main() {
   });
 
   const orders = [
-    ["ord-1001", "M-1001", "merchant-orbita", "provider-cascade", "req-sber-c2c", 125000, "RUB", OrderStatus.COMPLETED, 0.025, daysAgo(6)],
-    ["ord-1002", "M-1002", "merchant-orbita", "provider-fireex", "req-orbita-usd", 1250, "USD", OrderStatus.WAITING_PAYMENT, 0.025, daysAgo(5)],
-    ["ord-1003", "M-1003", "merchant-orbita", "provider-cascade", "req-sber-c2c", 216000, "RUB", OrderStatus.DISPUTED, 0.025, daysAgo(4)],
-    ["ord-1004", "N-2201", "merchant-nova", "provider-titan", "req-vtb-account", 94000, "RUB", OrderStatus.PAID, 0.028, daysAgo(3)],
-    ["ord-1005", "N-2202", "merchant-nova", "provider-test", "req-ozon-c2c", 51000, "RUB", OrderStatus.FAILED, 0.028, daysAgo(3)],
-    ["ord-1006", "S-3010", "merchant-sigma", "provider-flow", "req-alfa-sbp", 188000, "RUB", OrderStatus.CONFIRMED, 0.022, daysAgo(2)],
-    ["ord-1007", "S-3011", "merchant-sigma", "provider-cascade", "req-sigma-usd", 1750, "USD", OrderStatus.CREATED, 0.022, daysAgo(2)],
-    ["ord-1008", "M-1008", "merchant-orbita", "provider-cascade", "req-sber-c2c", 305000, "RUB", OrderStatus.COMPLETED, 0.025, daysAgo(1)],
-    ["ord-1009", "N-2209", "merchant-nova", "provider-titan", "req-vtb-account", 116000, "RUB", OrderStatus.CANCELED, 0.028, hoursAgo(16)],
-    ["ord-1010", "S-3020", "merchant-sigma", "provider-cascade", "req-alfa-sbp", 149000, "RUB", OrderStatus.WAITING_PAYMENT, 0.022, hoursAgo(8)]
+    ["ord-1001", "M-1001", "merchant-orbita", "provider-cascade", "req-sber-c2c", 125000, "RUB", OrderStatus.COMPLETED, 0.025, hoursAgo(22)],
+    ["ord-1002", "M-1002", "merchant-orbita", "provider-fireex", "req-orbita-usd", 1250, "USD", OrderStatus.COMPLETED, 0.025, hoursAgo(20)],
+    ["ord-1003", "M-1003", "merchant-orbita", "provider-cascade", "req-sber-c2c", 216000, "RUB", OrderStatus.DISPUTED, 0.025, hoursAgo(18)],
+    ["ord-1004", "N-2201", "merchant-nova", "provider-titan", "req-vtb-account", 94000, "RUB", OrderStatus.COMPLETED, 0.028, hoursAgo(16)],
+    ["ord-1005", "N-2202", "merchant-nova", "provider-test", "req-ozon-c2c", 51000, "RUB", OrderStatus.COMPLETED, 0.028, hoursAgo(14)],
+    ["ord-1006", "S-3010", "merchant-sigma", "provider-flow", "req-alfa-sbp", 188000, "RUB", OrderStatus.COMPLETED, 0.022, hoursAgo(12)],
+    ["ord-1007", "S-3011", "merchant-sigma", "provider-cascade", "req-sigma-usd", 1750, "USD", OrderStatus.COMPLETED, 0.022, hoursAgo(10)],
+    ["ord-1008", "M-1008", "merchant-orbita", "provider-cascade", "req-sber-c2c", 305000, "RUB", OrderStatus.COMPLETED, 0.025, hoursAgo(8)],
+    ["ord-1009", "N-2209", "merchant-nova", "provider-titan", "req-vtb-account", 116000, "RUB", OrderStatus.COMPLETED, 0.028, hoursAgo(6)],
+    ["ord-1010", "S-3020", "merchant-sigma", "provider-cascade", "req-alfa-sbp", 149000, "RUB", OrderStatus.COMPLETED, 0.022, hoursAgo(4)]
   ] as const;
 
   for (const [id, externalId, merchantId, providerId, requisiteId, amount, currency, status, rate, createdAt] of orders) {
@@ -406,7 +407,7 @@ async function main() {
         paymentUrl: `https://pay.local/demo/${externalId}`,
         metadata: JSON.stringify({ source: "seed", demo: true }),
         createdAt,
-        paidAt: status === OrderStatus.PAID || status === OrderStatus.CONFIRMED || status === OrderStatus.COMPLETED || status === OrderStatus.DISPUTED ? new Date(createdAt.getTime() + 40 * 60 * 1000) : null,
+        paidAt: paidLikeOrderStatuses.has(status) ? new Date(createdAt.getTime() + 40 * 60 * 1000) : null,
         completedAt: status === OrderStatus.COMPLETED ? new Date(createdAt.getTime() + 90 * 60 * 1000) : null
       }
     });

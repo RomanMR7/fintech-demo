@@ -4,6 +4,7 @@ import { MoneyBreakdown } from "@/components/money-breakdown";
 import { PageHeader } from "@/components/page-header";
 import { QuickScenarioLauncher } from "@/components/quick-scenario-launcher";
 import { StatusBadge } from "@/components/status-badge";
+import { calculateOrderSuccessRate } from "@/lib/dashboard-metrics";
 import { convertBreakdownToBase, convertMoneyToBase, getFxSnapshot } from "@/lib/fx";
 import { formatDate, formatMoney, formatNumber, formatRate, toNumber, totalByCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -283,7 +284,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const periodPendingPayouts = periodPayouts.filter((payout) => ["CREATED", "PENDING_APPROVAL", "HOLD"].includes(payout.status));
   const periodOpenAppeals = periodAppeals.filter((appeal) => ["NEW", "OPEN"].includes(appeal.status));
   const periodRiskOrders = periodOrders.filter((order) => ["DISPUTED", "FAILED"].includes(order.status));
-  const successRate = periodOrders.length ? (periodCompletedOrders.length / periodOrders.length) * 100 : 0;
+  const successRate = calculateOrderSuccessRate(periodOrders.map((order) => order.status));
 
   const availableBase = convertBreakdownToBase(available, fx);
   const frozenBase = convertBreakdownToBase(frozen, fx);
