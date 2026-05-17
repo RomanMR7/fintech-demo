@@ -18,6 +18,9 @@ model User {
   authoredAppeals Appeal[]      @relation("AppealAuthor")
   comments        AppealComment[]
   createdAt       DateTime      @default(now())
+
+  @@index([merchantId], map: "User_merchantId_idx")
+  @@index([role], map: "User_role_idx")
 }
 
 model Merchant {
@@ -39,6 +42,9 @@ model Merchant {
   requisites      PaymentRequisite[]
   appeals         Appeal[]
   notifications   Notification[]
+
+  @@index([displayName], map: "Merchant_displayName_idx")
+  @@index([status], map: "Merchant_status_idx")
 }
 
 model Provider {
@@ -55,6 +61,10 @@ model Provider {
   createdAt       DateTime           @default(now())
   orders          PaymentOrder[]
   requisites      PaymentRequisite[]
+
+  @@index([displayName], map: "Provider_displayName_idx")
+  @@index([status], map: "Provider_status_idx")
+  @@index([availability], map: "Provider_availability_idx")
 }
 
 model PaymentRequisite {
@@ -76,6 +86,10 @@ model PaymentRequisite {
   linkedOrders    Int              @default(0)
   createdAt       DateTime         @default(now())
   orders          PaymentOrder[]
+
+  @@index([merchantId, status], map: "PaymentRequisite_merchantId_status_idx")
+  @@index([providerId], map: "PaymentRequisite_providerId_idx")
+  @@index([status, createdAt], map: "PaymentRequisite_status_createdAt_idx")
 }
 
 model PaymentOrder {
@@ -103,6 +117,11 @@ model PaymentOrder {
   completedAt     DateTime?
   appeals         Appeal[]
   transactions    BalanceTransaction[]
+
+  @@index([merchantId, createdAt], map: "PaymentOrder_merchantId_createdAt_idx")
+  @@index([merchantId, status], map: "PaymentOrder_merchantId_status_idx")
+  @@index([status, updatedAt], map: "PaymentOrder_status_updatedAt_idx")
+  @@index([createdAt], map: "PaymentOrder_createdAt_idx")
 }
 
 model Payout {
@@ -119,6 +138,11 @@ model Payout {
   updatedAt       DateTime       @updatedAt
   completedAt     DateTime?
   transactions    BalanceTransaction[]
+
+  @@index([merchantId, createdAt], map: "Payout_merchantId_createdAt_idx")
+  @@index([merchantId, status], map: "Payout_merchantId_status_idx")
+  @@index([status, updatedAt], map: "Payout_status_updatedAt_idx")
+  @@index([createdAt], map: "Payout_createdAt_idx")
 }
 
 model BalanceAccount {
@@ -153,6 +177,12 @@ model BalanceTransaction {
   currency        String            @default("RUB")
   description     String
   createdAt       DateTime          @default(now())
+
+  @@index([merchantId, createdAt], map: "BalanceTransaction_merchantId_createdAt_idx")
+  @@index([balanceId, createdAt], map: "BalanceTransaction_balanceId_createdAt_idx")
+  @@index([orderId], map: "BalanceTransaction_orderId_idx")
+  @@index([payoutId], map: "BalanceTransaction_payoutId_idx")
+  @@index([appealId], map: "BalanceTransaction_appealId_idx")
 }
 
 model CommissionRule {
@@ -164,6 +194,9 @@ model CommissionRule {
   maxAmount       Decimal         @default(0)
   active          Boolean         @default(true)
   description     String
+
+  @@index([type], map: "CommissionRule_type_idx")
+  @@index([active], map: "CommissionRule_active_idx")
 }
 
 model ExchangeRate {
@@ -203,6 +236,11 @@ model Appeal {
   updatedAt       DateTime        @updatedAt
   resolvedAt      DateTime?
   comments        AppealComment[]
+
+  @@index([merchantId, status], map: "Appeal_merchantId_status_idx")
+  @@index([status, updatedAt], map: "Appeal_status_updatedAt_idx")
+  @@index([orderId], map: "Appeal_orderId_idx")
+  @@index([createdAt], map: "Appeal_createdAt_idx")
 }
 
 model AppealComment {
@@ -214,6 +252,8 @@ model AppealComment {
   authorRole      String
   message         String
   createdAt       DateTime     @default(now())
+
+  @@index([appealId, createdAt], map: "AppealComment_appealId_createdAt_idx")
 }
 
 model Notification {
@@ -226,6 +266,11 @@ model Notification {
   type            String             @default("INFO")
   read            Boolean            @default(false)
   createdAt       DateTime           @default(now())
+
+  @@index([role, createdAt], map: "Notification_role_createdAt_idx")
+  @@index([merchantId, createdAt], map: "Notification_merchantId_createdAt_idx")
+  @@index([read, createdAt], map: "Notification_read_createdAt_idx")
+  @@index([createdAt], map: "Notification_createdAt_idx")
 }
 
 model EventLog {
@@ -239,6 +284,11 @@ model EventLog {
   description     String
   metadata        String?
   createdAt       DateTime     @default(now())
+
+  @@index([createdAt], map: "EventLog_createdAt_idx")
+  @@index([type, createdAt], map: "EventLog_type_createdAt_idx")
+  @@index([entityType, entityId], map: "EventLog_entityType_entityId_idx")
+  @@index([actorRole, createdAt], map: "EventLog_actorRole_createdAt_idx")
 }
 
 model ScenarioState {
