@@ -12,16 +12,93 @@ const offerItems = [
 const contactScenarios = [
   {
     title: "Нужна разработка",
-    description: "Опишите задачу, роли пользователей, какие операции нужно показать и какой результат хотите получить."
+    description: "Опишите задачу, роли пользователей, операции и результат, который нужно показать в продукте."
   },
   {
     title: "Нужна консультация",
-    description: "Можно разобрать идею, MVP, архитектуру, демо-логику, упаковку продукта или презентацию для инвестора."
+    description: "Можно разобрать идею, MVP, архитектуру, демо-логику, экономику продукта или презентацию для инвестора."
   },
   {
     title: "Нужно показать проект",
-    description: "Скачайте презентацию и используйте ее как короткое объяснение возможностей платежной платформы."
+    description: "Используйте встроенную PDF-презентацию как короткое объяснение возможностей платежной платформы."
   }
+];
+
+const investorMetricGroups = [
+  {
+    title: "Трафик и привлечение",
+    caption: "Показывает, откуда приходит оборот и насколько он управляем.",
+    items: [
+      { label: "Traffic volume", value: "объем заявок / GMV / processing volume" },
+      { label: "Conversion rate", value: "доля заявок, дошедших до целевого действия" },
+      { label: "CAC", value: "стоимость привлечения активного клиента или FTD" },
+      { label: "Revenue per FTD", value: "выручка платформы на первое целевое действие" }
+    ]
+  },
+  {
+    title: "Доходность",
+    caption: "Отвечает на вопрос, где платформа зарабатывает и сколько остается после затрат.",
+    items: [
+      { label: "ROI", value: "окупаемость вложений после комиссий, затрат и рисков" },
+      { label: "ROAS", value: "выручка с трафика относительно рекламных расходов" },
+      { label: "LTV", value: "ожидаемая маржа за срок жизни клиента / мерчанта" },
+      { label: "Payout margins", value: "маржа выплат после provider cost и risk loss" }
+    ]
+  },
+  {
+    title: "Масштабирование",
+    caption: "Показывает, можно ли расти без ручного хаоса и зависимости от одного источника.",
+    items: [
+      { label: "Retention", value: "удержание активных мерчантов, операторов и источников" },
+      { label: "GEO performance", value: "эффективность по странам, валютам, методам и провайдерам" },
+      { label: "Scalability", value: "рост оборота без пропорционального роста ручной команды" },
+      { label: "Automation %", value: "доля операций, обработанных без ручного вмешательства" }
+    ]
+  }
+];
+
+const riskCoverage = [
+  {
+    risk: "Зависимость от одного источника трафика",
+    answer: "Платформа должна показывать source diversification: долю каждого источника, качество трафика и риск концентрации."
+  },
+  {
+    risk: "Блокировки и ограничения аккаунтов",
+    answer: "Нужны лимиты, мониторинг доступности, контроль провайдеров, SLA, журнал действий и план замены проблемных инструментов."
+  },
+  {
+    risk: "Юридические риски",
+    answer: "Модель должна строиться через договорную базу, KYC/AML, лимиты, прозрачную отчетность и white infrastructure."
+  },
+  {
+    risk: "Ручное управление",
+    answer: "Операционные очереди, статусы, роли, audit log, сценарии и automation % показывают, что процесс можно контролировать системно."
+  },
+  {
+    risk: "Непрозрачные цифры",
+    answer: "CAC, ROI, ROAS, LTV, retention, margin и GMV должны быть видны в одной модели, а не храниться в разрозненных таблицах."
+  },
+  {
+    risk: "Невозможность масштабирования",
+    answer: "Scalability доказывается через рост оборота, диверсификацию источников, автоматизацию и стабильность payout margins."
+  },
+  {
+    risk: "Cashflow instability",
+    answer: "Разделение available, hold, reserved, frozen и fee balance помогает заранее видеть кассовые разрывы и спорные суммы."
+  },
+  {
+    risk: "«Арбитражник без системы»",
+    answer: "Продуктовая упаковка, роли, логи, метрики, white infrastructure и управляемые процессы превращают ручную схему в операционную платформу."
+  }
+];
+
+const operatingSignals = [
+  "Source diversification: ни один источник не должен быть единственной точкой отказа.",
+  "Anti-ban stability: устойчивость к ограничениям через правила, лимиты, мониторинг и compliance-процедуры, а не обход контроля.",
+  "GEO performance: сравнение стран, валют, методов оплаты, approval rate, margin и dispute rate.",
+  "Automation %: доля автоматизированных статусов, webhook-событий, проверок и уведомлений.",
+  "Retention: повторное использование платформы мерчантами, операторами и партнерами.",
+  "Payout margins: доходность выплат после комиссий провайдера, операционных расходов и спорных потерь."
 ];
 
 export default function ContactPage() {
@@ -43,7 +120,7 @@ export default function ContactPage() {
             <p className="eyebrow">Презентация внутри проекта</p>
             <h2 className="section-title mt-2 text-ink">Investor deck можно смотреть прямо здесь</h2>
             <p className="copy mt-3">
-              Эта страница находится внутри текущего приложения. Основная ссылка на проект не меняется: после деплоя появится раздел с контактами, встроенным PDF-просмотром и файлом презентации для скачивания.
+              Страница встроена в текущую версию приложения. Основная ссылка на проект не меняется: после деплоя раздел с контактами, PDF-просмотром и investor-checklist будет доступен внутри той же платформы.
             </p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <a href={projectContact.presentationPdfUrl} download className="btn btn-primary focus-ring">
@@ -82,6 +159,67 @@ export default function ContactPage() {
           />
         </div>
 
+        <div className="mt-5 rounded-[var(--radius-xl)] border border-ink/10 bg-white/50 p-4">
+          <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr] xl:items-start">
+            <div>
+              <p className="eyebrow">Чек-лист инвестора</p>
+              <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-ink">Что важно показать кроме самой презентации</h3>
+              <p className="copy mt-3">
+                Инвестор смотрит не только на интерфейс. Ему важно понять, откуда берется оборот, сколько стоит рост, насколько стабильны выплаты, как контролируются риски и можно ли масштабировать систему без ручного хаоса.
+              </p>
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-3">
+              {investorMetricGroups.map((group) => (
+                <article key={group.title} className="rounded-[var(--radius-lg)] border border-ink/10 bg-white/55 p-4">
+                  <h4 className="text-sm font-semibold tracking-[-0.01em] text-ink">{group.title}</h4>
+                  <p className="copy-sm mt-1">{group.caption}</p>
+                  <div className="mt-3 grid gap-2">
+                    {group.items.map((item) => (
+                      <div key={item.label} className="rounded-xl border border-ink/10 bg-white/45 px-3 py-2">
+                        <p className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-jade">{item.label}</p>
+                        <p className="mt-1 text-xs leading-5 text-graphite/72">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <details className="mt-5 rounded-[var(--radius-xl)] border border-ink/10 bg-white/50 p-4" open>
+          <summary className="cursor-pointer list-none">
+            <span className="eyebrow">Риск-мемо</span>
+            <span className="mt-2 block text-xl font-semibold tracking-[-0.03em] text-ink">Какие страхи нужно закрыть заранее</span>
+            <span className="copy mt-2 block">
+              Блок помогает быстро объяснить, что платформа не является набором ручных действий, а строится как управляемая платежная инфраструктура с метриками, контролем, ролями и прозрачной операционной моделью.
+            </span>
+          </summary>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {riskCoverage.map((item) => (
+              <article key={item.risk} className="rounded-[var(--radius-lg)] border border-ink/10 bg-white/55 p-4">
+                <h4 className="text-sm font-semibold text-ink">{item.risk}</h4>
+                <p className="copy-sm mt-2">{item.answer}</p>
+              </article>
+            ))}
+          </div>
+        </details>
+
+        <div className="mt-5 rounded-[var(--radius-xl)] border border-ink/10 bg-white/50 p-4">
+          <p className="eyebrow">Операционные показатели</p>
+          <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {operatingSignals.map((signal) => (
+              <div key={signal} className="rounded-[var(--radius-lg)] border border-ink/10 bg-white/55 p-4">
+                <div className="flex gap-3">
+                  <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-jade" />
+                  <p className="text-sm font-semibold leading-6 text-ink">{signal}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {projectContact.presentationSlides.map((slide) => (
             <a
@@ -111,7 +249,7 @@ export default function ContactPage() {
           <p className="eyebrow">Что можно заказать</p>
           <h2 className="section-title mt-2 text-ink">Платежная платформа под ваш процесс</h2>
           <p className="copy mt-3 max-w-3xl">
-            Этот проект можно использовать как основу для собственного fintech-продукта: от интерактивного демо до полноценного рабочего MVP с ролями, статусами, балансами, выплатами и API-логикой.
+            Этот проект можно использовать как основу для собственного fintech-продукта: от интерактивного демо до рабочего MVP с ролями, статусами, балансами, выплатами, API-логикой и презентационной упаковкой.
           </p>
           <div className="mt-5 grid gap-3">
             {offerItems.map((item) => (
