@@ -1,5 +1,14 @@
 import assert from "node:assert/strict";
-import { ApiRequestError, apiErrorStatus, getOptionalQueryString, getSafeQueryLimit, readJsonBody } from "../lib/api-guards";
+import {
+  ApiRequestError,
+  apiErrorStatus,
+  apiForbidden,
+  apiJsonError,
+  apiNotFound,
+  getOptionalQueryString,
+  getSafeQueryLimit,
+  readJsonBody
+} from "../lib/api-guards";
 
 async function main() {
   const parsed = await readJsonBody(
@@ -35,6 +44,17 @@ async function main() {
   assert.equal(getSafeQueryLimit(new Request("http://localhost/api/events?limit=-1"), { defaultLimit: 50 }), 50);
   assert.equal(getOptionalQueryString(new Request("http://localhost/api/orders?merchantId=merchant-orbita"), "merchantId"), "merchant-orbita");
   assert.equal(getOptionalQueryString(new Request("http://localhost/api/orders?merchantId=+"), "merchantId"), undefined);
+
+  const genericError = await apiJsonError("Ошибка", 409, "CONFLICT").json();
+  assert.deepEqual(genericError, { ok: false, error: "Ошибка", code: "CONFLICT" });
+
+  const forbidden = apiForbidden("Нет доступа");
+  assert.equal(forbidden.status, 403);
+  assert.equal((await forbidden.json()).code, "FORBIDDEN");
+
+  const notFound = apiNotFound("Не найдено");
+  assert.equal(notFound.status, 404);
+  assert.equal((await notFound.json()).code, "NOT_FOUND");
 
   console.log("API guard tests passed");
 }

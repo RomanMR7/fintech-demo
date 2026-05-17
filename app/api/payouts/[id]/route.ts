@@ -8,21 +8,19 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const actor = resolveRequestActor(request);
-  const order = await prisma.paymentOrder.findUnique({
+  const payout = await prisma.payout.findUnique({
     where: { id },
     include: {
       merchant: true,
-      provider: true,
-      requisite: true,
-      appeals: { include: { comments: true } },
       transactions: { orderBy: { createdAt: "desc" } }
     }
   });
 
-  if (!order) return apiNotFound("Ордер не найден.");
-  if (!canAccessMerchant(actor, order.merchantId)) {
-    return apiForbidden("Мерчант может смотреть только свои ордера.");
+  if (!payout) return apiNotFound("Выплата не найдена.");
+  if (!canAccessMerchant(actor, payout.merchantId)) {
+    return apiForbidden("Мерчант может смотреть только свои выплаты.");
   }
 
-  return NextResponse.json(order);
+  return NextResponse.json(payout);
 }
+

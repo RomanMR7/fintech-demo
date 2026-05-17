@@ -49,10 +49,19 @@ export function apiErrorMessage(error: unknown, fallbackMessage: string) {
 }
 
 export function apiErrorResponse(error: unknown, fallbackMessage: string, fallbackStatus = 400) {
-  return NextResponse.json(
-    { error: apiErrorMessage(error, fallbackMessage) },
-    { status: apiErrorStatus(error, fallbackStatus) }
-  );
+  return apiJsonError(apiErrorMessage(error, fallbackMessage), apiErrorStatus(error, fallbackStatus));
+}
+
+export function apiJsonError(message: string, status = 400, code = "API_ERROR") {
+  return NextResponse.json({ ok: false, error: message, code }, { status });
+}
+
+export function apiForbidden(message = "Недостаточно прав для выполнения действия.") {
+  return apiJsonError(message, 403, "FORBIDDEN");
+}
+
+export function apiNotFound(message = "Объект не найден.") {
+  return apiJsonError(message, 404, "NOT_FOUND");
 }
 
 export function getSafeQueryLimit(
